@@ -12,5 +12,9 @@ require mathlib from git
   "https://github.com/leanprover-community/mathlib4.git"
 
 @[default_target]
+lean_exe «lsort» where
+  root := `Main
+  -- supportInterpreter := true
+
 lean_lib «LeanSorting» where
   -- add any library configuration options here
