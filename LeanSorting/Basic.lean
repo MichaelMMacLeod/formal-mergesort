@@ -45,7 +45,11 @@ def mergeSort [Inhabited α] [Ord α] (arr : Array α) : Array α := Id.run do
   let mut aux : Array α := Array.ofFn (n := arr.size) (fun _ => default)
   let mut chunkSize := 1
   while chunkSize < arr.size do
-    arr := mergeChunksIntoAux arr aux chunkSize
+    aux := mergeChunksIntoAux arr aux chunkSize
+    let mut i := 0
+    while h : i < arr.size do
+      arr := arr.set ⟨i, by simp[*]⟩ aux[i]!
+      i := i + 1
     chunkSize := chunkSize * 2
   pure arr
 
