@@ -12,12 +12,12 @@ def getLines : IO (Array String) := do
 
 def mainUnique : IO Unit := do
   let lines ← getLines
-  for line in mergeSort lines do
+  for line in lines.mergeSort do
     IO.println line
 
 def mainShared : IO Unit := do
   let lines ← getLines
-  for line in mergeSort lines do
+  for line in lines.mergeSort do
     IO.println line
   IO.println ""
   IO.println "--- Original data: ---"
