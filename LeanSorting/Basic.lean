@@ -36,10 +36,10 @@ partial def mergeAdjacentChunksIntoAux [Inhabited α] [Ord α] (arr : Array α) 
   -- Copy from both the left and right chunk until one of the chunks is fully copied.
   let rec loop (aux : Array α) (i : ℕ) (k₁ : ℕ) (k₂ : ℕ)
       (k₁_ge_chunkStart₁ : k₁ ≥ chunkStart₁)
-      (chunkEnd₂_leq_aux_size : chunkEnd₂ ≤ aux.size)
-      (i_le_k₂ : i ≤ k₂)
       (arr_size_eq_aux_size : arr.size = aux.size)
-      (i_eq_k₁_or_i_eq_k₂ : (i = k₁ ∧ i < k₂) ∨ i = k₂)
+      (i_in_single_chunk :
+        Xor' (i ≥ chunkStart₁ ∧ i < chunkStart₂)
+             (i ≥ chunkStart₂ ∧ i < chunkEnd₂))
       : Array α :=
     if k₁_k₂_in_bounds : k₁ < chunkStart₂ ∧ k₂ < chunkEnd₂ then
 
@@ -55,9 +55,9 @@ partial def mergeAdjacentChunksIntoAux [Inhabited α] [Ord α] (arr : Array α) 
         exact (Nat.lt_trans k₁_k₂_in_bounds end₂_lt_arr_size)
 
       have i_lt_aux_size : i < aux.size := by
-        apply And.right at k₁_k₂_in_bounds
-        have k₂_lt_aux_size := Nat.lt_of_lt_le k₁_k₂_in_bounds chunkEnd₂_leq_aux_size
-        exact (Nat.lt_of_le_lt i_le_k₂ k₂_lt_aux_size)
+        rw [Xor'] at i_in_single_chunk
+        omega
+
       match Ord.compare arr[k₁] arr[k₂] with
       | .lt | .eq =>
         let aux' := (dbgTraceIfShared "mergeChunks1" aux).set ⟨i, i_lt_aux_size⟩ arr[k₁]
@@ -68,24 +68,16 @@ partial def mergeAdjacentChunksIntoAux [Inhabited α] [Ord α] (arr : Array α) 
           exact arr_size_eq_aux_size
         have k₁_succ_ge_chunkStart₁ : k₁.succ ≥ chunkStart₁ := by
           exact (Nat.succ_ge_of_ge k₁_ge_chunkStart₁)
-        have chunkEnd₂_leq_aux'_size : chunkEnd₂ ≤ aux'.size := by
-          apply Nat.le_of_lt
-          have aux'_def : aux' = aux.set ⟨i, i_lt_aux_size⟩ arr[k₁] := by rfl
-          rw [aux'_def]
-          rw [Array.size_set]
-          rw [← arr_size_eq_aux_size]
-          exact end₂_lt_arr_size
-        have i_succ_le_k₂ : i.succ ≤ k₂ := by
-          sorry
-        have i_succ_eq_k₁_succ_or_i_succ_eq_k₂ :
-            (i.succ = k₁.succ ∧ i.succ < k₂) ∨ i.succ = k₂ := by
-          omega
+        have i_in_single_chunk' :
+            Xor' (i.succ ≥ chunkStart₁ ∧ i.succ < chunkStart₂)
+                 (i.succ ≥ chunkStart₂ ∧ i.succ < chunkEnd₂) := by
+          rw [Xor'] at i_in_single_chunk
+          rw [Xor']
+
         loop aux' i.succ k₁.succ k₂
           k₁_succ_ge_chunkStart₁
-          chunkEnd₂_leq_aux'_size
-          i_succ_le_k₂
           arr_size_eq_aux'_size
-          i_succ_eq_k₁_succ_or_i_succ_eq_k₂
+          i_in_single_chunk'
       | .gt =>
         let aux' := (dbgTraceIfShared "mergeChunks2" aux).set ⟨i, i_lt_aux_size⟩ arr[k₂]
         have arr_size_eq_aux'_size : arr.size = aux'.size := by
@@ -93,38 +85,14 @@ partial def mergeAdjacentChunksIntoAux [Inhabited α] [Ord α] (arr : Array α) 
           rw [aux'_def]
           rw [Array.size_set]
           exact arr_size_eq_aux_size
-        have chunkEnd₂_leq_aux'_size : chunkEnd₂ ≤ aux'.size := by
-          apply Nat.le_of_lt
-          have aux'_def : aux' = aux.set ⟨i, i_lt_aux_size⟩ arr[k₂] := by rfl
-          rw [aux'_def]
-          rw [Array.size_set]
-          rw [← arr_size_eq_aux_size]
-          exact end₂_lt_arr_size
-        have i_succ_eq_k₁_or_i_succ_eq_k₂_succ :
-            (i.succ = k₁ ∧ i.succ < k₂.succ) ∨ i.succ = k₂.succ := by
-          apply Or.intro_right
-          rw [Nat.succ_eq_succ_of_self]
-          cases i_eq_k₁_or_i_eq_k₂ with
-          | inl h =>
-            apply And.right at h
-            -- absurd h
-
-          | inr h =>
-            omega
-          -- apply Or.intro_right
-          -- rw [Nat.succ_eq_succ_of_self]
-          -- cases i_eq_k₁_or_i_eq_k₂ with
-          -- | inl i_eq_k₁ =>
-          --   omega
-          -- | inr i_eq_k₂ =>
-          --   exact i_eq_k₂
-        have i_succ_le_k₂_succ : i.succ ≤ k₂.succ := sorry
+        have i_in_single_chunk' :
+            Xor' (i.succ ≥ chunkStart₁ ∧ i.succ < chunkStart₂)
+                 (i.succ ≥ chunkStart₂ ∧ i.succ < chunkEnd₂) :=
+          sorry
         loop aux' i.succ k₁ k₂.succ
           k₁_ge_chunkStart₁
-          chunkEnd₂_leq_aux'_size
-          i_succ_le_k₂_succ
           arr_size_eq_aux'_size
-          i_succ_eq_k₁_or_i_succ_eq_k₂_succ
+          i_in_single_chunk'
     else
       -- Finish copying everything from the left chunk (if there was anything left to copy).
       let rec loop₁ (aux : Array α) (i : ℕ) (k₁ : ℕ) :=
@@ -146,13 +114,9 @@ partial def mergeAdjacentChunksIntoAux [Inhabited α] [Ord α] (arr : Array α) 
           loop₂ aux i k₂
       loop₁ aux i k₁
   loop aux chunkStart₁ chunkStart₁ chunkStart₂
-    sorry
-    sorry
-    sorry
+    (by simp [*])
     arr_size_eq_aux_size
-    (by
-       apply Or.intro_left
-       rfl)
+    (by simp [*])
 
 -- def mergeAdjacentChunksIntoAux2
       -- have k₁_lt_arr_size : k₁ < arr.size := by
