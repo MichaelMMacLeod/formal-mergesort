@@ -21,16 +21,87 @@ arr: 1 2 3 100 200 300 [10 20 30 │ 21 22 23] 400 500 600
 aux: 1 2 3 100 200 300 [0  0  0  │ 0  0  0 ] 0   0   0
 ---> 1 2 3 100 200 300 [10 20 21 │ 22 23 30] 0   0   0
                         │          │         │
+start1 ─────────────────┘          │         │
+start2 ────────────────────────────┘         │
+end2 ────────────────────────────────────────┘
+```
+-/
+partial def mergeAdjacentChunksIntoAux [Inhabited α] [Ord α] (arr : Array α) (aux : Array α)
+    (chunkStart₁ : ℕ) (start₂ : ℕ) (end₂ : ℕ)
+    (start₁_lt_start₂ : start₁ < start₂)
+    (start₂_lt_end₂ : start₂ < end₂)
+    (end₂_le_arr_size : end₂ ≤ arr.size)
+    (arr_size_eq_aux_size : arr.size = aux.size)
+    : Array α :=
+  -- Copy from both the left and right chunk until one of the chunks is fully copied.
+  let rec loop (aux : Array α) (i : ℕ) (k₁ : ℕ) (k₂ : ℕ)
+      : Array α :=
+    if k₁_k₂_in_bounds : k₁ < start₂ ∧ k₂ < end₂ then
+
+      -- Without the following two proofs, the proofs required for arr[k₁] and arr[k₂] are
+      -- automatically inferred (via `omega`?), which for whatever reason messes with the
+      -- reference counter for `aux`, resulting in a full copy when we do `aux.set`.
+      have k₁_lt_arr_size : k₁ < arr.size := by
+        apply And.left at k₁_k₂_in_bounds
+        let start₂_lt_arr_size := Nat.lt_of_lt_le start₂_lt_end₂ end₂_le_arr_size
+        exact (Nat.lt_trans k₁_k₂_in_bounds start₂_lt_arr_size)
+      have k₂_lt_arr_size : k₂ < arr.size := by
+        apply And.right at k₁_k₂_in_bounds
+        exact (Nat.lt_of_lt_le k₁_k₂_in_bounds end₂_le_arr_size)
+
+      have i_lt_aux_size : i < aux.size := by
+        
+
+      match Ord.compare arr[k₁] arr[k₂] with
+      | .lt | .eq =>
+        let aux' := (dbgTraceIfShared "mergeChunks1" aux).set ⟨i, i_lt_aux_size⟩ arr[k₁]
+        loop aux' i.succ k₁.succ k₂
+      | .gt =>
+        let aux' := (dbgTraceIfShared "mergeChunks2" aux).set ⟨i, i_lt_aux_size⟩ arr[k₂]
+        loop aux' i.succ k₁ k₂.succ
+    else
+      -- Finish copying everything from the left chunk (if there was anything left to copy).
+      let rec loop₁ (aux : Array α) (i : ℕ) (k₁ : ℕ) :=
+        if k₁ < start₂ then
+          have i_lt_aux_size : i < aux.size := sorry
+          have k₁_lt_arr_size : k₁ < arr.size := sorry
+          let aux' := (dbgTraceIfShared "mergeChunks" aux).set ⟨i, i_lt_aux_size⟩ arr[k₁]
+          loop₁ aux' i.succ k₁.succ
+        else
+          -- Finish copying everything from the right chunk (if there was anything left to copy).
+          let rec loop₂ (aux : Array α) (i : ℕ) (k₂ : ℕ) :=
+            if k₂ < end₂ then
+              have i_lt_aux_size : i < aux.size := sorry
+              have k₂_lt_arr_size : k₂ < arr.size := sorry
+              let aux' := (dbgTraceIfShared "mergeChunks" aux).set ⟨i, i_lt_aux_size⟩ arr[k₂]
+              loop₂ aux' i.succ k₂.succ
+            else
+              aux
+          loop₂ aux i k₂
+      loop₁ aux i k₁
+  loop aux start₁ start₁ start₂
+
+/--
+Merges two ordered contiguous portions of `arr` into `aux`, returning `aux`.
+If there are no other references to `aux`, it will be mutated in-place.
+
+For example,
+```
+                        region1    region2
+arr: 1 2 3 100 200 300 [10 20 30 │ 21 22 23] 400 500 600
+aux: 1 2 3 100 200 300 [0  0  0  │ 0  0  0 ] 0   0   0
+---> 1 2 3 100 200 300 [10 20 21 │ 22 23 30] 0   0   0
+                        │          │         │
 chunkStart1 ────────────┘          │         │
 chunkStart2 ───────────────────────┘         │
 end2 ────────────────────────────────────────┘
 ```
 -/
-partial def mergeAdjacentChunksIntoAux [Inhabited α] [Ord α] (arr : Array α) (aux : Array α)
+partial def mergeAdjacentChunksIntoAux2 [Inhabited α] [Ord α] (arr : Array α) (aux : Array α)
     (chunkStart₁ : ℕ) (chunkStart₂ : ℕ) (chunkEnd₂ : ℕ)
     (start₁_lt_start₂ : chunkStart₁ < chunkStart₂)
     (start₂_lt_end₂ : chunkStart₂ < chunkEnd₂)
-    (end₂_lt_arr_size : chunkEnd₂ < arr.size)
+    (end₂_le_arr_size : chunkEnd₂ ≤ arr.size)
     (arr_size_eq_aux_size : arr.size = aux.size)
     : Array α :=
   -- Copy from both the left and right chunk until one of the chunks is fully copied.
@@ -47,12 +118,14 @@ partial def mergeAdjacentChunksIntoAux [Inhabited α] [Ord α] (arr : Array α) 
       -- automatically inferred (via `omega`?), which for whatever reason messes with the
       -- reference counter for `aux`, resulting in a full copy when we do `aux.set`.
       have k₁_lt_arr_size : k₁ < arr.size := by
-        apply And.left at k₁_k₂_in_bounds
-        let start₂_lt_arr_size := Nat.lt_trans start₂_lt_end₂ end₂_lt_arr_size
-        exact (Nat.lt_trans k₁_k₂_in_bounds start₂_lt_arr_size)
-      have k₂_st_arr_size : k₂ < arr.size := by
-        apply And.right at k₁_k₂_in_bounds
-        exact (Nat.lt_trans k₁_k₂_in_bounds end₂_lt_arr_size)
+        omega
+        -- apply And.left at k₁_k₂_in_bounds
+        -- let start₂_lt_arr_size := Nat.lt_trans start₂_lt_end₂ end₂_lt_arr_size
+        -- exact (Nat.lt_trans k₁_k₂_in_bounds start₂_lt_arr_size)
+      have k₂_lt_arr_size : k₂ < arr.size := by
+        omega
+        -- apply And.right at k₁_k₂_in_bounds
+        -- exact (Nat.lt_trans k₁_k₂_in_bounds end₂_lt_arr_size)
 
       have i_lt_aux_size : i < aux.size := by
         rw [Xor'] at i_in_single_chunk
