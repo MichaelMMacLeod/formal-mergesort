@@ -7,6 +7,8 @@ theorem Nat.lt_of_le_lt {a b c : ℕ} (h : a ≤ b) : b < c → a < c := by
   omega
 theorem Nat.succ_ge_of_ge {a b : ℕ} (h : a ≥ b) : a.succ ≥ b := by
   omega
+theorem Nat.succ_eq_succ_of_self {a b : ℕ} (h : a = b) : a.succ = b.succ := by
+  simp[*]
 
 /--
 Merges two ordered contiguous portions of `arr` into `aux`, returning `aux`.
@@ -37,6 +39,7 @@ partial def mergeAdjacentChunksIntoAux [Inhabited α] [Ord α] (arr : Array α) 
       (chunkEnd₂_leq_aux_size : chunkEnd₂ ≤ aux.size)
       (i_le_k₂ : i ≤ k₂)
       (arr_size_eq_aux_size : arr.size = aux.size)
+      (i_eq_k₁_or_i_eq_k₂ : (i = k₁ ∧ i < k₂) ∨ i = k₂)
       : Array α :=
     if k₁_k₂_in_bounds : k₁ < chunkStart₂ ∧ k₂ < chunkEnd₂ then
 
@@ -73,9 +76,16 @@ partial def mergeAdjacentChunksIntoAux [Inhabited α] [Ord α] (arr : Array α) 
           rw [← arr_size_eq_aux_size]
           exact end₂_lt_arr_size
         have i_succ_le_k₂ : i.succ ≤ k₂ := by
-          
+          sorry
+        have i_succ_eq_k₁_succ_or_i_succ_eq_k₂ :
+            (i.succ = k₁.succ ∧ i.succ < k₂) ∨ i.succ = k₂ := by
+          omega
         loop aux' i.succ k₁.succ k₂
-          k₁_succ_ge_chunkStart₁ chunkEnd₂_leq_aux'_size i_succ_le_k₂ arr_size_eq_aux'_size
+          k₁_succ_ge_chunkStart₁
+          chunkEnd₂_leq_aux'_size
+          i_succ_le_k₂
+          arr_size_eq_aux'_size
+          i_succ_eq_k₁_succ_or_i_succ_eq_k₂
       | .gt =>
         let aux' := (dbgTraceIfShared "mergeChunks2" aux).set ⟨i, i_lt_aux_size⟩ arr[k₂]
         have arr_size_eq_aux'_size : arr.size = aux'.size := by
@@ -90,9 +100,31 @@ partial def mergeAdjacentChunksIntoAux [Inhabited α] [Ord α] (arr : Array α) 
           rw [Array.size_set]
           rw [← arr_size_eq_aux_size]
           exact end₂_lt_arr_size
+        have i_succ_eq_k₁_or_i_succ_eq_k₂_succ :
+            (i.succ = k₁ ∧ i.succ < k₂.succ) ∨ i.succ = k₂.succ := by
+          apply Or.intro_right
+          rw [Nat.succ_eq_succ_of_self]
+          cases i_eq_k₁_or_i_eq_k₂ with
+          | inl h =>
+            apply And.right at h
+            -- absurd h
+
+          | inr h =>
+            omega
+          -- apply Or.intro_right
+          -- rw [Nat.succ_eq_succ_of_self]
+          -- cases i_eq_k₁_or_i_eq_k₂ with
+          -- | inl i_eq_k₁ =>
+          --   omega
+          -- | inr i_eq_k₂ =>
+          --   exact i_eq_k₂
         have i_succ_le_k₂_succ : i.succ ≤ k₂.succ := sorry
         loop aux' i.succ k₁ k₂.succ
-          k₁_ge_chunkStart₁ chunkEnd₂_leq_aux'_size i_succ_le_k₂_succ arr_size_eq_aux'_size
+          k₁_ge_chunkStart₁
+          chunkEnd₂_leq_aux'_size
+          i_succ_le_k₂_succ
+          arr_size_eq_aux'_size
+          i_succ_eq_k₁_or_i_succ_eq_k₂_succ
     else
       -- Finish copying everything from the left chunk (if there was anything left to copy).
       let rec loop₁ (aux : Array α) (i : ℕ) (k₁ : ℕ) :=
@@ -114,7 +146,13 @@ partial def mergeAdjacentChunksIntoAux [Inhabited α] [Ord α] (arr : Array α) 
           loop₂ aux i k₂
       loop₁ aux i k₁
   loop aux chunkStart₁ chunkStart₁ chunkStart₂
-    sorry sorry sorry arr_size_eq_aux_size
+    sorry
+    sorry
+    sorry
+    arr_size_eq_aux_size
+    (by
+       apply Or.intro_left
+       rfl)
 
 -- def mergeAdjacentChunksIntoAux2
       -- have k₁_lt_arr_size : k₁ < arr.size := by
