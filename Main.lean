@@ -13,6 +13,7 @@ def getLines : IO (Array String) := do
 def mainUnique : IO Unit := do
   let lines ← getLines
   for line in lines.mergeSort do
+  -- for line in lines.qsort (· < ·) do
     IO.println line
 
 def mainShared : IO Unit := do
