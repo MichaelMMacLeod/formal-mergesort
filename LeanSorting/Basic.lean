@@ -20,9 +20,11 @@ theorem Nat.not_lt_of_lt_not_lt_and_lt {a b c d : ℕ} {a_lt_b : a < b}
 theorem Nat.eq_of_not_lt_lt_succ {a b : ℕ} {not_a_lt_b : ¬a < b}
     : a < b.succ → a = b := by
   omega
+theorem Nat.sub_succ_lt_sub_of_lt {a b : ℕ} (h : a < b) : b - a.succ < b - a := by omega
 
 set_option pp.proofs true
 
+@[ext]
 structure M₁ (α : Type) where
   arr : Array α
   aux : Array α
@@ -35,6 +37,7 @@ structure M₁ (α : Type) where
   arr_size_eq_aux_size : arr.size = aux.size
 deriving Repr
 
+@[ext]
 structure M₂ (α : Type) extends M₁ α where
   i : ℕ
   k₁ : ℕ
@@ -46,6 +49,7 @@ structure M₂ (α : Type) extends M₁ α where
   k₂_lt_end₂_of_not_k₁_lt_start₂ : ¬start₁ < start₂ → start₂ < end₂
 deriving Repr
 
+@[ext]
 structure M₃ (α : Type) extends M₂ α where
   k₁_k₂_in_bounds : k₁ < start₂ ∧ k₂ < end₂
   k₁_lt_arr_size : k₁ < arr.size
@@ -95,12 +99,6 @@ def M₃.nextLeft (m₃ : M₃ α) : M₂ α :=
     k₁_lt_start₂_succ := k₁_succ_lt_start₂_succ
   }
 
-def terminationTmp1 [Ord α] (m₂ : M₂ α) (k₁_k₂_in_bounds : m₂.k₁ < m₂.start₂ ∧ m₂.k₂ < m₂.end₂)
-    : (let m₃ := m₂.mkM₃ k₁_k₂_in_bounds
-       let m₂' := m₃.nextLeft
-       m₂'.start₂ - m₂'.k₁ < m₂.start₂ - m₂.k₁) := by
-  sorry
--- (m₂.mkM₃ k₁_k₂_in_bounds).nextLeft.start₂ - (m₂.mkM₃ k₁_k₂_in_bounds).nextLeft.k₁ < m₂.start₂ - m₂.k₁
 def M₃.nextRight (m₃ : M₃ α) : M₂ α :=
   have := m₃.k₂_lt_arr_size
   let aux' := m₃.aux.set ⟨m₃.i, m₃.i_lt_aux_size⟩ m₃.arr[m₃.k₂]
@@ -147,36 +145,28 @@ def mergeAdjacentChunksIntoAuxM [Ord α] (m₁ : M₁ α) : Array α :=
       have := m₃.k₂_lt_arr_size
       match Ord.compare m₂.arr[m₂.k₁] m₂.arr[m₂.k₂] with
       | .lt | .eq =>
-        have termination :
-            let m₂' := (m₂.mkM₃ k₁_k₂_in_bounds).nextLeft
-            m₂'.k₁ - m₂'.start₂ < m₂.k₁ - m₂.start₂ := by
-          
-          simp [M₂.mkM₃, M₃.nextLeft]
-
-          -- simp [*]
-          -- have := m₂.start₁_lt_start₂
-          -- have := m₂.start₂_lt_end₂
-          -- have := m₂.end₂_le_arr_size
-          -- have := m₂.arr_size_eq_aux_size
-          -- have := m₂.i_def
-          -- have := m₂.k₂_ge_start₂
-          -- have := m₂.k₁_lt_start₂_succ
-          -- have := m₂.k₂_lt_end₂_succ
-          -- have := m₂.k₂_lt_end₂_of_not_k₁_lt_start₂
-          -- refine (Nat.sub_lt_sub_iff_right ?h).mpr ?_
-
         loop m₃.nextLeft
       | .gt =>
-        have termination :
-            let m₂' := (m₂.mkM₃ k₁_k₂_in_bounds).nextRight
-            m₂'.k₁ - m₂'.start₂ < m₂.k₁ - m₂.start₂ := by
-          sorry
         loop m₃.nextRight
     else if k₁_lt_start₂ : m₂.k₁ < m₂.start₂ then
       sorry
     else
       sorry
-  termination_by (m₂.k₁ - m₂.start₂, m₂.k₂ - m₂.end₂)
+  termination_by m₂.arr.size - m₂.i
+  decreasing_by
+    . have nextLeft_i_def : (m₂.mkM₃ k₁_k₂_in_bounds).nextLeft.i = m₂.i.succ := by rfl
+      repeat rw [nextLeft_i_def]
+      have i_lt_arr_size : m₂.i < m₂.arr.size := by
+        rw [m₂.arr_size_eq_aux_size]
+        exact (m₂.mkM₃ k₁_k₂_in_bounds).i_lt_aux_size
+      exact (Nat.sub_succ_lt_sub_of_lt i_lt_arr_size)
+    . have nextRight_i_def : (m₂.mkM₃ k₁_k₂_in_bounds).nextRight.i = m₂.i.succ := by rfl
+      repeat rw [nextRight_i_def]
+      have i_lt_arr_size : m₂.i < m₂.arr.size := by
+        rw [m₂.arr_size_eq_aux_size]
+        exact (m₂.mkM₃ k₁_k₂_in_bounds).i_lt_aux_size
+      exact (Nat.sub_succ_lt_sub_of_lt i_lt_arr_size)
+
   loop m₂
 
 def mergeAdjacentChunksIntoAuxLoopLeft
