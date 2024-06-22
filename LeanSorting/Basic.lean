@@ -533,7 +533,7 @@ def mergeChunksIntoAux
     (size : ℕ)
     (arr_size_eq_aux_size : arr.size = aux.size)
     (size_gt_0 : size > 0)
-    : Array α := Id.run do
+    : Array α :=
   let rec loop
       (aux : Array α)
       (start₁ : ℕ)
@@ -594,6 +594,48 @@ def mergeChunksIntoAux
     omega
   loop aux 0 arr_size_eq_aux_size
 
+theorem mergeChunksIntoAux.loop.loopFinal_size_eq_arr_size
+    [Ord α]
+    { arr aux : Array α}
+    { arr_size_eq_aux_size : arr.size = aux.size }
+    { start₁ : ℕ}
+    : (mergeChunksIntoAux.loop.loopFinal
+        arr
+        aux
+        start₁
+        arr_size_eq_aux_size
+      ).size = arr.size := by
+  unfold mergeChunksIntoAux.loop.loopFinal
+  sorry
+
+theorem mergeChunksIntoAux.loop_size_eq_arr_size
+    [Ord α]
+    { arr aux : Array α}
+    { chunkSize : ℕ }
+    { arr_size_eq_aux_size : arr.size = aux.size }
+    { chunkSize_gt_0 : chunkSize > 0 }
+    { start₁ : ℕ}
+    : (mergeChunksIntoAux.loop
+        arr
+        aux
+        chunkSize
+        arr_size_eq_aux_size
+        chunkSize_gt_0
+        aux
+        start₁
+        arr_size_eq_aux_size
+      ).size = arr.size := by
+  unfold mergeChunksIntoAux.loop
+  if start₁_plus_size_lt_arr_size : start₁ + chunkSize < arr.size then
+    simp only [start₁_plus_size_lt_arr_size]
+    exact (mergeChunksIntoAux.loop_size_eq_arr_size
+            )
+  else
+    simp [
+      start₁_plus_size_lt_arr_size,
+      mergeChunksIntoAux.loop.loopFinal_size_eq_arr_size
+    ]
+
 theorem mergeChunksIntoAux_size_eq_arr_size
     [Ord α]
     { arr aux : Array α}
@@ -607,7 +649,23 @@ theorem mergeChunksIntoAux_size_eq_arr_size
         arr_size_eq_aux_size
         chunkSize_gt_0
       ).size = arr.size := by
-  sorry
+  unfold mergeChunksIntoAux
+  let rec mergeChunksIntoAux.loop_size_eq_arr_size
+      { start₁ : ℕ}
+      : (mergeChunksIntoAux.loop
+          arr
+          aux
+          chunkSize
+          arr_size_eq_aux_size
+          chunkSize_gt_0
+          aux
+          start₁
+          arr_size_eq_aux_size
+        ).size = arr.size := by
+    unfold mergeChunksIntoAux.loop
+
+  simp [mergeChunksIntoAux.loop_size_eq_arr_size]
+
 
 def Array.mergeSort [Inhabited α] [Ord α] (arr : Array α) : Array α := Id.run do
   let rec loop
