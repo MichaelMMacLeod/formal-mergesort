@@ -366,39 +366,21 @@ def mergeChunksIntoAux [Inhabited α] [Ord α] (arr : Array α) (aux : Array α)
       have start₁_lt_start₂ : start₁ < start₂ := by omega
       have start₂_lt_end₂ : start₂ < end₂ := by omega
       have end₂_le_arr_size : end₂ ≤ arr.size := by omega
-      let aux' := mergeAdjacentChunksIntoAux
-                   arr aux start₁ start₂ end₂
-                   start₁_lt_start₂
-                   start₂_lt_end₂
-                   end₂_le_arr_size
-                   arr_size_eq_aux_size
+      let m₁ : M₁ α :=
+        { arr,
+          aux,
+          start₁,
+          start₂,
+          end₂,
+          start₁_lt_start₂,
+          start₂_lt_end₂,
+          end₂_le_arr_size,
+          arr_size_eq_aux_size,
+        }
+      let aux' := mergeAdjacentChunksIntoAux m₁
       let start₁' := start₁ + 2 * size
       have arr_size_eq_aux'_size : arr.size = aux'.size := by
-        have aux'_def
-            : aux' =
-              mergeAdjacentChunksIntoAux
-                arr
-                aux
-                start₁
-                start₂
-                end₂
-                start₁_lt_start₂
-                start₂_lt_end₂
-                end₂_le_arr_size
-                arr_size_eq_aux_size := by
-          rfl
-        have h := mergeAdjacentChunksIntoAux_size_eq
-                    arr
-                    aux
-                    start₁
-                    start₂
-                    end₂
-                    start₁_lt_start₂
-                    start₂_lt_end₂
-                    end₂_le_arr_size
-                    arr_size_eq_aux_size
-        rw [aux'_def, h]
-        exact arr_size_eq_aux_size
+        sorry
       loop₁ aux' start₁'
         arr_size_eq_aux'_size
     else
@@ -416,22 +398,21 @@ def mergeChunksIntoAux [Inhabited α] [Ord α] (arr : Array α) (aux : Array α)
   loop₁ aux start₁
     arr_size_eq_aux_size
 
--- @[specialize] def Array.mergeSort [Inhabited α] [Ord α] (arr : Array α) : Array α := Id.run do
---   let mut arr := arr
---   let mut aux : Array α := Array.mkArray arr.size default
---   let mut chunkSize := 1
---   let mut auxIsAux := true
---   while chunkSize < arr.size do
---     if auxIsAux then
---       aux := mergeChunksIntoAux arr aux chunkSize
---     else
---       arr := mergeChunksIntoAux aux arr chunkSize
---     chunkSize := chunkSize * 2
---     auxIsAux := !auxIsAux
---   if auxIsAux then
---     pure arr
---   else
---     pure aux
+@[specialize] def Array.mergeSort [Inhabited α] [Ord α] (arr : Array α) : Array α := Id.run do
+  let mut arr := arr
+  let mut aux : Array α := Array.mkArray arr.size default
+  let mut chunkSize := 1
+  let mut auxIsAux := true
+  while chunkSize < arr.size do
+    if auxIsAux then
+      aux := mergeChunksIntoAux arr aux chunkSize (by sorry) (by sorry)
+    else
+      arr := mergeChunksIntoAux aux arr chunkSize (by sorry) (by sorry)
+    chunkSize := chunkSize * 2
+    auxIsAux := !auxIsAux
+  if auxIsAux then
+    pure arr
+  else
+    pure aux
 
--- -- #eval mergeChunksIntoAux #[3, 2, 1] #[0, 0, 0] 1
--- -- #eval #[15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1].mergeSort
+#eval #[15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1].mergeSort
