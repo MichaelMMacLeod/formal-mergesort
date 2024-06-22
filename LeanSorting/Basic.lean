@@ -594,22 +594,46 @@ def mergeChunksIntoAux
     omega
   loop aux 0 arr_size_eq_aux_size
 
-@[specialize] def Array.mergeSort [Inhabited α] [Ord α] (arr : Array α) : Array α := Id.run do
-  let mut arr := arr
-  let mut aux : Array α := Array.mkArray arr.size default
-  let mut chunkSize := 1
-  let mut auxIsAux := true
-  while chunkSize < arr.size do
-    if auxIsAux then
-      aux := mergeChunksIntoAux arr aux chunkSize (by sorry) (by sorry)
+theorem mergeChunksIntoAux_size_eq_arr_size
+    [Ord α]
+    { arr aux : Array α}
+    { chunkSize : ℕ }
+    { arr_size_eq_aux_size : arr.size = aux.size }
+    { chunkSize_gt_0 : chunkSize > 0 }
+    : (mergeChunksIntoAux
+        arr
+        aux
+        chunkSize
+        arr_size_eq_aux_size
+        chunkSize_gt_0
+      ).size = arr.size := by
+  sorry
+
+def Array.mergeSort [Inhabited α] [Ord α] (arr : Array α) : Array α := Id.run do
+  let rec loop
+      (arr aux : Array α)
+      (chunkSize : ℕ)
+      (chunkSize_gt_0 : chunkSize > 0)
+      (arr_size_eq_aux_size : arr.size = aux.size)
+      : Array α :=
+    if chunkSize < arr.size then
+      let aux' := mergeChunksIntoAux arr aux chunkSize arr_size_eq_aux_size chunkSize_gt_0
+      have aux'_size_eq_arr_size : aux'.size = arr.size := by
+        simp [aux', mergeChunksIntoAux_size_eq_arr_size]
+      have chunkSize_mul_2_gt_0 : chunkSize * 2 > 0 := by simp [*]
+      loop aux' arr (chunkSize * 2) chunkSize_mul_2_gt_0 aux'_size_eq_arr_size
     else
-      arr := mergeChunksIntoAux aux arr chunkSize (by sorry) (by sorry)
-    chunkSize := chunkSize * 2
-    auxIsAux := !auxIsAux
-  if auxIsAux then
-    pure arr
-  else
-    pure aux
+      arr
+  termination_by arr.size - chunkSize
+  decreasing_by
+    simp_wf
+    simp [mergeChunksIntoAux_size_eq_arr_size]
+    omega
+  let initialChunkSize := 1
+  let aux : Array α := Array.mkArray arr.size default
+  have initialChunkSize_gt_0 : initialChunkSize > 0 := by decide
+  have arr_size_eq_aux_size : arr.size = aux.size := by simp [aux]
+  loop arr aux 1 initialChunkSize_gt_0 arr_size_eq_aux_size
 
 #eval #[1, 2, 3, 4, 5, 4, 3, 2, 1].mergeSort
 #eval #[15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1].mergeSort
