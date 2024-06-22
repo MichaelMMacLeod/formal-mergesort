@@ -279,6 +279,7 @@ def M₄Right.next
     k₂_ge_start₂ := k₂_succ_ge_start₂
   }
 
+@[specialize, inline]
 def mergeAdjacentChunksIntoAux [Ord α] (m₁ : M₁ α) : M₁ α :=
   let m₂ : M₂ α :=
     { m₁ with
@@ -291,7 +292,7 @@ def mergeAdjacentChunksIntoAux [Ord α] (m₁ : M₁ α) : M₁ α :=
       k₂_lt_end₂_succ := Nat.lt_succ_of_lt m₁.start₂_lt_end₂
       k₂_lt_end₂_of_not_k₁_lt_start₂ := fun _ ↦ m₁.start₂_lt_end₂
     }
-  let rec loop (m₂ : M₂ α) : M₁ α :=
+  let rec @[specialize] loop (m₂ : M₂ α) : M₁ α :=
     if k₁_k₂_in_bounds : m₂.k₁ < m₂.start₂ ∧ m₂.k₂ < m₂.end₂ then
       let m₃ := m₂.mkM₃ k₁_k₂_in_bounds
       have := m₃.k₁_lt_arr_size
@@ -302,7 +303,7 @@ def mergeAdjacentChunksIntoAux [Ord α] (m₁ : M₁ α) : M₁ α :=
       | .gt =>
         loop m₃.nextRight
     else if k₁_lt_start₂ : m₂.k₁ < m₂.start₂ then
-      let rec loopLeft (m₄Left : M₄Left α) : M₁ α :=
+      let rec @[specialize] loopLeft (m₄Left : M₄Left α) : M₁ α :=
         if k₁_lt_start₂ : m₄Left.k₁ < m₄Left.start₂ then
           loopLeft (m₄Left.next k₁_lt_start₂)
         else
@@ -315,7 +316,7 @@ def mergeAdjacentChunksIntoAux [Ord α] (m₁ : M₁ α) : M₁ α :=
         omega
       loopLeft (m₂.mkM₄Left k₁_lt_start₂)
     else
-      let rec loopRight (m₄Right : M₄Right α) : M₁ α :=
+      let rec @[specialize] loopRight (m₄Right : M₄Right α) : M₁ α :=
         if k₂_lt_end₂ : m₄Right.k₂ < m₄Right.end₂ then
           loopRight (m₄Right.next k₂_lt_end₂)
         else
@@ -590,6 +591,7 @@ def M₅.nextFinal
     arr_size_eq_aux_size := arr_size_eq_aux'_size
   }
 
+@[specialize, inline]
 def mergeChunksIntoAux
     [Ord α]
     (arr aux : Array α)
@@ -597,11 +599,11 @@ def mergeChunksIntoAux
     (arr_size_eq_aux_size : arr.size = aux.size)
     (size_gt_0 : size > 0)
     : Array α :=
-  let rec loop (m₅ : M₅ α) : Array α :=
+  let rec @[specialize] loop (m₅ : M₅ α) : Array α :=
     if start₁_plus_size_lt_arr_size : m₅.start₁ + m₅.size < m₅.arr.size then
       loop (m₅.next start₁_plus_size_lt_arr_size)
     else
-      let rec loopFinal (m₅ : M₅ α) : Array α :=
+      let rec @[specialize] loopFinal (m₅ : M₅ α) : Array α :=
         if start₁_lt_aux_size : m₅.start₁ < m₅.aux.size then
           loopFinal (m₅.nextFinal start₁_lt_aux_size)
         else
@@ -712,7 +714,7 @@ theorem mergeChunksIntoAux_size_eq_arr_size
   simp [mergeChunksIntoAux.loop_size_eq_arr_size]
 
 def Array.mergeSort [Inhabited α] [Ord α] (arr : Array α) : Array α := Id.run do
-  let rec loop
+  let rec @[specialize] loop
       (arr aux : Array α)
       (chunkSize : ℕ)
       (chunkSize_gt_0 : chunkSize > 0)
