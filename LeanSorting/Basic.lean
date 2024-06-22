@@ -1,10 +1,9 @@
 import Mathlib.Data.Bool.Basic
 import Mathlib.Data.Nat.ModEq
+import Mathlib.Data.Multiset.Basic
 
-theorem Nat.lt_of_lt_le {a b c : ℕ} (h : a < b) : b ≤ c → a < c := by
-  omega
-theorem Nat.lt_of_le_lt {a b c : ℕ} (h : a ≤ b) : b < c → a < c := by
-  omega
+theorem Nat.lt_of_lt_le {a b c : ℕ} (h : a < b) : b ≤ c → a < c := by omega
+theorem Nat.lt_of_le_lt {a b c : ℕ} (h : a ≤ b) : b < c → a < c := by omega
 theorem Nat.sub_succ_lt_sub_of_lt {a b : ℕ} (h : a < b) : b - a.succ < b - a := by omega
 
 structure M₁ (α : Type) where
@@ -722,20 +721,39 @@ def Array.mergeSort [Inhabited α] [Ord α] (arr : Array α) : Array α :=
   have arr_size_eq_aux_size : arr.size = aux.size := by simp [aux]
   loop arr aux 1 initialChunkSize_gt_0 arr_size_eq_aux_size
 
-example : #[].mergeSort (α := Nat) = #[] := by rfl
-example : #[0].mergeSort = #[0] := by rfl
-example : #[0, 1].mergeSort = #[0, 1] := by rfl
-example : #[1, 0].mergeSort = #[0, 1] := by rfl
-example : #[0, 0].mergeSort = #[0, 0] := by rfl
-example : #[1, 1].mergeSort = #[1, 1] := by rfl
-example : #[0, 1, 2].mergeSort = #[0, 1, 2] := by rfl
-example : #[0, 2, 1].mergeSort = #[0, 1, 2] := by rfl
-example : #[1, 0, 2].mergeSort = #[0, 1, 2] := by rfl
-example : #[1, 2, 0].mergeSort = #[0, 1, 2] := by rfl
-example : #[2, 0, 1].mergeSort = #[0, 1, 2] := by rfl
-example : #[2, 1, 0].mergeSort = #[0, 1, 2] := by rfl
-example : #[0, 0, 0].mergeSort = #[0, 0, 0] := by rfl
-example : #[1, 1, 1].mergeSort = #[1, 1, 1] := by rfl
-example : #[2, 2, 2].mergeSort = #[2, 2, 2] := by rfl
-example : #[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].mergeSort = #[1, 2, 3, 4, 5, 6, 7, 8, 9, 10] := by rfl
-example : #[10, 0, 100, 1, 200, 2].mergeSort = #[0, 1, 2, 10, 100, 200] := by rfl
+def Array.non_decreasing [Ord α] {as : Array α} : Prop :=
+  ∀ i j : Fin as.size,
+    i.val.succ = j.val →
+      Ord.compare as[i] as[j] != Ordering.gt
+
+def Array.contains_same_data_as (as : Array α) (bs : Array α) : Prop :=
+  Multiset.ofList as.data = Multiset.ofList bs.data
+
+def Array.sorting_algorithm [Ord α] (f : Array α → Array α) : Prop :=
+  ∀ as : Array α,
+      (f as).non_decreasing
+    ∧ (f as).contains_same_data_as as
+
+theorem sorting_algorithm_mergeSort
+    [Inhabited α]
+    [Ord α]
+    : Array.sorting_algorithm Array.mergeSort (α := α) := by
+  sorry
+
+-- example : #[].mergeSort (α := Nat) = #[] := by rfl
+-- example : #[0].mergeSort = #[0] := by rfl
+-- example : #[0, 1].mergeSort = #[0, 1] := by rfl
+-- example : #[1, 0].mergeSort = #[0, 1] := by rfl
+-- example : #[0, 0].mergeSort = #[0, 0] := by rfl
+-- example : #[1, 1].mergeSort = #[1, 1] := by rfl
+-- example : #[0, 1, 2].mergeSort = #[0, 1, 2] := by rfl
+-- example : #[0, 2, 1].mergeSort = #[0, 1, 2] := by rfl
+-- example : #[1, 0, 2].mergeSort = #[0, 1, 2] := by rfl
+-- example : #[1, 2, 0].mergeSort = #[0, 1, 2] := by rfl
+-- example : #[2, 0, 1].mergeSort = #[0, 1, 2] := by rfl
+-- example : #[2, 1, 0].mergeSort = #[0, 1, 2] := by rfl
+-- example : #[0, 0, 0].mergeSort = #[0, 0, 0] := by rfl
+-- example : #[1, 1, 1].mergeSort = #[1, 1, 1] := by rfl
+-- example : #[2, 2, 2].mergeSort = #[2, 2, 2] := by rfl
+-- example : #[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].mergeSort = #[1, 2, 3, 4, 5, 6, 7, 8, 9, 10] := by rfl
+-- example : #[10, 0, 100, 1, 200, 2].mergeSort = #[0, 1, 2, 10, 100, 200] := by rfl
