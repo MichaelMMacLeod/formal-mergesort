@@ -10,25 +10,15 @@ def getLines : IO (Array String) := do
     currLine ← stdin.getLine
   pure lines
 
-def mainUnique : IO Unit := do
+def mainSort (sort : Array String → Array String) : IO Unit := do
   let lines ← getLines
-  for line in lines.mergeSort do
-  -- for line in lines.qsort (· < ·) do
-    IO.println line
-
-def mainShared : IO Unit := do
-  let lines ← getLines
-  for line in lines.mergeSort do
-    IO.println line
-  IO.println ""
-  IO.println "--- Original data: ---"
-  for line in lines do
+  for line in sort lines do
     IO.println line
 
 def main (args : List String) : IO UInt32 := do
   match args with
-  | ["--shared"] => mainShared; pure 0
-  | ["--unique"] => mainUnique; pure 0
+  | ["--msort"] => mainSort Array.mergeSort; pure 0
+  | ["--qsort"] => mainSort (Array.qsort · (· < ·)); pure 0
   | _ =>
     IO.println "Expected single argument, either \"--shared\" or \"--unique\""
     pure 1
