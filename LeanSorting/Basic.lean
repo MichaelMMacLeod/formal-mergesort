@@ -5,21 +5,6 @@ theorem Nat.lt_of_lt_le {a b c : ℕ} (h : a < b) : b ≤ c → a < c := by
   omega
 theorem Nat.lt_of_le_lt {a b c : ℕ} (h : a ≤ b) : b < c → a < c := by
   omega
-theorem Nat.succ_ge_of_ge {a b : ℕ} (h : a ≥ b) : a.succ ≥ b := by
-  omega
-theorem Nat.succ_eq_succ_of_self {a b : ℕ} (h : a = b) : a.succ = b.succ := by
-  simp[*]
-theorem idk2 {p a : Prop} {h : p} (h_imp : p → a) : a :=
-  by simp[*]
-theorem idk3 {k₁ k₂ start₂ end₂ : ℕ} {h : ¬(k₁ < start₂ ∧ k₂ < end₂)}
-    : (¬(k₁ < start₂)) ∨ (¬(k₂ < end₂)) := by
-  omega
-theorem Nat.not_lt_of_lt_not_lt_and_lt {a b c d : ℕ} {a_lt_b : a < b}
-    : (¬(a < b ∧ c < d)) → ¬c < d := by
-  omega
-theorem Nat.eq_of_not_lt_lt_succ {a b : ℕ} {not_a_lt_b : ¬a < b}
-    : a < b.succ → a = b := by
-  omega
 theorem Nat.sub_succ_lt_sub_of_lt {a b : ℕ} (h : a < b) : b - a.succ < b - a := by omega
 
 set_option pp.proofs true
