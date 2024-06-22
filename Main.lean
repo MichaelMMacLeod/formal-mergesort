@@ -20,5 +20,5 @@ def main (args : List String) : IO UInt32 := do
   | ["--msort"] => mainSort Array.mergeSort; pure 0
   | ["--qsort"] => mainSort (Array.qsort · (· < ·)); pure 0
   | _ =>
-    IO.println "Expected single argument, either \"--shared\" or \"--unique\""
+    IO.println "Expected single argument, either \"--msort\" or \"--qsort\""
     pure 1
