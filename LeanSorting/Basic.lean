@@ -527,6 +527,69 @@ theorem merge_adjacent_aux_size_eq_arr
     : (mergeAdjacentChunksIntoAux m₁).aux.size = m₁.arr.size := by
   simp [mergeAdjacentChunksIntoAux, merge_adjacent_loop_aux_size_eq_arr]
 
+structure M₅ (α : Type) where
+  arr : Array α
+  aux : Array α
+  size : ℕ
+  start₁ : ℕ
+  arr_size_eq_aux_size : arr.size = aux.size
+  size_gt_0 : size > 0
+
+def M₅.next
+    [Ord α]
+    (m₅ : M₅ α)
+    (start₁_plus_size_lt_arr_size : m₅.start₁ + m₅.size < m₅.arr.size)
+    : M₅ α :=
+  let start₂ := m₅.start₁ + m₅.size
+  let end₂ := min (start₂ + m₅.size) m₅.arr.size
+  have start₁_lt_start₂ : m₅.start₁ < start₂ := by
+    have := m₅.size_gt_0
+    omega
+  have start₂_lt_end₂ : start₂ < end₂ := by
+    simp [end₂]
+    apply And.intro
+    . case left =>
+      exact m₅.size_gt_0
+    . case right =>
+      exact start₁_plus_size_lt_arr_size
+  have end₂_le_arr_size : end₂ ≤ m₅.arr.size := by omega
+  let m₁ : M₁ α :=
+    { m₅ with
+      start₂,
+      end₂,
+      start₁_lt_start₂,
+      start₂_lt_end₂,
+      end₂_le_arr_size,
+    }
+  let m₁' : M₁ α := mergeAdjacentChunksIntoAux m₁
+  have arr_size_eq_m₁'_aux_size : m₁'.arr.size = m₁'.aux.size := by
+    simp [m₁', merge_adjacent_aux_size_eq_arr, merge_adjacent_arr_eq]
+  { arr := m₁'.arr
+    aux := m₁'.aux
+    size := m₅.size
+    start₁ := m₅.start₁ + 2 * m₅.size
+    arr_size_eq_aux_size := arr_size_eq_m₁'_aux_size
+    size_gt_0 := m₅.size_gt_0
+  }
+
+def M₅.nextFinal
+    [Ord α]
+    (m₅ : M₅ α)
+    (start₁_lt_aux_size : m₅.start₁ < m₅.aux.size)
+    : M₅ α :=
+    have start₁_lt_arr_size : m₅.start₁ < m₅.arr.size := by
+      rw [m₅.arr_size_eq_aux_size]
+      exact start₁_lt_aux_size
+    let aux' := m₅.aux.set ⟨m₅.start₁, start₁_lt_aux_size⟩ m₅.arr[m₅.start₁]
+    have arr_size_eq_aux'_size := by
+      simp [aux']
+      exact m₅.arr_size_eq_aux_size
+  { m₅ with
+    aux := aux'
+    start₁ := m₅.start₁.succ
+    arr_size_eq_aux_size := arr_size_eq_aux'_size
+  }
+
 def mergeChunksIntoAux
     [Ord α]
     (arr aux : Array α)
@@ -534,65 +597,46 @@ def mergeChunksIntoAux
     (arr_size_eq_aux_size : arr.size = aux.size)
     (size_gt_0 : size > 0)
     : Array α :=
-  let rec loop
-      (aux : Array α)
-      (start₁ : ℕ)
-      (arr_size_eq_aux_size : arr.size = aux.size)
-      : Array α :=
-    if start₁_plus_size_lt_arr_size : start₁ + size < arr.size then
-      let start₂ := start₁ + size
-      let end₂ := min (start₂ + size) arr.size
-      have start₁_lt_start₂ : start₁ < start₂ := by omega
-      have start₂_lt_end₂ : start₂ < end₂ := by
-        simp [end₂]
-        apply And.intro
-        . case left =>
-          exact size_gt_0
-        . case right =>
-          exact start₁_plus_size_lt_arr_size
-      have end₂_le_arr_size : end₂ ≤ arr.size := by omega
-      let m₁ : M₁ α :=
-        { arr,
-          aux,
-          start₁,
-          start₂,
-          end₂,
-          start₁_lt_start₂,
-          start₂_lt_end₂,
-          end₂_le_arr_size,
-          arr_size_eq_aux_size,
-        }
-      let m₁' : M₁ α := mergeAdjacentChunksIntoAux m₁
-      have arr_size_eq_m₁'_aux_size : arr.size = m₁'.aux.size := by
-        simp [m₁', merge_adjacent_aux_size_eq_arr]
-      loop m₁'.aux (start₁ + 2 * size) arr_size_eq_m₁'_aux_size
+  let rec loop (m₅ : M₅ α) : Array α :=
+    if start₁_plus_size_lt_arr_size : m₅.start₁ + m₅.size < m₅.arr.size then
+      loop (m₅.next start₁_plus_size_lt_arr_size)
     else
-      let rec loopFinal
-          (aux : Array α)
-          (start₁ : ℕ)
-          (arr_size_eq_aux_size : arr.size = aux.size)
-          : Array α :=
-        if start₁_lt_aux_size : start₁ < aux.size then
-          have start₁_lt_arr_size : start₁ < arr.size := by
-            rw [arr_size_eq_aux_size]
-            exact start₁_lt_aux_size
-          let aux' := aux.set ⟨start₁, start₁_lt_aux_size⟩ arr[start₁]
-          have arr_size_eq_aux'_size := by
-            simp [aux']
-            exact arr_size_eq_aux_size
-          loopFinal aux' start₁.succ arr_size_eq_aux'_size
+      let rec loopFinal (m₅ : M₅ α) : Array α :=
+        if start₁_lt_aux_size : m₅.start₁ < m₅.aux.size then
+          loopFinal (m₅.nextFinal start₁_lt_aux_size)
         else
-          aux
-      loopFinal aux start₁ arr_size_eq_aux_size
-  termination_by arr.size - start₁
+          m₅.aux
+      termination_by m₅.arr.size - m₅.start₁
+      decreasing_by
+        simp_wf
+        have : (m₅.nextFinal start₁_lt_aux_size).arr.size = m₅.arr.size := by
+          rfl
+        have : (m₅.nextFinal start₁_lt_aux_size).start₁ = m₅.start₁.succ := by
+          rfl
+        have := m₅.arr_size_eq_aux_size
+        omega
+      loopFinal m₅
+  termination_by m₅.arr.size - m₅.start₁
   decreasing_by
     simp_wf
-    have mdef : (mergeAdjacentChunksIntoAux m₁) = m₁' := by rfl
-    simp [mdef]
-    have : m₁'.arr.size = arr.size := by
-      simp [m₁', merge_adjacent_arr_eq]
+    have : (m₅.next start₁_plus_size_lt_arr_size).arr.size = m₅.arr.size := by
+      have : (m₅.next start₁_plus_size_lt_arr_size).arr = m₅.arr := by
+        simp [M₅.next]
+        exact (merge_adjacent_arr_eq)
+      simp [*]
+    have : (m₅.next start₁_plus_size_lt_arr_size).start₁ = m₅.start₁ + 2 * m₅.size := by
+      simp [M₅.next]
+    have := m₅.size_gt_0
     omega
-  loop aux 0 arr_size_eq_aux_size
+  let m₅ : M₅ α :=
+    { arr,
+      aux,
+      size,
+      start₁ := 0,
+      arr_size_eq_aux_size,
+      size_gt_0,
+    }
+  loop m₅
 
 theorem mergeChunksIntoAux.loop.loopFinal_size_eq_arr_size
     [Ord α]
