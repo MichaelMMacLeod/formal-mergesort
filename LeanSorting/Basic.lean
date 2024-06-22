@@ -80,8 +80,7 @@ def M₃.nextLeft (m₃ : M₃ α) : M₂ α :=
   have := m₃.k₁_lt_arr_size
   let aux' := m₃.aux.set ⟨m₃.i, m₃.i_lt_aux_size⟩ m₃.arr[m₃.k₁]
   have arr_size_eq_aux'_size : m₃.arr.size = aux'.size := by
-    have aux'_def : aux' = m₃.aux.set ⟨m₃.i, m₃.i_lt_aux_size⟩ m₃.arr[m₃.k₁] := by rfl
-    rw [aux'_def, Array.size_set]
+    simp [aux']
     exact m₃.arr_size_eq_aux_size
   have i_succ_def : m₃.i.succ = m₃.k₁.succ + m₃.k₂ - m₃.start₂ := by
     have := m₃.i_def
@@ -103,8 +102,7 @@ def M₃.nextRight (m₃ : M₃ α) : M₂ α :=
   have := m₃.k₂_lt_arr_size
   let aux' := m₃.aux.set ⟨m₃.i, m₃.i_lt_aux_size⟩ m₃.arr[m₃.k₂]
   have arr_size_eq_aux'_size : m₃.arr.size = aux'.size := by
-    have aux'_def : aux' = m₃.aux.set ⟨m₃.i, m₃.i_lt_aux_size⟩ m₃.arr[m₃.k₂] := by rfl
-    rw [aux'_def, Array.size_set]
+    simp [aux']
     exact m₃.arr_size_eq_aux_size
   have i_succ_def : m₃.i.succ = m₃.k₁ + m₃.k₂.succ - m₃.start₂ := by
     have := m₃.i_def
@@ -124,6 +122,55 @@ def M₃.nextRight (m₃ : M₃ α) : M₂ α :=
     i_def := i_succ_def
     k₂_lt_end₂_succ := k₂_succ_lt_end₂_succ
     k₂_ge_start₂ := k₂_succ_ge_start₂
+  }
+
+structure M₄Left (α : Type) extends M₂ α where
+  not_k₁_k₂_in_bounds : ¬(k₁ < start₂ ∧ k₂ < end₂)
+  k₁_lt_start₂ : k₁ < start₂
+  k₁_lt_arr_size : k₁ < arr.size
+  i_lt_aux_size : i < aux.size
+
+def M₂.mkM₄Left [Ord α] (m₂ : M₂ α)
+    (not_k₁_k₂_in_bounds : ¬(m₂.k₁ < m₂.start₂ ∧ m₂.k₂ < m₂.end₂))
+    (k₁_lt_start₂ : m₂.k₁ < m₂.start₂)
+    : M₄Left α :=
+  have k₁_lt_arr_size : m₂.k₁ < m₂.arr.size := by
+    have := m₂.start₂_lt_end₂
+    have := m₂.end₂_le_arr_size
+    omega
+  have i_lt_aux_size : m₂.i < m₂.aux.size := by
+    have := m₂.end₂_le_arr_size
+    have := m₂.arr_size_eq_aux_size
+    have := m₂.i_def
+    have := m₂.k₂_lt_end₂_succ
+    omega
+  { m₂ with
+    not_k₁_k₂_in_bounds
+    k₁_lt_start₂
+    k₁_lt_arr_size
+    i_lt_aux_size
+  }
+
+def M₄Left.next [Ord α] (m₄Left : M₄Left α) : M₂ α :=
+  have := m₄Left.k₁_lt_arr_size
+  let aux' := m₄Left.aux.set ⟨m₄Left.i, m₄Left.i_lt_aux_size⟩ m₄Left.arr[m₄Left.k₁]
+  let arr_size_eq_aux'_size : m₄Left.arr.size = aux'.size := by
+    simp [aux']
+    exact m₄Left.arr_size_eq_aux_size
+  have i_succ_def : m₄Left.i.succ = m₄Left.k₁.succ + m₄Left.k₂ - m₄Left.start₂ := by
+    have := m₄Left.i_def
+    have := m₄Left.k₂_ge_start₂
+    omega
+  have k₁_succ_lt_start₂_succ : m₄Left.k₁.succ < m₄Left.start₂.succ := by
+    have := m₄Left.k₁_lt_start₂
+    omega
+  { m₄Left with
+    aux := aux'
+    arr_size_eq_aux_size := arr_size_eq_aux'_size
+    k₁ := m₄Left.k₁.succ
+    i := m₄Left.i.succ
+    i_def := i_succ_def
+    k₁_lt_start₂_succ := k₁_succ_lt_start₂_succ
   }
 
 def mergeAdjacentChunksIntoAuxM [Ord α] (m₁ : M₁ α) : Array α :=
@@ -149,7 +196,15 @@ def mergeAdjacentChunksIntoAuxM [Ord α] (m₁ : M₁ α) : Array α :=
       | .gt =>
         loop m₃.nextRight
     else if k₁_lt_start₂ : m₂.k₁ < m₂.start₂ then
-      sorry
+      let not_k₁_k₂_in_bounds := k₁_k₂_in_bounds
+      let m₄Left := m₂.mkM₄Left not_k₁_k₂_in_bounds k₁_lt_start₂
+      let rec loop (m₂ : M₂ α) : Array α :=
+        if k₁_lt_start₂ : m₂.k₁ < m₂.start₂ then
+          let m₄Left := m₂.mkM₄Left not_k₁_k₂_in_bounds k₁_lt_start₂
+          loop m₄Left.next
+        else
+          m₂.aux
+      loop m₄Left.next
     else
       sorry
   termination_by m₂.arr.size - m₂.i
