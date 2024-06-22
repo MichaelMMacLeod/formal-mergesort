@@ -34,7 +34,6 @@ structure M₁ (α : Type) where
   start₂_lt_end₂ : start₂ < end₂
   end₂_le_arr_size : end₂ ≤ arr.size
   arr_size_eq_aux_size : arr.size = aux.size
-deriving Repr
 
 structure M₂ (α : Type) extends M₁ α where
   i : ℕ
@@ -45,14 +44,12 @@ structure M₂ (α : Type) extends M₁ α where
   k₁_lt_start₂_succ : k₁ < start₂.succ
   k₂_lt_end₂_succ : k₂ < end₂.succ
   k₂_lt_end₂_of_not_k₁_lt_start₂ : ¬k₁ < start₂ → k₂ < end₂
-deriving Repr
 
 structure M₃ (α : Type) extends M₂ α where
   k₁_k₂_in_bounds : k₁ < start₂ ∧ k₂ < end₂
   k₁_lt_arr_size : k₁ < arr.size
   k₂_lt_arr_size : k₂ < arr.size
   i_lt_aux_size : i < aux.size
-deriving Repr
 
 def M₂.mkM₃ [Ord α] (m₂ : M₂ α) (k₁_k₂_in_bounds : m₂.k₁ < m₂.start₂ ∧ m₂.k₂ < m₂.end₂) : M₃ α :=
   have k₁_lt_arr_size := by
@@ -282,7 +279,7 @@ def M₄Right.next
     k₂_ge_start₂ := k₂_succ_ge_start₂
   }
 
-def mergeAdjacentChunksIntoAux [Ord α] (m₁ : M₁ α) : Array α :=
+def mergeAdjacentChunksIntoAux [Ord α] (m₁ : M₁ α) : M₁ α :=
   let m₂ : M₂ α :=
     { m₁ with
       i := m₁.start₁
@@ -294,7 +291,7 @@ def mergeAdjacentChunksIntoAux [Ord α] (m₁ : M₁ α) : Array α :=
       k₂_lt_end₂_succ := Nat.lt_succ_of_lt m₁.start₂_lt_end₂
       k₂_lt_end₂_of_not_k₁_lt_start₂ := fun _ ↦ m₁.start₂_lt_end₂
     }
-  let rec loop (m₂ : M₂ α) : Array α :=
+  let rec loop (m₂ : M₂ α) : M₁ α :=
     if k₁_k₂_in_bounds : m₂.k₁ < m₂.start₂ ∧ m₂.k₂ < m₂.end₂ then
       let m₃ := m₂.mkM₃ k₁_k₂_in_bounds
       have := m₃.k₁_lt_arr_size
@@ -305,11 +302,11 @@ def mergeAdjacentChunksIntoAux [Ord α] (m₁ : M₁ α) : Array α :=
       | .gt =>
         loop m₃.nextRight
     else if k₁_lt_start₂ : m₂.k₁ < m₂.start₂ then
-      let rec loopLeft (m₄Left : M₄Left α) : Array α :=
+      let rec loopLeft (m₄Left : M₄Left α) : M₁ α :=
         if k₁_lt_start₂ : m₄Left.k₁ < m₄Left.start₂ then
           loopLeft (m₄Left.next k₁_lt_start₂)
         else
-          m₄Left.aux
+          { m₄Left with }
       termination_by m₄Left.start₂ - m₄Left.k₁
       decreasing_by
         simp_wf
@@ -318,11 +315,11 @@ def mergeAdjacentChunksIntoAux [Ord α] (m₁ : M₁ α) : Array α :=
         omega
       loopLeft (m₂.mkM₄Left k₁_lt_start₂)
     else
-      let rec loopRight (m₄Right : M₄Right α) : Array α :=
+      let rec loopRight (m₄Right : M₄Right α) : M₁ α :=
         if k₂_lt_end₂ : m₄Right.k₂ < m₄Right.end₂ then
           loopRight (m₄Right.next k₂_lt_end₂)
         else
-          m₄Right.aux
+          { m₄Right with }
       termination_by m₄Right.end₂ - m₄Right.k₂
       decreasing_by
         simp_wf
@@ -332,90 +329,270 @@ def mergeAdjacentChunksIntoAux [Ord α] (m₁ : M₁ α) : Array α :=
       loopRight (m₂.mkM₄Right k₁_lt_start₂)
   termination_by m₂.arr.size - m₂.i
   decreasing_by
-    . have nextLeft_i_def : (m₂.mkM₃ k₁_k₂_in_bounds).nextLeft.i = m₂.i.succ := by rfl
-      repeat rw [nextLeft_i_def]
-      have i_lt_arr_size : m₂.i < m₂.arr.size := by
-        rw [m₂.arr_size_eq_aux_size]
-        exact (m₂.mkM₃ k₁_k₂_in_bounds).i_lt_aux_size
-      exact (Nat.sub_succ_lt_sub_of_lt i_lt_arr_size)
-    . have nextRight_i_def : (m₂.mkM₃ k₁_k₂_in_bounds).nextRight.i = m₂.i.succ := by rfl
-      repeat rw [nextRight_i_def]
+    all_goals
       have i_lt_arr_size : m₂.i < m₂.arr.size := by
         rw [m₂.arr_size_eq_aux_size]
         exact (m₂.mkM₃ k₁_k₂_in_bounds).i_lt_aux_size
       exact (Nat.sub_succ_lt_sub_of_lt i_lt_arr_size)
   loop m₂
 
--- Sorts every two adjacent chunks in `arr` of length `size` into `aux`.
-def mergeChunksIntoAux [Inhabited α] [Ord α] (arr : Array α) (aux : Array α) (size : ℕ)
+theorem M₄Left.next_arr_eq
+    [Ord α]
+    {m₄Left : M₄Left α}
+    (k₁_lt_start₂ : m₄Left.k₁ < m₄Left.start₂)
+    : (m₄Left.next k₁_lt_start₂).arr = m₄Left.arr := by rfl
+
+theorem merge_adjacent_loopLeft_arr_eq
+    [Ord α]
+    {m₄Left : M₄Left α}
+    : (mergeAdjacentChunksIntoAux.loop.loopLeft m₄Left).arr = m₄Left.arr := by
+  unfold mergeAdjacentChunksIntoAux.loop.loopLeft
+  if k₁_lt_start₂ : m₄Left.k₁ < m₄Left.start₂ then
+    simp [k₁_lt_start₂]
+    have := m₄Left.next_arr_eq
+    exact (merge_adjacent_loopLeft_arr_eq (m₄Left := m₄Left.next k₁_lt_start₂))
+  else
+    simp [k₁_lt_start₂]
+termination_by m₄Left.start₂ - m₄Left.k₁
+decreasing_by
+  simp_wf
+  have start₂_def : (m₄Left.next k₁_lt_start₂).start₂ = m₄Left.start₂ := by rfl
+  have k₁_def : (m₄Left.next k₁_lt_start₂).k₁ = m₄Left.k₁.succ := by rfl
+  omega
+
+theorem M₄Right.next_arr_eq
+    [Ord α]
+    {m₄Right : M₄Right α}
+    (k₂_lt_end₂ : m₄Right.k₂ < m₄Right.end₂)
+    : (m₄Right.next k₂_lt_end₂).arr = m₄Right.arr := by rfl
+
+theorem merge_adjacent_loopRight_arr_eq
+    [Ord α]
+    {m₄Right : M₄Right α}
+    : (mergeAdjacentChunksIntoAux.loop.loopRight m₄Right).arr = m₄Right.arr := by
+  unfold mergeAdjacentChunksIntoAux.loop.loopRight
+  if k₂_lt_end₂ : m₄Right.k₂ < m₄Right.end₂ then
+    simp [k₂_lt_end₂]
+    have := m₄Right.next_arr_eq
+    exact (merge_adjacent_loopRight_arr_eq (m₄Right := m₄Right.next k₂_lt_end₂))
+  else
+    simp [k₂_lt_end₂]
+termination_by m₄Right.end₂ - m₄Right.k₂
+decreasing_by
+  simp_wf
+  have end₂_def : (m₄Right.next k₂_lt_end₂).end₂ = m₄Right.end₂ := by rfl
+  have k₂_def : (m₄Right.next k₂_lt_end₂).k₂ = m₄Right.k₂.succ := by rfl
+  omega
+
+theorem M₂.mkM₄Left_arr_eq
+    [Ord α]
+    {m₂ : M₂ α}
+    {k₁_lt_start₂ : m₂.k₁ < m₂.start₂}
+    : (m₂.mkM₄Left k₁_lt_start₂).arr = m₂.arr := by
+  rfl
+
+theorem M₂.mkM₄Right_arr_eq
+    [Ord α]
+    {m₂ : M₂ α}
+    {not_k₁_lt_start₂ : ¬m₂.k₁ < m₂.start₂}
+    : (m₂.mkM₄Right not_k₁_lt_start₂).arr = m₂.arr := by
+  rfl
+
+theorem merge_adjacent_loop_arr_eq
+    [Ord α]
+    {m₂ : M₂ α}
+    : (mergeAdjacentChunksIntoAux.loop m₂).arr = m₂.arr := by
+  unfold mergeAdjacentChunksIntoAux.loop
+  if k₁_k₂_in_bounds : m₂.k₁ < m₂.start₂ ∧ m₂.k₂ < m₂.end₂ then
+    simp [k₁_k₂_in_bounds]
+    split
+    . case h_1 =>
+      have : (m₂.mkM₃ k₁_k₂_in_bounds).nextLeft.arr = m₂.arr := by rfl
+      exact (merge_adjacent_loop_arr_eq (m₂ := (m₂.mkM₃ k₁_k₂_in_bounds).nextLeft))
+    . case h_2 =>
+      have : (m₂.mkM₃ k₁_k₂_in_bounds).nextLeft.arr = m₂.arr := by rfl
+      exact (merge_adjacent_loop_arr_eq (m₂ := (m₂.mkM₃ k₁_k₂_in_bounds).nextLeft))
+    . case h_3 =>
+      have : (m₂.mkM₃ k₁_k₂_in_bounds).nextRight.arr = m₂.arr := by rfl
+      exact (merge_adjacent_loop_arr_eq (m₂ := (m₂.mkM₃ k₁_k₂_in_bounds).nextRight))
+  else
+    simp [k₁_k₂_in_bounds]
+    split
+    . case isTrue =>
+        simp [merge_adjacent_loopLeft_arr_eq, M₂.mkM₄Left_arr_eq]
+    . case isFalse =>
+        simp [merge_adjacent_loopRight_arr_eq, M₂.mkM₄Right_arr_eq]
+termination_by m₂.arr.size - m₂.i
+decreasing_by
+  all_goals
+    have i_lt_arr_size : m₂.i < m₂.arr.size := by
+      rw [m₂.arr_size_eq_aux_size]
+      exact (m₂.mkM₃ k₁_k₂_in_bounds).i_lt_aux_size
+    exact (Nat.sub_succ_lt_sub_of_lt i_lt_arr_size)
+
+theorem merge_adjacent_arr_eq
+    [Ord α]
+    {m₁ : M₁ α}
+    : (mergeAdjacentChunksIntoAux m₁).arr = m₁.arr := by
+  simp [mergeAdjacentChunksIntoAux, merge_adjacent_loop_arr_eq]
+
+theorem M₄Left.next_aux_size_eq_arr
+    [Ord α]
+    {m₄Left : M₄Left α}
+    (k₁_lt_start₂ : m₄Left.k₁ < m₄Left.start₂)
+    : (m₄Left.next k₁_lt_start₂).aux.size = m₄Left.arr.size := by
+  simp [M₄Left.next, m₄Left.arr_size_eq_aux_size]
+
+theorem merge_adjacent_loopLeft_aux_size_eq_arr
+    [Ord α]
+    {m₄Left : M₄Left α}
+    : (mergeAdjacentChunksIntoAux.loop.loopLeft m₄Left).aux.size = m₄Left.arr.size := by
+  unfold mergeAdjacentChunksIntoAux.loop.loopLeft
+  if k₁_lt_start₂ : m₄Left.k₁ < m₄Left.start₂ then
+    simp [k₁_lt_start₂]
+    have := m₄Left.next_arr_eq
+    exact (merge_adjacent_loopLeft_aux_size_eq_arr (m₄Left := m₄Left.next k₁_lt_start₂))
+  else
+    simp [k₁_lt_start₂, m₄Left.arr_size_eq_aux_size]
+termination_by m₄Left.start₂ - m₄Left.k₁
+decreasing_by
+  simp_wf
+  have start₂_def : (m₄Left.next k₁_lt_start₂).start₂ = m₄Left.start₂ := by rfl
+  have k₁_def : (m₄Left.next k₁_lt_start₂).k₁ = m₄Left.k₁.succ := by rfl
+  omega
+
+theorem M₄Right.next_aux_size_eq_arr
+    [Ord α]
+    {m₄Right : M₄Right α}
+    (k₂_lt_end₂ : m₄Right.k₂ < m₄Right.end₂)
+    : (m₄Right.next k₂_lt_end₂).aux.size = m₄Right.arr.size := by
+  simp [M₄Right.next, m₄Right.arr_size_eq_aux_size]
+
+theorem merge_adjacent_loopRight_aux_size_eq_arr
+    [Ord α]
+    {m₄Right : M₄Right α}
+    : (mergeAdjacentChunksIntoAux.loop.loopRight m₄Right).aux.size = m₄Right.arr.size := by
+  unfold mergeAdjacentChunksIntoAux.loop.loopRight
+  if k₂_lt_end₂ : m₄Right.k₂ < m₄Right.end₂ then
+    simp [k₂_lt_end₂]
+    have := m₄Right.next_arr_eq
+    exact (merge_adjacent_loopRight_aux_size_eq_arr (m₄Right := m₄Right.next k₂_lt_end₂))
+  else
+    simp [k₂_lt_end₂, m₄Right.arr_size_eq_aux_size]
+termination_by m₄Right.end₂ - m₄Right.k₂
+decreasing_by
+  simp_wf
+  have end₂_def : (m₄Right.next k₂_lt_end₂).end₂ = m₄Right.end₂ := by rfl
+  have k₂_def : (m₄Right.next k₂_lt_end₂).k₂ = m₄Right.k₂.succ := by rfl
+  omega
+
+theorem merge_adjacent_loop_aux_size_eq_arr
+    [Ord α]
+    {m₂ : M₂ α}
+    : (mergeAdjacentChunksIntoAux.loop m₂).aux.size = m₂.arr.size := by
+  unfold mergeAdjacentChunksIntoAux.loop
+  if k₁_k₂_in_bounds : m₂.k₁ < m₂.start₂ ∧ m₂.k₂ < m₂.end₂ then
+    simp [k₁_k₂_in_bounds]
+    split
+    . case h_1 =>
+      have : (m₂.mkM₃ k₁_k₂_in_bounds).nextLeft.aux.size = m₂.aux.size := by
+        simp [M₂.mkM₃, M₃.nextLeft]
+      exact (merge_adjacent_loop_aux_size_eq_arr (m₂ := (m₂.mkM₃ k₁_k₂_in_bounds).nextLeft))
+    . case h_2 =>
+      have : (m₂.mkM₃ k₁_k₂_in_bounds).nextLeft.aux.size = m₂.aux.size := by
+        simp [M₂.mkM₃, M₃.nextLeft]
+      exact (merge_adjacent_loop_aux_size_eq_arr (m₂ := (m₂.mkM₃ k₁_k₂_in_bounds).nextLeft))
+    . case h_3 =>
+      have : (m₂.mkM₃ k₁_k₂_in_bounds).nextRight.aux.size = m₂.aux.size := by
+        simp [M₂.mkM₃, M₃.nextRight]
+      exact (merge_adjacent_loop_aux_size_eq_arr (m₂ := (m₂.mkM₃ k₁_k₂_in_bounds).nextRight))
+  else
+    simp [k₁_k₂_in_bounds]
+    split
+    . case isTrue =>
+        simp [merge_adjacent_loopLeft_aux_size_eq_arr, M₂.mkM₄Left]
+    . case isFalse =>
+        simp [merge_adjacent_loopRight_aux_size_eq_arr, M₂.mkM₄Right]
+termination_by m₂.arr.size - m₂.i
+decreasing_by
+  all_goals
+    have i_lt_arr_size : m₂.i < m₂.arr.size := by
+      rw [m₂.arr_size_eq_aux_size]
+      exact (m₂.mkM₃ k₁_k₂_in_bounds).i_lt_aux_size
+    exact (Nat.sub_succ_lt_sub_of_lt i_lt_arr_size)
+
+theorem merge_adjacent_aux_size_eq_arr
+    [Ord α]
+    {m₁ : M₁ α}
+    : (mergeAdjacentChunksIntoAux m₁).aux.size = m₁.arr.size := by
+  simp [mergeAdjacentChunksIntoAux, merge_adjacent_loop_aux_size_eq_arr]
+
+def mergeChunksIntoAux
+    [Ord α]
+    (arr aux : Array α)
+    (size : ℕ)
     (arr_size_eq_aux_size : arr.size = aux.size)
     (size_gt_0 : size > 0)
-    (size_lt_aux_size : size < aux.size)
     : Array α := Id.run do
-  let start₁ := 0
-  let start₂ := start₁ + size
-  let end₂ := min (start₂ + size) arr.size
-  have start₁_lt_start₂ := by omega
-  have start₂_lt_end₂ : start₂ < end₂ := by omega
-  have end₂_le_arr_size := by omega
-  let m₁ : M₁ α :=
-    { arr,
-      aux,
-      start₁,
-      start₂,
-      end₂,
-      start₁_lt_start₂,
-      start₂_lt_end₂,
-      end₂_le_arr_size,
-      arr_size_eq_aux_size,
-    }
-  let rec loop (m₁ : M₁ α) : Array α :=
-    if m₁.start₁ + size < m₁.arr.size then
-      let aux' := mergeAdjacentChunksIntoAux m₁
-      loop m₁'
+  let rec loop
+      (aux : Array α)
+      (start₁ : ℕ)
+      (arr_size_eq_aux_size : arr.size = aux.size)
+      : Array α :=
+    if start₁_plus_size_lt_arr_size : start₁ + size < arr.size then
+      let start₂ := start₁ + size
+      let end₂ := min (start₂ + size) arr.size
+      have start₁_lt_start₂ : start₁ < start₂ := by omega
+      have start₂_lt_end₂ : start₂ < end₂ := by
+        simp [end₂]
+        apply And.intro
+        . case left =>
+          exact size_gt_0
+        . case right =>
+          exact start₁_plus_size_lt_arr_size
+      have end₂_le_arr_size : end₂ ≤ arr.size := by omega
+      let m₁ : M₁ α :=
+        { arr,
+          aux,
+          start₁,
+          start₂,
+          end₂,
+          start₁_lt_start₂,
+          start₂_lt_end₂,
+          end₂_le_arr_size,
+          arr_size_eq_aux_size,
+        }
+      let m₁' : M₁ α := mergeAdjacentChunksIntoAux m₁
+      have arr_size_eq_m₁'_aux_size : arr.size = m₁'.aux.size := by
+        simp [m₁', merge_adjacent_aux_size_eq_arr]
+      loop m₁'.aux (start₁ + 2 * size) arr_size_eq_m₁'_aux_size
     else
-      sorry
-  loop m₁
-  -- let rec loop₁ (aux : Array α) (start₁ : ℕ)
-  --     (arr_size_eq_aux_size : arr.size = aux.size)
-  --     : Array α :=
-  --   if start₁ + size < arr.size then
-  --     let start₂ := start₁ + size
-  --     let end₂ := min (start₂ + size) arr.size
-  --     have start₁_lt_start₂ : start₁ < start₂ := by omega
-  --     have start₂_lt_end₂ : start₂ < end₂ := by sorry
-  --     have end₂_le_arr_size : end₂ ≤ arr.size := by omega
-  --     let m₁ : M₁ α :=
-  --       { arr,
-  --         aux,
-  --         start₁,
-  --         start₂,
-  --         end₂,
-  --         start₁_lt_start₂,
-  --         start₂_lt_end₂,
-  --         end₂_le_arr_size,
-  --         arr_size_eq_aux_size,
-  --       }
-  --     let aux' := mergeAdjacentChunksIntoAux m₁
-  --     let start₁' := start₁ + 2 * size
-  --     have arr_size_eq_aux'_size : arr.size = aux'.size := by
-  --       sorry
-  --     loop₁ aux' start₁'
-  --       arr_size_eq_aux'_size
-  --   else
-  --     let rec loop₂ (aux : Array α) (start₁ : ℕ)
-  --         : Array α :=
-  --       if start₁ < arr.size then
-  --         have : start₁ < arr.size := by sorry
-  --         have chunkStart₁_lt_aux_size : start₁ < aux.size := by sorry
-  --         let aux' := aux.set ⟨start₁, chunkStart₁_lt_aux_size⟩ arr[start₁]
-  --         let start₁' := start₁ + 1
-  --         loop₂ aux' start₁'
-  --       else
-  --         aux
-  --     loop₂ aux start₁
-  -- loop₁ aux 0
-  --   arr_size_eq_aux_size
+      let rec loopFinal
+          (aux : Array α)
+          (start₁ : ℕ)
+          (arr_size_eq_aux_size : arr.size = aux.size)
+          : Array α :=
+        if start₁_lt_aux_size : start₁ < aux.size then
+          have start₁_lt_arr_size : start₁ < arr.size := by
+            rw [arr_size_eq_aux_size]
+            exact start₁_lt_aux_size
+          let aux' := aux.set ⟨start₁, start₁_lt_aux_size⟩ arr[start₁]
+          have arr_size_eq_aux'_size := by
+            simp [aux']
+            exact arr_size_eq_aux_size
+          loopFinal aux' start₁.succ arr_size_eq_aux'_size
+        else
+          aux
+      loopFinal aux start₁ arr_size_eq_aux_size
+  termination_by arr.size - start₁
+  decreasing_by
+    simp_wf
+    have mdef : (mergeAdjacentChunksIntoAux m₁) = m₁' := by rfl
+    simp [mdef]
+    have : m₁'.arr.size = arr.size := by
+      simp [m₁', merge_adjacent_arr_eq]
+    omega
+  loop aux 0 arr_size_eq_aux_size
 
 @[specialize] def Array.mergeSort [Inhabited α] [Ord α] (arr : Array α) : Array α := Id.run do
   let mut arr := arr
@@ -434,4 +611,5 @@ def mergeChunksIntoAux [Inhabited α] [Ord α] (arr : Array α) (aux : Array α)
   else
     pure aux
 
+#eval #[1, 2, 3, 4, 5, 4, 3, 2, 1].mergeSort
 #eval #[15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1].mergeSort
