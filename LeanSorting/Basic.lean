@@ -25,7 +25,6 @@ structure M₂ (α : Type) extends M₁ α where
   k₂_ge_start₂ : k₂ ≥ start₂
   k₁_lt_start₂_succ : k₁ < start₂.succ
   k₂_lt_end₂_succ : k₂ < end₂.succ
-  k₂_lt_end₂_of_not_k₁_lt_start₂ : ¬k₁ < start₂ → k₂ < end₂
 
 structure M₃ (α : Type) extends M₂ α where
   k₁_k₂_in_bounds : k₁ < start₂ ∧ k₂ < end₂
@@ -65,9 +64,6 @@ def M₃.nextLeft (m₃ : M₃ α) : M₂ α :=
   have k₁_succ_lt_start₂_succ : m₃.k₁.succ < m₃.start₂.succ := by
     have := m₃.k₁_k₂_in_bounds
     omega
-  have k₂_lt_end₂_of_not_k₁_succ_lt_start₂ : ¬m₃.k₁.succ < m₃.start₂ → m₃.k₂ < m₃.end₂ := by
-    have := m₃.k₁_k₂_in_bounds
-    omega
   { m₃ with
     aux := aux'
     arr_size_eq_aux_size := arr_size_eq_aux'_size
@@ -75,7 +71,6 @@ def M₃.nextLeft (m₃ : M₃ α) : M₂ α :=
     k₁ := m₃.k₁.succ
     i_def := i_succ_def
     k₁_lt_start₂_succ := k₁_succ_lt_start₂_succ
-    k₂_lt_end₂_of_not_k₁_lt_start₂ := k₂_lt_end₂_of_not_k₁_succ_lt_start₂
   }
 
 def M₃.nextRight (m₃ : M₃ α) : M₂ α :=
@@ -94,9 +89,6 @@ def M₃.nextRight (m₃ : M₃ α) : M₂ α :=
   have k₂_succ_ge_start₂ : m₃.k₂.succ ≥ m₃.start₂ := by
     have := m₃.k₂_ge_start₂
     omega
-  have k₂_succ_lt_end₂_of_not_k₁_lt_start₂ : ¬m₃.k₁ < m₃.start₂ → m₃.k₂.succ < m₃.end₂ := by
-    have := m₃.k₁_k₂_in_bounds
-    omega
   { m₃ with
     aux := aux'
     arr_size_eq_aux_size := arr_size_eq_aux'_size
@@ -105,7 +97,6 @@ def M₃.nextRight (m₃ : M₃ α) : M₂ α :=
     i_def := i_succ_def
     k₂_lt_end₂_succ := k₂_succ_lt_end₂_succ
     k₂_ge_start₂ := k₂_succ_ge_start₂
-    k₂_lt_end₂_of_not_k₁_lt_start₂ := k₂_succ_lt_end₂_of_not_k₁_lt_start₂
   }
 
 structure M₄Left (α : Type) extends M₁ α where
@@ -215,7 +206,6 @@ def mergeAdjacentChunksIntoAux [Ord α] (m₁ : M₁ α) : M₁ α :=
       k₂_ge_start₂ := Nat.le_refl m₁.start₂
       k₁_lt_start₂_succ := Nat.lt_succ_of_lt m₁.start₁_lt_start₂
       k₂_lt_end₂_succ := Nat.lt_succ_of_lt m₁.start₂_lt_end₂
-      k₂_lt_end₂_of_not_k₁_lt_start₂ := fun _ ↦ m₁.start₂_lt_end₂
     }
   let rec @[specialize] loop (m₂ : M₂ α) : M₁ α :=
     if k₁_k₂_in_bounds : m₂.k₁ < m₂.start₂ ∧ m₂.k₂ < m₂.end₂ then
