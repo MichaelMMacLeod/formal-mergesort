@@ -7,8 +7,6 @@ theorem Nat.lt_of_le_lt {a b c : ℕ} (h : a ≤ b) : b < c → a < c := by
   omega
 theorem Nat.sub_succ_lt_sub_of_lt {a b : ℕ} (h : a < b) : b - a.succ < b - a := by omega
 
-set_option pp.proofs true
-
 structure M₁ (α : Type) where
   arr : Array α
   aux : Array α
