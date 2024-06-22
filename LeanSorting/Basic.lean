@@ -696,7 +696,7 @@ theorem mergeChunksIntoAux_size_eq_arr_size
   unfold mergeChunksIntoAux
   simp [mergeChunksIntoAux.loop_size_eq_arr_size]
 
-def Array.mergeSort [Inhabited α] [Ord α] (arr : Array α) : Array α := Id.run do
+def Array.mergeSort [Inhabited α] [Ord α] (arr : Array α) : Array α :=
   let rec @[specialize] loop
       (arr aux : Array α)
       (chunkSize : ℕ)
