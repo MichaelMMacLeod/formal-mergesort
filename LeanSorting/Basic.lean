@@ -640,45 +640,60 @@ def mergeChunksIntoAux
 
 theorem mergeChunksIntoAux.loop.loopFinal_size_eq_arr_size
     [Ord α]
-    { arr aux : Array α}
-    { arr_size_eq_aux_size : arr.size = aux.size }
-    { start₁ : ℕ}
-    : (mergeChunksIntoAux.loop.loopFinal
-        arr
-        aux
-        start₁
-        arr_size_eq_aux_size
-      ).size = arr.size := by
+    (m₅ : M₅ α)
+    : (mergeChunksIntoAux.loop.loopFinal m₅).size = m₅.arr.size := by
   unfold mergeChunksIntoAux.loop.loopFinal
-  sorry
+  if start₁_lt_aux_size : m₅.start₁ < m₅.aux.size then
+    simp [start₁_lt_aux_size]
+    have : (m₅.nextFinal start₁_lt_aux_size).arr.size = m₅.arr.size := by
+      simp [M₅.nextFinal]
+    simp [
+      mergeChunksIntoAux.loop.loopFinal_size_eq_arr_size
+        (m₅.nextFinal start₁_lt_aux_size),
+      *
+    ]
+  else
+    simp [start₁_lt_aux_size, m₅.arr_size_eq_aux_size]
+termination_by m₅.arr.size - m₅.start₁
+decreasing_by
+  simp_wf
+  have : (m₅.nextFinal start₁_lt_aux_size).arr = m₅.arr := by
+    simp [M₅.nextFinal]
+  have : (m₅.nextFinal start₁_lt_aux_size).start₁ = m₅.start₁.succ := by
+    simp [M₅.nextFinal]
+  have := m₅.arr_size_eq_aux_size
+  omega
 
 theorem mergeChunksIntoAux.loop_size_eq_arr_size
     [Ord α]
-    { arr aux : Array α}
-    { chunkSize : ℕ }
-    { arr_size_eq_aux_size : arr.size = aux.size }
-    { chunkSize_gt_0 : chunkSize > 0 }
-    { start₁ : ℕ}
-    : (mergeChunksIntoAux.loop
-        arr
-        aux
-        chunkSize
-        arr_size_eq_aux_size
-        chunkSize_gt_0
-        aux
-        start₁
-        arr_size_eq_aux_size
-      ).size = arr.size := by
+    (m₅ : M₅ α)
+    : (mergeChunksIntoAux.loop m₅).size = m₅.arr.size := by
   unfold mergeChunksIntoAux.loop
-  if start₁_plus_size_lt_arr_size : start₁ + chunkSize < arr.size then
-    simp only [start₁_plus_size_lt_arr_size]
-    exact (mergeChunksIntoAux.loop_size_eq_arr_size
-            )
+  if start₁_plus_size_lt_arr_size : m₅.start₁ + m₅.size < m₅.arr.size then
+    simp [start₁_plus_size_lt_arr_size]
+    have : (m₅.next start₁_plus_size_lt_arr_size).arr.size = m₅.arr.size := by
+      have : (m₅.next start₁_plus_size_lt_arr_size).arr = m₅.arr := by
+        simp [M₅.next, merge_adjacent_arr_eq]
+      simp [*]
+    simp [
+      mergeChunksIntoAux.loop_size_eq_arr_size
+        (m₅.next start₁_plus_size_lt_arr_size),
+      *
+    ]
   else
     simp [
       start₁_plus_size_lt_arr_size,
       mergeChunksIntoAux.loop.loopFinal_size_eq_arr_size
     ]
+termination_by m₅.arr.size - m₅.start₁
+decreasing_by
+  simp_wf
+  have : (m₅.next start₁_plus_size_lt_arr_size).arr = m₅.arr := by
+    simp [M₅.next, merge_adjacent_arr_eq]
+  have : (m₅.next start₁_plus_size_lt_arr_size).start₁ = m₅.start₁ + 2 * m₅.size := by
+    simp [M₅.next]
+  have := m₅.size_gt_0
+  omega
 
 theorem mergeChunksIntoAux_size_eq_arr_size
     [Ord α]
@@ -694,22 +709,7 @@ theorem mergeChunksIntoAux_size_eq_arr_size
         chunkSize_gt_0
       ).size = arr.size := by
   unfold mergeChunksIntoAux
-  let rec mergeChunksIntoAux.loop_size_eq_arr_size
-      { start₁ : ℕ}
-      : (mergeChunksIntoAux.loop
-          arr
-          aux
-          chunkSize
-          arr_size_eq_aux_size
-          chunkSize_gt_0
-          aux
-          start₁
-          arr_size_eq_aux_size
-        ).size = arr.size := by
-    unfold mergeChunksIntoAux.loop
-
   simp [mergeChunksIntoAux.loop_size_eq_arr_size]
-
 
 def Array.mergeSort [Inhabited α] [Ord α] (arr : Array α) : Array α := Id.run do
   let rec loop
@@ -737,5 +737,20 @@ def Array.mergeSort [Inhabited α] [Ord α] (arr : Array α) : Array α := Id.ru
   have arr_size_eq_aux_size : arr.size = aux.size := by simp [aux]
   loop arr aux 1 initialChunkSize_gt_0 arr_size_eq_aux_size
 
-#eval #[1, 2, 3, 4, 5, 4, 3, 2, 1].mergeSort
-#eval #[15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1].mergeSort
+example : #[].mergeSort (α := Nat) = #[] := by rfl
+example : #[0].mergeSort = #[0] := by rfl
+example : #[0, 1].mergeSort = #[0, 1] := by rfl
+example : #[1, 0].mergeSort = #[0, 1] := by rfl
+example : #[0, 0].mergeSort = #[0, 0] := by rfl
+example : #[1, 1].mergeSort = #[1, 1] := by rfl
+example : #[0, 1, 2].mergeSort = #[0, 1, 2] := by rfl
+example : #[0, 2, 1].mergeSort = #[0, 1, 2] := by rfl
+example : #[1, 0, 2].mergeSort = #[0, 1, 2] := by rfl
+example : #[1, 2, 0].mergeSort = #[0, 1, 2] := by rfl
+example : #[2, 0, 1].mergeSort = #[0, 1, 2] := by rfl
+example : #[2, 1, 0].mergeSort = #[0, 1, 2] := by rfl
+example : #[0, 0, 0].mergeSort = #[0, 0, 0] := by rfl
+example : #[1, 1, 1].mergeSort = #[1, 1, 1] := by rfl
+example : #[2, 2, 2].mergeSort = #[2, 2, 2] := by rfl
+example : #[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].mergeSort = #[1, 2, 3, 4, 5, 6, 7, 8, 9, 10] := by rfl
+example : #[10, 0, 100, 1, 200, 2].mergeSort = #[0, 1, 2, 10, 100, 200] := by rfl
