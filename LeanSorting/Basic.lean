@@ -721,6 +721,85 @@ def Array.mergeSort [Inhabited α] [Ord α] (arr : Array α) : Array α :=
   have arr_size_eq_aux_size : arr.size = aux.size := by simp [aux]
   loop arr aux 1 initialChunkSize_gt_0 arr_size_eq_aux_size
 
+@[specialize, inline]
+partial def mergeAdjacentChunksIntoAuxPartial
+    [Inhabited α]
+    [Ord α]
+    (arr aux : Array α)
+    (start₁ start₂ end₂ : ℕ)
+    : Array α :=
+  let rec @[specialize] loop
+      (aux : Array α)
+      (i k₁ k₂ : ℕ)
+      : Array α :=
+    if k₁ < start₂ ∧ k₂ < end₂ then
+      let ak₁ := arr[k₁]!
+      let ak₂ := arr[k₂]!
+      match Ord.compare ak₁ ak₂ with
+      | .lt | .eq =>
+        let aux' := aux.set! i ak₁
+        loop aux' i.succ k₁.succ k₂
+      | .gt =>
+        let aux' := aux.set! i ak₂
+        loop aux' i.succ k₁ k₂.succ
+    else
+      let rec @[specialize] loopLeft
+          (aux : Array α)
+          (i k₁ : ℕ)
+          : Array α :=
+        if k₁ < start₂ then
+          let aux' := aux.set! i arr[k₁]!
+          loopLeft aux' i.succ k₁.succ
+        else
+          let rec @[specialize] loopRight
+              (aux : Array α)
+              (i k₂ : ℕ)
+              : Array α :=
+            if k₂ < end₂ then
+              let aux' := aux.set! i arr[k₂]!
+              loopRight aux' i.succ k₂.succ
+            else
+              aux
+          loopRight aux i k₂
+      loopLeft aux i k₁
+  loop aux start₁ start₁ start₂
+
+@[specialize, inline]
+partial def mergeChunksIntoAuxPartial
+    [Inhabited α]
+    [Ord α]
+    (arr aux : Array α)
+    (size : ℕ) :=
+  let rec @[specialize] loop (aux : Array α) (start₁: ℕ)
+      : Array α :=
+    if start₁ + size < arr.size then
+      let start₂ := start₁ + size
+      let end₂ := min (start₂ + size) arr.size
+      let aux' := mergeAdjacentChunksIntoAuxPartial arr aux start₁ start₂ end₂
+      loop aux' (start₁ + 2 * size)
+    else
+      let rec @[specialize] loopFinal (aux : Array α) (start₁ : ℕ) : Array α :=
+        if start₁ < aux.size then
+          let aux' := aux.set! start₁ arr[start₁]!
+          loopFinal aux' start₁.succ
+        else
+          aux
+      loopFinal aux start₁
+  loop aux 0
+
+partial def Array.mergeSortPartial [Inhabited α] [Ord α] (arr : Array α) : Array α :=
+  let rec @[specialize] loop
+      (arr aux : Array α)
+      (chunkSize : ℕ)
+      : Array α :=
+    if chunkSize < arr.size then
+      let aux' := mergeChunksIntoAuxPartial arr aux chunkSize
+      loop aux' arr (chunkSize * 2)
+    else
+      arr
+  let aux : Array α := Array.mkArray arr.size default
+  loop arr aux 1
+
 def Array.non_decreasing [Ord α] {as : Array α} : Prop :=
   ∀ i j : Fin as.size,
     i.val.succ = j.val →

@@ -18,6 +18,7 @@ def mainSort (sort : Array String → Array String) : IO Unit := do
 def main (args : List String) : IO UInt32 := do
   match args with
   | ["--msort"] => mainSort Array.mergeSort; pure 0
+  | ["--msort-partial"] => mainSort Array.mergeSortPartial; pure 0
   | ["--qsort"] => mainSort (Array.qsort · (· < ·)); pure 0
   | _ =>
     IO.println "Expected single argument, either \"--msort\" or \"--qsort\""
