@@ -730,9 +730,9 @@ def Array.contains_same_data_as (as : Array α) (bs : Array α) : Prop :=
   Multiset.ofList as.data = Multiset.ofList bs.data
 
 def Array.sorting_algorithm [Ord α] (f : Array α → Array α) : Prop :=
-  ∀ as : Array α,
-      (f as).non_decreasing
-    ∧ (f as).contains_same_data_as as
+  ∀ arr : Array α,
+      (f arr).non_decreasing
+    ∧ (f arr).contains_same_data_as arr
 
 theorem sorting_algorithm_mergeSort
     [Inhabited α]
