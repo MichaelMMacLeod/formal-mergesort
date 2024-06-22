@@ -24,7 +24,6 @@ theorem Nat.sub_succ_lt_sub_of_lt {a b : ℕ} (h : a < b) : b - a.succ < b - a :
 
 set_option pp.proofs true
 
-@[ext]
 structure M₁ (α : Type) where
   arr : Array α
   aux : Array α
@@ -37,7 +36,6 @@ structure M₁ (α : Type) where
   arr_size_eq_aux_size : arr.size = aux.size
 deriving Repr
 
-@[ext]
 structure M₂ (α : Type) extends M₁ α where
   i : ℕ
   k₁ : ℕ
@@ -49,7 +47,6 @@ structure M₂ (α : Type) extends M₁ α where
   k₂_lt_end₂_of_not_k₁_lt_start₂ : ¬k₁ < start₂ → k₂ < end₂
 deriving Repr
 
-@[ext]
 structure M₃ (α : Type) extends M₂ α where
   k₁_k₂_in_bounds : k₁ < start₂ ∧ k₂ < end₂
   k₁_lt_arr_size : k₁ < arr.size
@@ -133,7 +130,6 @@ def M₃.nextRight (m₃ : M₃ α) : M₂ α :=
   }
 
 structure M₄Left (α : Type) extends M₁ α where
-  -- Existing M₂ hypotheses, without k₂_lt_end₂_of_not_k₁_lt_start₂
   i : ℕ
   k₁ : ℕ
   k₂ : ℕ
@@ -354,49 +350,72 @@ def mergeAdjacentChunksIntoAux [Ord α] (m₁ : M₁ α) : Array α :=
 def mergeChunksIntoAux [Inhabited α] [Ord α] (arr : Array α) (aux : Array α) (size : ℕ)
     (arr_size_eq_aux_size : arr.size = aux.size)
     (size_gt_0 : size > 0)
+    (size_lt_aux_size : size < aux.size)
     : Array α := Id.run do
-  let mut aux := aux
-  let mut start₁ := 0
-  let rec loop₁ (aux : Array α) (start₁ : ℕ)
-      (arr_size_eq_aux_size : arr.size = aux.size)
-      : Array α :=
-    if start₁ + size < arr.size then
-      let start₂ := start₁ + size
-      let end₂ := min (start₂ + size) arr.size
-      have start₁_lt_start₂ : start₁ < start₂ := by omega
-      have start₂_lt_end₂ : start₂ < end₂ := by omega
-      have end₂_le_arr_size : end₂ ≤ arr.size := by omega
-      let m₁ : M₁ α :=
-        { arr,
-          aux,
-          start₁,
-          start₂,
-          end₂,
-          start₁_lt_start₂,
-          start₂_lt_end₂,
-          end₂_le_arr_size,
-          arr_size_eq_aux_size,
-        }
+  let start₁ := 0
+  let start₂ := start₁ + size
+  let end₂ := min (start₂ + size) arr.size
+  have start₁_lt_start₂ := by omega
+  have start₂_lt_end₂ : start₂ < end₂ := by omega
+  have end₂_le_arr_size := by omega
+  let m₁ : M₁ α :=
+    { arr,
+      aux,
+      start₁,
+      start₂,
+      end₂,
+      start₁_lt_start₂,
+      start₂_lt_end₂,
+      end₂_le_arr_size,
+      arr_size_eq_aux_size,
+    }
+  let rec loop (m₁ : M₁ α) : Array α :=
+    if m₁.start₁ + size < m₁.arr.size then
       let aux' := mergeAdjacentChunksIntoAux m₁
-      let start₁' := start₁ + 2 * size
-      have arr_size_eq_aux'_size : arr.size = aux'.size := by
-        sorry
-      loop₁ aux' start₁'
-        arr_size_eq_aux'_size
+      loop m₁'
     else
-      let rec loop₂ (aux : Array α) (start₁ : ℕ)
-          : Array α :=
-        if start₁ < arr.size then
-          have : start₁ < arr.size := by sorry
-          have chunkStart₁_lt_aux_size : start₁ < aux.size := by sorry
-          let aux' := aux.set ⟨start₁, chunkStart₁_lt_aux_size⟩ arr[start₁]
-          let start₁' := start₁ + 1
-          loop₂ aux' start₁'
-        else
-          aux
-      loop₂ aux start₁
-  loop₁ aux start₁
-    arr_size_eq_aux_size
+      sorry
+  loop m₁
+  -- let rec loop₁ (aux : Array α) (start₁ : ℕ)
+  --     (arr_size_eq_aux_size : arr.size = aux.size)
+  --     : Array α :=
+  --   if start₁ + size < arr.size then
+  --     let start₂ := start₁ + size
+  --     let end₂ := min (start₂ + size) arr.size
+  --     have start₁_lt_start₂ : start₁ < start₂ := by omega
+  --     have start₂_lt_end₂ : start₂ < end₂ := by sorry
+  --     have end₂_le_arr_size : end₂ ≤ arr.size := by omega
+  --     let m₁ : M₁ α :=
+  --       { arr,
+  --         aux,
+  --         start₁,
+  --         start₂,
+  --         end₂,
+  --         start₁_lt_start₂,
+  --         start₂_lt_end₂,
+  --         end₂_le_arr_size,
+  --         arr_size_eq_aux_size,
+  --       }
+  --     let aux' := mergeAdjacentChunksIntoAux m₁
+  --     let start₁' := start₁ + 2 * size
+  --     have arr_size_eq_aux'_size : arr.size = aux'.size := by
+  --       sorry
+  --     loop₁ aux' start₁'
+  --       arr_size_eq_aux'_size
+  --   else
+  --     let rec loop₂ (aux : Array α) (start₁ : ℕ)
+  --         : Array α :=
+  --       if start₁ < arr.size then
+  --         have : start₁ < arr.size := by sorry
+  --         have chunkStart₁_lt_aux_size : start₁ < aux.size := by sorry
+  --         let aux' := aux.set ⟨start₁, chunkStart₁_lt_aux_size⟩ arr[start₁]
+  --         let start₁' := start₁ + 1
+  --         loop₂ aux' start₁'
+  --       else
+  --         aux
+  --     loop₂ aux start₁
+  -- loop₁ aux 0
+  --   arr_size_eq_aux_size
 
 @[specialize] def Array.mergeSort [Inhabited α] [Ord α] (arr : Array α) : Array α := Id.run do
   let mut arr := arr
