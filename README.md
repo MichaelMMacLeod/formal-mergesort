@@ -3,7 +3,7 @@
 `LeanSorting/Basic.lean` defines `Array.mergeSort`, an implementation
 of [mergesort](https://en.wikipedia.org/wiki/Merge_sort) that uses one auxiliary array and sorts in-place.
 
-I have proved that all array accesses are in-bounds (i.e., `Array.mergeSort` uses `Fin`-based indexing), but have not yet proved that it actually sorts the array.
+I have proved that all array accesses are in-bounds (i.e., `Array.mergeSort` uses `Fin`-based indexing) and that `Array.mergeSort` terminates, but have not yet proved that it actually sorts the array.
 
 Some 'eyeball' performance testing suggests that the performance of `Array.mergeSort` is on-par with Lean's standard library `Array.qsort` (quicksort) implementation. More rigorous statistical testing is needed to determine actual performance differences.
 
