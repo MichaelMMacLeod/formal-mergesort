@@ -484,16 +484,16 @@ def M₅.nextFinal
 def mergeChunksIntoAux
     [Ord α]
     (m₅ : M₅ α)
-    : Array α :=
-  let rec @[specialize] loop (m₅ : M₅ α) : Array α :=
+    : M₅ α :=
+  let rec @[specialize] loop (m₅ : M₅ α) : M₅ α :=
     if start₁_plus_size_lt_arr_size : m₅.start₁ + m₅.size < m₅.arr.size then
       loop (m₅.next start₁_plus_size_lt_arr_size)
     else
-      let rec @[specialize] loopFinal (m₅ : M₅ α) : Array α :=
+      let rec @[specialize] loopFinal (m₅ : M₅ α) : M₅ α :=
         if start₁_lt_aux_size : m₅.start₁ < m₅.aux.size then
           loopFinal (m₅.nextFinal start₁_lt_aux_size)
         else
-          m₅.aux
+          m₅
       termination_by m₅.arr.size - m₅.start₁
       decreasing_by
         simp_wf
