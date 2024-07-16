@@ -707,25 +707,6 @@ partial def Array.mergeSortPartial [Inhabited α] [Ord α] (arr : Array α) : Ar
   let aux : Array α := Array.mkArray arr.size default
   loop arr aux 1
 
-def Array.non_decreasing [Ord α] {as : Array α} : Prop :=
-  ∀ i j : Fin as.size,
-    i.val.succ = j.val →
-      Ord.compare as[i] as[j] != Ordering.gt
-
-def Array.contains_same_data_as (as : Array α) (bs : Array α) : Prop :=
-  Multiset.ofList as.data = Multiset.ofList bs.data
-
-def Array.sorting_algorithm [Ord α] (f : Array α → Array α) : Prop :=
-  ∀ arr : Array α,
-      (f arr).non_decreasing
-    ∧ (f arr).contains_same_data_as arr
-
-theorem sorting_algorithm_mergeSort
-    [Inhabited α]
-    [Ord α]
-    : Array.sorting_algorithm Array.mergeSort (α := α) := by
-  sorry
-
 example : #[].mergeSort (α := Nat) = #[] := by rfl
 example : #[0].mergeSort = #[0] := by rfl
 example : #[0, 1].mergeSort = #[0, 1] := by rfl
