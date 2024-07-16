@@ -22,9 +22,9 @@
           export PS1='${makePromptString devShellName}'
 
           export DEVSHELL_NAME='${devShellName}'
-          # if [ -x ./devshells.current.add-gc-root ]; then
-          #   ./devshells.current.add-gc-root > /dev/null
-          # fi
+          if [ -x ./devshells.current.add-gc-root ]; then
+            ./devshells.current.add-gc-root > /dev/null
+          fi
 
           # Fix glitchy blank VSCodium screen after updates.
           # See https://github.com/NixOS/nixpkgs/issues/259929.

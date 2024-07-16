@@ -1,0 +1,39 @@
+#!/usr/bin/env bash
+
+# Stops the dependencies of a devshell from being garbage
+# collected. If we don't do this then running 'nix develop' will
+# re-download a lot of data every time 'nix store gc' is called.
+
+if [ -z ${DEVSHELL_NAME+x} ]; then
+    echo "Must be called from within 'nix develop'"
+    exit 1
+fi
+
+# Finds the directory that this script was written in and puts it in
+# $SCRIPT_PATH. See https://stackoverflow.com/a/179231.
+
+pushd . > '/dev/null';
+SCRIPT_PATH="${BASH_SOURCE[0]:-$0}";
+
+while [ -h "$SCRIPT_PATH" ];
+do
+    cd "$( dirname -- "$SCRIPT_PATH"; )";
+    SCRIPT_PATH="$( readlink -f -- "$SCRIPT_PATH"; )";
+done
+
+cd "$( dirname -- "$SCRIPT_PATH"; )" > '/dev/null';
+SCRIPT_PATH="$( pwd; )";
+popd  > '/dev/null';
+
+# Add GC roots for devshell inputs. See
+# https://github.com/ruuda/dotfiles/blob/master/zsh/.zshrc. The
+# variable 'DEVSHELL_NAME' is defined in flake.nix.
+
+GC_ROOT="${SCRIPT_PATH}/.devshells/${DEVSHELL_NAME}"
+DEVSHELL_FLAKE_OUTPUT=".#devShells.x86_64-linux.${DEVSHELL_NAME}"
+DEVSHELL_STOREPATH=$(nix build --no-link --print-out-paths "${DEVSHELL_FLAKE_OUTPUT}")
+nix --offline flake archive --dry-run --json \
+    | jq --raw-output '.. | .path? | select(. != null)' \
+    | xargs --max-procs=1 \
+            nix-store --add-root "${GC_ROOT}" --indirect --realise "${DEVSHELL_STOREPATH}" \
+            > /dev/null
