@@ -1,4 +1,4 @@
-import «LeanSorting».Basic
+import «LeanSorting».Total
 
 def getLines : IO (Array String) := do
   let stdin ← IO.getStdin
