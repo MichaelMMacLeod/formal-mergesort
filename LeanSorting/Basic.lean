@@ -483,10 +483,7 @@ def M₅.nextFinal
 @[specialize, inline]
 def mergeChunksIntoAux
     [Ord α]
-    (arr aux : Array α)
-    (size : ℕ)
-    (arr_size_eq_aux_size : arr.size = aux.size)
-    (size_gt_0 : size > 0)
+    (m₅ : M₅ α)
     : Array α :=
   let rec @[specialize] loop (m₅ : M₅ α) : Array α :=
     if start₁_plus_size_lt_arr_size : m₅.start₁ + m₅.size < m₅.arr.size then
@@ -519,14 +516,6 @@ def mergeChunksIntoAux
       simp [M₅.next]
     have := m₅.size_gt_0
     omega
-  let m₅ : M₅ α :=
-    { arr,
-      aux,
-      size,
-      start₁ := 0,
-      arr_size_eq_aux_size,
-      size_gt_0,
-    }
   loop m₅
 
 theorem mergeChunksIntoAux.loop.loopFinal_size_eq_arr_size
@@ -588,17 +577,8 @@ decreasing_by
 
 theorem mergeChunksIntoAux_size_eq_arr_size
     [Ord α]
-    { arr aux : Array α}
-    { chunkSize : ℕ }
-    { arr_size_eq_aux_size : arr.size = aux.size }
-    { chunkSize_gt_0 : chunkSize > 0 }
-    : (mergeChunksIntoAux
-        arr
-        aux
-        chunkSize
-        arr_size_eq_aux_size
-        chunkSize_gt_0
-      ).size = arr.size := by
+    { m₅ : M₅ α }
+    : (mergeChunksIntoAux m₅).size = m₅.arr.size := by
   unfold mergeChunksIntoAux
   simp [mergeChunksIntoAux.loop_size_eq_arr_size]
 
@@ -610,9 +590,18 @@ def Array.mergeSort [Inhabited α] [Ord α] (arr : Array α) : Array α :=
       (arr_size_eq_aux_size : arr.size = aux.size)
       : Array α :=
     if chunkSize < arr.size then
-      let aux' := mergeChunksIntoAux arr aux chunkSize arr_size_eq_aux_size chunkSize_gt_0
+      let m₅ : M₅ α := {
+        arr,
+        aux,
+        size := chunkSize,
+        start₁ := 0,
+        arr_size_eq_aux_size,
+        size_gt_0 := chunkSize_gt_0
+      }
+      let aux' := mergeChunksIntoAux m₅
       have aux'_size_eq_arr_size : aux'.size = arr.size := by
         simp [aux', mergeChunksIntoAux_size_eq_arr_size]
+
       have chunkSize_mul_2_gt_0 : chunkSize * 2 > 0 := by simp [*]
       loop aux' arr (chunkSize * 2) chunkSize_mul_2_gt_0 aux'_size_eq_arr_size
     else
