@@ -114,7 +114,7 @@ theorem sorting_algorithm_mergeSort
 -- 0..2C, 2C..4C, 4C..6C, ... and so on each form non-decreasing runs of aux.
 --
 -- When C=1 (our base case), mergeChunksIntoAux checks if the two elements are in order
--- and swaps them if they are not, so it follows that elements 0..2,
+-- and swaps them if they are not, so it follows that elements 0..2 are in order.
 --
 -- For C>1, we can assume that 0..2C, 2C..4C, 4C..6C, ... and so on form non-decreasing
 -- runs. We then can show that mergeAdjacentChunksIntoAux, when given a non-decreasing run,
