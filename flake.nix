@@ -48,9 +48,9 @@
                   ] ++ pkgs.vscode-utils.extensionsFromVscodeMarketplace [{
                     name = "lean4";
                     publisher = "leanprover";
-                    version = "0.0.160";
+                    version = "0.0.174";
                     sha256 =
-                      "sha256-escuAn7grL99NHxUbxKNXP9qiy1Q/+hlK9KqhoZ52/0=";
+                      "sha256-z6J1mUMmjdI6lK2JPKzoz99JIyEA9LgUprypd3b5Fi4=";
                   }];
               })
             ];
