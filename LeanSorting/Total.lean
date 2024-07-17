@@ -184,6 +184,24 @@ def M₄Right.next
     k₂_ge_start₂ := k₂_succ_ge_start₂
   }
 
+def mergeAdjacentChunksIntoAux.loop.loopLeft_decreasing
+    [Ord α]
+    {m₂ : M₂ α}
+    {k₁_lt_start₂ : m₂.k₁ < m₂.start₂}
+    : (m₂.nextLeft k₁_lt_start₂).start₂ - (m₂.nextLeft k₁_lt_start₂).k₁ < m₂.start₂ - m₂.k₁ := by
+  have start₂_def : (m₂.nextLeft k₁_lt_start₂).start₂ = m₂.start₂ := by rfl
+  have k₁_def : (m₂.nextLeft k₁_lt_start₂).k₁ = m₂.k₁.succ := by rfl
+  omega
+
+def mergeAdjacentChunksIntoAux.loop.loopLeft.loopRight_decreasing
+    [Ord α]
+    {m₄Right : M₄Right α}
+    {k₂_lt_end₂ : m₄Right.k₂ < m₄Right.end₂}
+    : (m₄Right.next k₂_lt_end₂).end₂ - (m₄Right.next k₂_lt_end₂).k₂ < m₄Right.end₂ - m₄Right.k₂ := by
+  have end₂_def : (m₄Right.next k₂_lt_end₂).end₂ = m₄Right.end₂ := by rfl
+  have k₂_def : (m₄Right.next k₂_lt_end₂).k₂ = m₄Right.k₂.succ := by rfl
+  omega
+
 @[specialize, inline]
 def mergeAdjacentChunksIntoAux [Ord α] (m₁ : M₁ α) : M₁ α :=
   let m₂ : M₂ α :=
@@ -217,18 +235,10 @@ def mergeAdjacentChunksIntoAux [Ord α] (m₁ : M₁ α) : M₁ α :=
             else
               { m₄Right with }
           termination_by m₄Right.end₂ - m₄Right.k₂
-          decreasing_by
-            simp_wf
-            have end₂_def : (m₄Right.next k₂_lt_end₂).end₂ = m₄Right.end₂ := by rfl
-            have k₂_def : (m₄Right.next k₂_lt_end₂).k₂ = m₄Right.k₂.succ := by rfl
-            omega
+          decreasing_by exact mergeAdjacentChunksIntoAux.loop.loopLeft.loopRight_decreasing
           loopRight (m₂.mkM₄Right k₁_lt_start₂)
       termination_by m₂.start₂ - m₂.k₁
-      decreasing_by
-        simp_wf
-        have start₂_def : (m₂.nextLeft k₁_lt_start₂).start₂ = m₂.start₂ := by rfl
-        have k₁_def : (m₂.nextLeft k₁_lt_start₂).k₁ = m₂.k₁.succ := by rfl
-        omega
+      decreasing_by exact mergeAdjacentChunksIntoAux.loop.loopLeft_decreasing
       loopLeft m₂
   termination_by m₂.arr.size - m₂.i
   decreasing_by
@@ -257,11 +267,7 @@ theorem merge_adjacent_loopRight_arr_eq
   else
     simp [k₂_lt_end₂]
 termination_by m₄Right.end₂ - m₄Right.k₂
-decreasing_by
-  simp_wf
-  have end₂_def : (m₄Right.next k₂_lt_end₂).end₂ = m₄Right.end₂ := by rfl
-  have k₂_def : (m₄Right.next k₂_lt_end₂).k₂ = m₄Right.k₂.succ := by rfl
-  omega
+decreasing_by exact mergeAdjacentChunksIntoAux.loop.loopLeft.loopRight_decreasing
 
 theorem M₂.nextLeft_arr_eq
     [Ord α]
@@ -282,11 +288,7 @@ theorem merge_adjacent_loopLeft_arr_eq
     simp [k₁_lt_start₂]
     exact (merge_adjacent_loopRight_arr_eq (m₄Right := m₂.mkM₄Right k₁_lt_start₂))
 termination_by m₂.start₂ - m₂.k₁
-decreasing_by
-  simp_wf
-  have start₂_def : (m₂.nextLeft k₁_lt_start₂).start₂ = m₂.start₂ := by rfl
-  have k₁_def : (m₂.nextLeft k₁_lt_start₂).k₁ = m₂.k₁.succ := by rfl
-  omega
+decreasing_by exact mergeAdjacentChunksIntoAux.loop.loopLeft_decreasing
 
 theorem M₂.mkM₄Right_arr_eq
     [Ord α]
@@ -348,11 +350,7 @@ theorem merge_adjacent_loopRight_aux_size_eq_arr
   else
     simp [k₂_lt_end₂, m₄Right.arr_size_eq_aux_size]
 termination_by m₄Right.end₂ - m₄Right.k₂
-decreasing_by
-  simp_wf
-  have end₂_def : (m₄Right.next k₂_lt_end₂).end₂ = m₄Right.end₂ := by rfl
-  have k₂_def : (m₄Right.next k₂_lt_end₂).k₂ = m₄Right.k₂.succ := by rfl
-  omega
+decreasing_by exact mergeAdjacentChunksIntoAux.loop.loopLeft.loopRight_decreasing
 
 theorem M₂.nextLeft_aux_size_eq_arr
     [Ord α]
