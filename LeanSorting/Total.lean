@@ -6,6 +6,11 @@ theorem Nat.lt_of_lt_le {a b c : ℕ} (h : a < b) : b ≤ c → a < c := by omeg
 theorem Nat.lt_of_le_lt {a b c : ℕ} (h : a ≤ b) : b < c → a < c := by omega
 theorem Nat.sub_succ_lt_sub_of_lt {a b : ℕ} (h : a < b) : b - a.succ < b - a := by omega
 
+@[simp]
+theorem dbgTraceIfShared_eq : (dbgTraceIfShared s v) = v := by
+  unfold dbgTraceIfShared
+  rfl
+
 structure M₁ (α : Type) where
   arr : Array α
   aux : Array α
@@ -51,9 +56,9 @@ def M₂.mkM₃ [Ord α] (m₂ : M₂ α) (k₁_k₂_in_bounds : m₂.k₁ < m�
     i_lt_aux_size
   }
 
-def M₃.nextLeft (m₃ : M₃ α) : M₂ α :=
+@[inline, specialize] def M₃.nextLeft (m₃ : M₃ α) : M₂ α :=
   have := m₃.k₁_lt_arr_size
-  let aux' := m₃.aux.set ⟨m₃.i, m₃.i_lt_aux_size⟩ m₃.arr[m₃.k₁]
+  let aux' := (dbgTraceIfShared "m₃.aux.set" m₃.aux).set ⟨m₃.i, m₃.i_lt_aux_size⟩ m₃.arr[m₃.k₁]
   have arr_size_eq_aux'_size : m₃.arr.size = aux'.size := by
     simp [aux']
     exact m₃.arr_size_eq_aux_size
@@ -73,7 +78,7 @@ def M₃.nextLeft (m₃ : M₃ α) : M₂ α :=
     k₁_lt_start₂_succ := k₁_succ_lt_start₂_succ
   }
 
-def M₃.nextRight (m₃ : M₃ α) : M₂ α :=
+@[inline, specialize] def M₃.nextRight (m₃ : M₃ α) : M₂ α :=
   have := m₃.k₂_lt_arr_size
   let aux' := m₃.aux.set ⟨m₃.i, m₃.i_lt_aux_size⟩ m₃.arr[m₃.k₂]
   have arr_size_eq_aux'_size : m₃.arr.size = aux'.size := by
@@ -99,7 +104,7 @@ def M₃.nextRight (m₃ : M₃ α) : M₂ α :=
     k₂_ge_start₂ := k₂_succ_ge_start₂
   }
 
-def M₂.nextLeft [Ord α] (m₂ : M₂ α) (k₁_lt_start₂ : m₂.k₁ < m₂.start₂): M₂ α :=
+@[inline, specialize] def M₂.nextLeft [Ord α] (m₂ : M₂ α) (k₁_lt_start₂ : m₂.k₁ < m₂.start₂): M₂ α :=
   have i_lt_aux_size : m₂.i < m₂.aux.size := by
     have := m₂.start₂_lt_end₂
     have := m₂.end₂_le_arr_size
@@ -148,7 +153,7 @@ def M₂.mkM₄Right
     not_k₁_lt_start₂
   }
 
-def M₄Right.next
+@[inline, specialize] def M₄Right.next
     [Ord α]
     (m₄Right : M₄Right α)
     (k₂_lt_end₂ : m₄Right.k₂ < m₄Right.end₂)
@@ -389,6 +394,7 @@ theorem merge_adjacent_loop_aux_size_eq_arr
     . case h_1 =>
       have : (m₂.mkM₃ k₁_k₂_in_bounds).nextLeft.aux.size = m₂.aux.size := by
         simp [M₂.mkM₃, M₃.nextLeft]
+
       exact (merge_adjacent_loop_aux_size_eq_arr (m₂ := (m₂.mkM₃ k₁_k₂_in_bounds).nextLeft))
     . case h_2 =>
       have : (m₂.mkM₃ k₁_k₂_in_bounds).nextLeft.aux.size = m₂.aux.size := by
