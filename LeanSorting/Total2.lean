@@ -10,21 +10,13 @@ variable
   (arr aux : Array α)
   (start₁ start₂ end₂ i k₁ k₂ : ℕ)
 
-structure H₁
-  (arr aux : Array α)
-  (start₁ start₂ end₂ : ℕ)
-  : Prop
-where
+structure H₁ : Prop where
   start₁_lt_start₂ : start₁ < start₂
   start₂_lt_end₂ : start₂ < end₂
   end₂_le_arr_size : end₂ ≤ arr.size
   arr_size_eq_aux_size : arr.size = aux.size
 
-structure H₂
-  (i k₁ k₂ : ℕ)
-  extends H₁ arr aux start₁ start₂ end₂
-  : Prop
-where
+structure H₂ extends H₁ arr aux start₁ start₂ end₂ : Prop where
   i_def : i = k₁ + k₂ - start₂
   k₂_ge_start₂ : k₂ ≥ start₂
   k₁_lt_start₂_succ : k₁ < start₂.succ
@@ -144,6 +136,62 @@ def H₂.nextLeft [Ord α]
     k₁_lt_start₂_succ := k₁_succ_lt_start₂_succ
   }
 
+
+structure H₄Right extends H₁ arr aux start₁ start₂ end₂ : Prop where
+  i_def : i = k₁ + k₂ - start₂
+  k₂_ge_start₂ : k₂ ≥ start₂
+  k₁_lt_start₂_succ : k₁ < start₂.succ
+  not_k₁_lt_start₂ : ¬k₁ < start₂
+
+def H₂.mkH₄Right
+    (h₂ : H₂ arr aux start₁ start₂ end₂ i k₁ k₂)
+    (not_k₁_lt_start₂ : ¬k₁ < start₂)
+    : H₄Right arr aux start₁ start₂ end₂ i k₁ k₂ :=
+  { h₂ with not_k₁_lt_start₂ }
+
+def H₄Right.mk_i_lt_aux_size
+    (h₄Right : H₄Right arr aux start₁ start₂ end₂ i k₁ k₂)
+    (k₂_lt_end₂ : k₂ < end₂)
+    : i < aux.size := by
+  have := h₄Right.end₂_le_arr_size
+  have := h₄Right.arr_size_eq_aux_size
+  have := h₄Right.i_def
+  have := h₄Right.k₁_lt_start₂_succ
+  omega
+
+def H₄Right.mk_k₂_lt_arr_size
+    (h₄Right : H₄Right arr aux start₁ start₂ end₂ i k₁ k₂)
+    (k₂_lt_end₂ : k₂ < end₂)
+    : k₂ < arr.size := by
+  have := h₄Right.end₂_le_arr_size
+  omega
+
+def H₄Right.next
+    (h₄Right : H₄Right arr aux start₁ start₂ end₂ i k₁ k₂)
+    (k₂_lt_end₂ : k₂ < end₂)
+    : have i_lt_aux_size := h₄Right.mk_i_lt_aux_size k₂_lt_end₂
+      have k₂_lt_arr_Size := h₄Right.mk_k₂_lt_arr_size k₂_lt_end₂
+      let aux' := aux.set ⟨i, i_lt_aux_size⟩ arr[k₂]
+      H₄Right arr aux' start₁ start₂ end₂ i.succ k₁ k₂.succ
+    := by
+  intro i_lt_aux_size k₂_lt_arr_size aux'
+  have arr_size_eq_aux'_size : arr.size = aux'.size := by
+    simp [aux']
+    exact h₄Right.arr_size_eq_aux_size
+  have i_succ_def : i.succ = k₁ + k₂.succ - start₂ := by
+    have := h₄Right.i_def
+    have := h₄Right.k₂_ge_start₂
+    omega
+  have k₂_succ_ge_start₂ : k₂.succ ≥ start₂ := by
+    have := h₄Right.k₂_ge_start₂
+    omega
+  exact
+    { h₄Right with
+      arr_size_eq_aux_size := arr_size_eq_aux'_size
+      i_def := i_succ_def
+      k₂_ge_start₂ := k₂_succ_ge_start₂
+    }
+
 def mergeAdjacentChunksIntoAux.loop.loopLeft_decreasing
     (k₁_lt_start₂ : k₁ < start₂)
     : start₂ - (k₁ + 1) < start₂ - k₁ := by
@@ -192,19 +240,20 @@ def mergeAdjacentChunksIntoAux
           let rec @[specialize] loopRight
               (aux : Array α)
               (i k₂ : ℕ)
+              (h₄Right : H₄Right arr aux start₁ start₂ end₂ i k₁ k₂)
               : Array α :=
             if k₂_lt_end₂ : k₂ < end₂ then
-              have : k₂ < arr.size := sorry
-              have i_lt_aux_size : i < aux.size := sorry
+              have : k₂ < arr.size := h₄Right.mk_k₂_lt_arr_size k₂_lt_end₂
+              have i_lt_aux_size : i < aux.size := h₄Right.mk_i_lt_aux_size k₂_lt_end₂
               let aux' := aux.set ⟨i, i_lt_aux_size⟩ arr[k₂]
-              loopRight aux' i.succ k₂.succ
+              loopRight aux' i.succ k₂.succ (h₄Right.next k₂_lt_end₂)
             else
               aux
           -- These termination proofs can be automatically inferred, but stating
           -- them explicitly makes this function compile a lot faster.
           termination_by end₂ - k₂
           decreasing_by exact mergeAdjacentChunksIntoAux.loop.loopLeft.loopRight_decreasing end₂ k₂ k₂_lt_end₂
-          loopRight aux i k₂
+          loopRight aux i k₂ (h₂.mkH₄Right k₁_lt_start₂)
       termination_by start₂ - k₁
       decreasing_by exact mergeAdjacentChunksIntoAux.loop.loopLeft_decreasing start₂ k₁ k₁_lt_start₂
       loopLeft aux i k₁ h₂
