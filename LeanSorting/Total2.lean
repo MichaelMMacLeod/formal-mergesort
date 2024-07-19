@@ -52,7 +52,11 @@ def H₂.mkH₃
 
 def H₃.nextLeft
     (h₃ : H₃ arr aux start₁ start₂ end₂ i k₁ k₂)
-    : H₂ arr (aux.set ⟨i, h₃.i_lt_aux_size⟩ (arr[k₁]'h₃.k₁_lt_arr_size)) start₁ start₂ end₂ i.succ k₁.succ k₂ :=
+    : have i_lt_aux_size := h₃.i_lt_aux_size
+      have k₁_lt_arr_size := h₃.k₁_lt_arr_size
+      have aux' := aux.set ⟨i, i_lt_aux_size⟩ arr[k₁]
+      H₂ arr aux' start₁ start₂ end₂ i.succ k₁.succ k₂ := by
+  intro i_lt_aux_size k₁_lt_arr_size aux'
   have i_succ_def : i.succ = k₁.succ + k₂ - start₂ := by
     have := h₃.i_def
     have := h₃.k₂_ge_start₂
@@ -60,21 +64,25 @@ def H₃.nextLeft
   have k₁_succ_lt_start₂_succ : k₁.succ < start₂.succ := by
     have := h₃.k₁_k₂_in_bounds
     omega
-  have arr_size_eq_aux'_size : arr.size = (aux.set ⟨i, h₃.i_lt_aux_size⟩ (arr[k₁]'h₃.k₁_lt_arr_size)).size := by
-    simp
+  have arr_size_eq_aux'_size : arr.size = aux'.size := by
+    simp [aux']
     exact h₃.arr_size_eq_aux_size
-  { h₃ with
-    arr_size_eq_aux_size := arr_size_eq_aux'_size
-    i_def := i_succ_def
-    k₁_lt_start₂_succ := k₁_succ_lt_start₂_succ
-  }
+  exact
+    { h₃ with
+      arr_size_eq_aux_size := arr_size_eq_aux'_size
+      i_def := i_succ_def
+      k₁_lt_start₂_succ := k₁_succ_lt_start₂_succ
+    }
 
 def H₃.nextRight
     (h₃ : H₃ arr aux start₁ start₂ end₂ i k₁ k₂)
-    : H₂ arr (aux.set ⟨i, h₃.i_lt_aux_size⟩ (arr[k₂]'h₃.k₂_lt_arr_size)) start₁ start₂ end₂ i.succ k₁ k₂.succ :=
-  have := h₃.k₂_lt_arr_size
-  have arr_size_eq_aux'_size : arr.size = (aux.set ⟨i, h₃.i_lt_aux_size⟩ (arr[k₂]'h₃.k₂_lt_arr_size)).size := by
-    simp
+    : have i_lt_aux_size := h₃.i_lt_aux_size
+      have k₂_lt_arr_size := h₃.k₂_lt_arr_size
+      have aux' := aux.set ⟨i, i_lt_aux_size⟩ arr[k₂]
+      H₂ arr aux' start₁ start₂ end₂ i.succ k₁ k₂.succ := by
+  intro i_lt_aux_size k₂_lt_arr_size aux'
+  have arr_size_eq_aux'_size : arr.size = aux'.size := by
+    simp [aux']
     exact h₃.arr_size_eq_aux_size
   have i_succ_def : i.succ = k₁ + k₂.succ - start₂ := by
     have := h₃.i_def
@@ -86,12 +94,13 @@ def H₃.nextRight
   have k₂_succ_ge_start₂ : k₂.succ ≥ start₂ := by
     have := h₃.k₂_ge_start₂
     omega
-  { h₃ with
-    arr_size_eq_aux_size := arr_size_eq_aux'_size
-    i_def := i_succ_def
-    k₂_lt_end₂_succ := k₂_succ_lt_end₂_succ
-    k₂_ge_start₂ := k₂_succ_ge_start₂
-  }
+  exact
+    { h₃ with
+      arr_size_eq_aux_size := arr_size_eq_aux'_size
+      i_def := i_succ_def
+      k₂_lt_end₂_succ := k₂_succ_lt_end₂_succ
+      k₂_ge_start₂ := k₂_succ_ge_start₂
+    }
 
 def H₂.mk_i_lt_aux_size
     (h₂ : H₂ arr aux start₁ start₂ end₂ i k₁ k₂)
@@ -112,17 +121,17 @@ def H₂.mk_k₁_lt_arr_size
   have := h₂.end₂_le_arr_size
   omega
 
-def H₂.nextLeft [Ord α]
+def H₂.nextLeft
     (h₂ : H₂ arr aux start₁ start₂ end₂ i k₁ k₂)
     (k₁_lt_start₂ : k₁ < start₂)
-    : ( have i_lt_aux_size : i < aux.size := h₂.mk_i_lt_aux_size k₁_lt_start₂
-        have k₁_lt_arr_size : k₁ < arr.size := h₂.mk_k₁_lt_arr_size k₁_lt_start₂
-        H₂ arr (aux.set ⟨i, i_lt_aux_size⟩ (arr[k₁]'k₁_lt_arr_size)) start₁ start₂ end₂ i.succ k₁.succ k₂
-      ) :=
-  have i_lt_aux_size : i < aux.size := h₂.mk_i_lt_aux_size k₁_lt_start₂
-  have k₁_lt_arr_size : k₁ < arr.size := h₂.mk_k₁_lt_arr_size k₁_lt_start₂
-  let arr_size_eq_aux'_size : arr.size = (aux.set ⟨i, i_lt_aux_size⟩ (arr[k₁]'k₁_lt_arr_size)).size := by
-    simp []
+    : have i_lt_aux_size : i < aux.size := h₂.mk_i_lt_aux_size k₁_lt_start₂
+      have k₁_lt_arr_size : k₁ < arr.size := h₂.mk_k₁_lt_arr_size k₁_lt_start₂
+      have aux' := aux.set ⟨i, i_lt_aux_size⟩ arr[k₁]
+      H₂ arr aux' start₁ start₂ end₂ i.succ k₁.succ k₂
+    := by
+  intro i_lt_aux_size k₁_lt_arr_size aux'
+  let arr_size_eq_aux'_size : arr.size = aux'.size := by
+    simp [aux']
     exact h₂.arr_size_eq_aux_size
   have i_succ_def : i.succ = k₁.succ + k₂ - start₂ := by
     have := h₂.i_def
@@ -130,12 +139,12 @@ def H₂.nextLeft [Ord α]
     omega
   have k₁_succ_lt_start₂_succ : k₁.succ < start₂.succ := by
     omega
-  { h₂ with
-    arr_size_eq_aux_size := arr_size_eq_aux'_size
-    i_def := i_succ_def
-    k₁_lt_start₂_succ := k₁_succ_lt_start₂_succ
-  }
-
+  exact
+    { h₂ with
+      arr_size_eq_aux_size := arr_size_eq_aux'_size
+      i_def := i_succ_def
+      k₁_lt_start₂_succ := k₁_succ_lt_start₂_succ
+    }
 
 structure H₄Right extends H₁ arr aux start₁ start₂ end₂ : Prop where
   i_def : i = k₁ + k₂ - start₂
