@@ -8,7 +8,7 @@ variable
   {α : Type}
   [Ord α]
   (arr aux : Array α)
-  (start₁ start₂ end₂ i k₁ k₂ : ℕ)
+  (start₁ start₂ end₂ i k₁ k₂ chunkSize : ℕ)
 
 structure H₁ : Prop where
   start₁_lt_start₂ : start₁ < start₂
@@ -281,3 +281,113 @@ def mergeAdjacentChunksIntoAux
       k₂_lt_end₂_succ := Nat.lt_succ_of_lt h₁.start₂_lt_end₂
     }
   loop aux start₁ start₁ start₂ h₂
+
+structure H₅ : Prop where
+  arr_size_eq_aux_size : arr.size = aux.size
+  chunkSize_gt_0 : chunkSize > 0
+
+def H₅.mkH₁
+    (h₅ : H₅ arr aux chunkSize)
+    (start₁_plus_chunkSize_lt_arr_size : start₁ + chunkSize < arr.size)
+    : have start₂' := start₁ + chunkSize
+      have end₂' := min (start₂' + chunkSize) arr.size
+      H₁ arr aux start₁ start₂' end₂'
+    := by
+  intro start₂' end₂'
+  have start₁_lt_start₂ : start₁ < start₂' := by
+    have := h₅.chunkSize_gt_0
+    omega
+  have start₂_lt_end₂ : start₂' < end₂' := by
+    simp [end₂']
+    apply And.intro
+    . case left =>
+      exact h₅.chunkSize_gt_0
+    . case right =>
+      exact start₁_plus_chunkSize_lt_arr_size
+  have end₂_le_arr_size : end₂' ≤ arr.size := by omega
+  exact {
+    h₅ with
+    start₁_lt_start₂,
+    start₂_lt_end₂,
+    end₂_le_arr_size
+  }
+
+theorem mergeAdjacentChunksIntoAux_size_eq
+    (h₂ : H₂ arr aux start₁ start₂ end₂ i k₁ k₂)
+    : arr.size = (mergeAdjacentChunksIntoAux arr aux start₁ start₂ end₂ h₁).size
+    := by
+  induction aux, i, k₁, k₂, h₂ using mergeAdjacentChunksIntoAux.loop.induct with
+  | case1 aux i k₁ k₂ h₂ h h₃ k₁_lt_arr_size k₂_lt_arr_size x aux' ih1 =>
+    have v := ih1
+
+    sorry
+  | case2 aux i k₁ k₂ h₂ h h₃ k₁_lt_arr_size k₂_lt_arr_size x aux' =>
+    sorry
+  | case3 aux i k₁ k₂ h₂ h h₃ k₁_lt_arr_size k₂_lt_arr_size x aux' =>
+    sorry
+  | case4 aux i k₁ k₂ h₂ h =>
+    sorry
+
+def H₅.next
+    (h₅ : H₅ arr aux chunkSize)
+    (start₁_plus_chunkSize_lt_arr_size : start₁ + chunkSize < arr.size)
+    : let start₂' := start₁ + chunkSize
+      have start₂'_def : start₂' = start₁ + chunkSize := by rfl
+      let end₂' := min (start₂' + chunkSize) arr.size
+      have end₂'_def : end₂' = min (start₂' + chunkSize) arr.size := by rfl
+      have h₁ : H₁ arr aux start₁ start₂' end₂' := by
+        have h₁ := h₅.mkH₁ arr aux start₁ chunkSize start₁_plus_chunkSize_lt_arr_size
+        simp at h₁
+        simp [start₂'_def, end₂'_def]
+        exact h₁
+      have aux' := mergeAdjacentChunksIntoAux arr aux start₁ start₂' end₂' h₁
+      have chunkSize' := chunkSize + chunkSize
+      H₅ arr aux' chunkSize'
+    := by
+  intro start₂' start₂'_def end₂' end₂'_def h₁ aux' chunkSize'
+  have arr_size_eq_aux'_size : arr.size = aux'.size := by
+    simp [aux']
+    exact mergeAdjacentChunksIntoAux_size_eq arr aux start₁ start₂' end₂'
+  have chunkSize'_gt_0 : chunkSize' > 0 := by simp [chunkSize', h₅.chunkSize_gt_0]
+  exact {
+    h₅ with
+    arr_size_eq_aux_size := arr_size_eq_aux'_size,
+    chunkSize_gt_0 := chunkSize'_gt_0,
+  }
+
+@[specialize, inline]
+def mergeChunksIntoAux (h₅ : H₅ arr aux chunkSize) :=
+  -- Merge every two adjacent chunks while the second chunk has at least one
+  -- element.
+  let rec @[specialize] loop
+      (aux : Array α)
+      (start₁ : ℕ)
+      (h₅ : H₅ arr aux chunkSize)
+      : Array α :=
+    if start₁_plus_chunkSize_lt_arr_size : start₁ + chunkSize < arr.size then
+      let start₂ := start₁ + chunkSize
+      let end₂ := min (start₂ + chunkSize) arr.size
+      have h₁ := h₅.mkH₁ arr aux start₁ chunkSize start₁_plus_chunkSize_lt_arr_size
+      let aux' := mergeAdjacentChunksIntoAux arr aux start₁ start₂ end₂ h₁
+      have h₅ := h₅.next arr aux start₁ start₂ end₂ chunkSize start₁_plus_chunkSize_lt_arr_size
+      loop aux' (start₁ + 2 * chunkSize) h₅
+    else
+      -- Copy any leftover elements directly to `aux`.
+      --
+      -- This can happen, for example, when calling this function with
+      --       `arr  := #[1, 2, 3, 10, 20, 30, 100, 200]`
+      --   and `size := 3`,
+      -- as the first loop with merge `#[1, 2, 3]` and `#[20, 30, 100]` together, but
+      -- because there are too few leftover elements to form two adjacent chunks,
+      -- it is unable to do any further merging. Thus, the leftover elements, `100`
+      -- and `200`, must be directly copied over into `aux`.
+      let rec @[specialize] loopFinal (aux : Array α) (start₁ : ℕ) : Array α :=
+        if start₁ < aux.size then
+          let aux' := aux.set! start₁ arr[start₁]
+          loopFinal aux' start₁.succ
+        else
+          aux
+      termination_by arr.size - start₁
+      loopFinal aux start₁
+  termination_by arr.size - start₁
+  loop aux 0 h₅
