@@ -448,9 +448,10 @@ def mergeChunksIntoAux (h₅ : H₅ arr aux chunkSize) :=
           loopFinal aux' start₁.succ h₅
         else
           aux
-      termination_by arr.size - start₁
-      decreasing_by sorry
       loopFinal aux start₁ h₅
   termination_by arr.size - start₁
-  decreasing_by sorry
+  decreasing_by
+    simp_wf
+    have := h₅.chunkSize_gt_0
+    omega
   loop aux 0 h₅
