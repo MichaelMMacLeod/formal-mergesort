@@ -371,6 +371,7 @@ theorem mergeAdjacentChunksIntoAux_size_eq
   exact mergeAdjacentChunksIntoAux.loop_size_eq arr start₁ start₂ end₂
 
 def H₅.next
+    {chunkSize : ℕ}
     (h₅ : H₅ arr aux chunkSize)
     (start₁_plus_chunkSize_lt_arr_size : start₁ + chunkSize < arr.size)
     : let start₂' := start₁ + chunkSize
@@ -383,18 +384,15 @@ def H₅.next
         simp [start₂'_def, end₂'_def]
         exact h₁
       have aux' := mergeAdjacentChunksIntoAux arr aux start₁ start₂' end₂' h₁
-      have chunkSize' := chunkSize + chunkSize
-      H₅ arr aux' chunkSize'
+      H₅ arr aux' chunkSize
     := by
-  intro start₂' start₂'_def end₂' end₂'_def h₁ aux' chunkSize'
+  intro start₂' start₂'_def end₂' end₂'_def h₁ aux'
   have arr_size_eq_aux'_size : arr.size = aux'.size := by
     simp [aux']
     exact mergeAdjacentChunksIntoAux_size_eq arr start₁ start₂' end₂'
-  have chunkSize'_gt_0 : chunkSize' > 0 := by simp [chunkSize', h₅.chunkSize_gt_0]
   exact {
     h₅ with
     arr_size_eq_aux_size := arr_size_eq_aux'_size,
-    chunkSize_gt_0 := chunkSize'_gt_0,
   }
 
 @[specialize, inline]
@@ -411,7 +409,7 @@ def mergeChunksIntoAux (h₅ : H₅ arr aux chunkSize) :=
       let end₂ := min (start₂ + chunkSize) arr.size
       have h₁ := h₅.mkH₁ arr aux start₁ chunkSize start₁_plus_chunkSize_lt_arr_size
       let aux' := mergeAdjacentChunksIntoAux arr aux start₁ start₂ end₂ h₁
-      have h₅ := h₅.next arr aux start₁ start₂ end₂ chunkSize start₁_plus_chunkSize_lt_arr_size
+      have h₅ := h₅.next arr aux start₁ start₁_plus_chunkSize_lt_arr_size
       loop aux' (start₁ + 2 * chunkSize) h₅
     else
       -- Copy any leftover elements directly to `aux`.
@@ -425,27 +423,13 @@ def mergeChunksIntoAux (h₅ : H₅ arr aux chunkSize) :=
       -- and `200`, must be directly copied over into `aux`.
       let rec @[specialize] loopFinal (aux : Array α) (start₁ : ℕ) : Array α :=
         if start₁ < aux.size then
-          let aux' := aux.set! start₁ arr[start₁]
+          let aux' := aux.set! start₁ (arr[start₁]'sorry)
           loopFinal aux' start₁.succ
         else
           aux
       termination_by arr.size - start₁
+      decreasing_by sorry
       loopFinal aux start₁
   termination_by arr.size - start₁
+  decreasing_by sorry
   loop aux 0 h₅
-
-
--- def test₁ : 0 = (have a := 10
---                  a - 10)
---     := by
---   simp only []
-
--- def Array.bespokeMkEmpty (h₁ : n < 50) (h₂ : n < 500) : Array ℕ :=
---   Array.mkEmpty n
-
--- def foo (n : ℕ) (h : n < 10) : Array ℕ :=
---   have n_lt_50 : n < 50 := by omega
---   have n_lt_500 : n < 500 := by omega
---   Array.bespokeMkEmpty n_lt_50 n_lt_500
-
--- theorem foo_size_eq_zero : 0 = (foo n h).size := by
