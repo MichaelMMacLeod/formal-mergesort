@@ -389,7 +389,7 @@ def H₅.next
   intro start₂' start₂'_def end₂' end₂'_def h₁ aux' chunkSize'
   have arr_size_eq_aux'_size : arr.size = aux'.size := by
     simp [aux']
-    exact mergeAdjacentChunksIntoAux_size_eq arr aux start₁ start₂' end₂'
+    exact mergeAdjacentChunksIntoAux_size_eq arr start₁ start₂' end₂'
   have chunkSize'_gt_0 : chunkSize' > 0 := by simp [chunkSize', h₅.chunkSize_gt_0]
   exact {
     h₅ with
