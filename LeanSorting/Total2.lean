@@ -396,6 +396,8 @@ def H₅.next
   }
 
 def H₅.nextFinal
+    {arr aux : Array α}
+    {chunkSize start₁ : ℕ}
     (h₅ : H₅ arr aux chunkSize)
     (start₁_lt_aux_size : start₁ < aux.size)
     : have := h₅.arr_size_eq_aux_size
@@ -411,7 +413,10 @@ def H₅.nextFinal
   }
 
 @[specialize, inline]
-def mergeChunksIntoAux (h₅ : H₅ arr aux chunkSize) :=
+def mergeChunksIntoAux
+  (arr aux : Array α)
+  (chunkSize : ℕ)
+  (h₅ : H₅ arr aux chunkSize) :=
   -- Merge every two adjacent chunks while the second chunk has at least one
   -- element.
   let rec @[specialize] loop
@@ -444,7 +449,7 @@ def mergeChunksIntoAux (h₅ : H₅ arr aux chunkSize) :=
         if start₁_lt_aux_size : start₁ < aux.size then
           have := h₅.arr_size_eq_aux_size
           let aux' := aux.set ⟨start₁, start₁_lt_aux_size⟩ arr[start₁]
-          have h₅ := h₅.nextFinal arr aux start₁ chunkSize start₁_lt_aux_size
+          have h₅ := h₅.nextFinal start₁_lt_aux_size
           loopFinal aux' start₁.succ h₅
         else
           aux
@@ -455,3 +460,66 @@ def mergeChunksIntoAux (h₅ : H₅ arr aux chunkSize) :=
     have := h₅.chunkSize_gt_0
     omega
   loop aux 0 h₅
+
+theorem mergeChunksIntoAux.loop.loopFinal_size_eq
+    {arr aux : Array α}
+    {start₁ chunkSize : ℕ}
+    {h₅ : H₅ arr aux chunkSize}
+    : let aux' := mergeChunksIntoAux.loop.loopFinal arr chunkSize start₁ aux start₁ h₅
+      arr.size = aux'.size
+    := by
+  unfold loopFinal
+  if start₁_lt_aux_size : start₁ < aux.size then
+    simp [start₁_lt_aux_size]
+    have := h₅.arr_size_eq_aux_size
+    let aux' := aux.set ⟨start₁, start₁_lt_aux_size⟩ arr[start₁]
+    have h₅ := h₅.nextFinal start₁_lt_aux_size
+    simp at h₅
+    have idk := mergeChunksIntoAux.loop.loopFinal_size_eq
+            (arr := arr)
+            (aux := aux')
+            (start₁ := start₁.succ)
+            (chunkSize := chunkSize)
+            (h₅ := h₅)
+    simp at idk
+
+  else
+    simp [start₁_lt_aux_size]
+    exact h₅.arr_size_eq_aux_size
+
+def H₅.nextChunk
+    (h₅ : H₅ arr aux chunkSize)
+    : let aux' := mergeChunksIntoAux arr aux chunkSize h₅
+      H₅ aux' arr (chunkSize * 2)
+    := by
+  intro aux'
+  have aux'_size_eq_arr_size : aux'.size = arr.size := by
+    symm
+    exact mergeChunksIntoAux.loop.loopFinal_size_eq
+  have chunkSize_mul_two_gt_0 : chunkSize * 2 > 0 := by
+    have := h₅.chunkSize_gt_0
+    omega
+  exact {
+    arr_size_eq_aux_size := aux'_size_eq_arr_size
+    chunkSize_gt_0 := chunkSize_mul_two_gt_0
+  }
+
+@[specialize]
+def Array.mergeSortPartial : Array α :=
+  let rec @[specialize] loop
+      (arr aux : Array α)
+      (chunkSize : ℕ)
+      (h₅ : H₅ arr aux chunkSize)
+      : Array α :=
+    if chunkSize < arr.size then
+      let aux' := mergeChunksIntoAux arr aux chunkSize h₅
+      have h₅ : H₅ aux' arr (chunkSize * 2) := h₅.nextChunk
+
+      -- Note: `aux` and `arr` are intentionally swapped in the recursive call
+      loop aux' arr (chunkSize * 2) h₅
+    else
+      arr
+  termination_by arr.size - chunkSize
+  let aux : Array α := arr
+  have h₅ : H₅ arr aux 1 := sorry
+  loop arr aux 1 h₅

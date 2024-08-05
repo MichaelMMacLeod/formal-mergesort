@@ -97,6 +97,7 @@ partial def mergeChunksIntoAuxPartial
 An implementation of the 'mergesort' algorithm that only allocates one auxiliary array
 and uses panic-based indexing.
 -/
+@[specialize]
 partial def Array.mergeSortPartial [Inhabited α] [Ord α] (arr : Array α) : Array α :=
   let rec @[specialize] loop
       (arr aux : Array α)
