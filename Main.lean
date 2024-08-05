@@ -1,4 +1,5 @@
 import «LeanSorting».Total
+import «LeanSorting».Unsafe
 import «LeanSorting».Partial
 import Mathlib.Data.BinaryHeap
 
@@ -21,6 +22,7 @@ def main (args : List String) : IO UInt32 := do
   match args with
   | ["--mergeSort"] => mainSort Array.mergeSort; pure 0
   | ["--mergeSortPartial"] => mainSort Array.mergeSortPartial; pure 0
+  | ["--mergeSortUnsafe"] => mainSort Array.mergeSortUnsafe; pure 0
   | ["--heapSort"] => mainSort (Array.heapSort · (· < ·)); pure 0
   | ["--qsort"] => mainSort (Array.qsort · (· < ·)); pure 0
   | _ =>
