@@ -395,6 +395,21 @@ def H₅.next
     arr_size_eq_aux_size := arr_size_eq_aux'_size,
   }
 
+def H₅.nextFinal
+    (h₅ : H₅ arr aux chunkSize)
+    (start₁_lt_aux_size : start₁ < aux.size)
+    : have := h₅.arr_size_eq_aux_size
+      let aux' := aux.set ⟨start₁, start₁_lt_aux_size⟩ arr[start₁]
+      H₅ arr aux' chunkSize
+    := by
+  intro arr_size_eq_aux_size aux'
+  have arr_size_eq_aux'_size : arr.size = aux'.size := by
+    simp [aux', h₅.arr_size_eq_aux_size]
+  exact {
+    h₅ with
+    arr_size_eq_aux_size := arr_size_eq_aux'_size
+  }
+
 @[specialize, inline]
 def mergeChunksIntoAux (h₅ : H₅ arr aux chunkSize) :=
   -- Merge every two adjacent chunks while the second chunk has at least one
@@ -421,15 +436,21 @@ def mergeChunksIntoAux (h₅ : H₅ arr aux chunkSize) :=
       -- because there are too few leftover elements to form two adjacent chunks,
       -- it is unable to do any further merging. Thus, the leftover elements, `100`
       -- and `200`, must be directly copied over into `aux`.
-      let rec @[specialize] loopFinal (aux : Array α) (start₁ : ℕ) : Array α :=
-        if start₁ < aux.size then
-          let aux' := aux.set! start₁ (arr[start₁]'sorry)
-          loopFinal aux' start₁.succ
+      let rec @[specialize] loopFinal
+          (aux : Array α)
+          (start₁ : ℕ)
+          (h₅ : H₅ arr aux chunkSize)
+          : Array α :=
+        if start₁_lt_aux_size : start₁ < aux.size then
+          have := h₅.arr_size_eq_aux_size
+          let aux' := aux.set ⟨start₁, start₁_lt_aux_size⟩ arr[start₁]
+          have h₅ := h₅.nextFinal arr aux start₁ chunkSize start₁_lt_aux_size
+          loopFinal aux' start₁.succ h₅
         else
           aux
       termination_by arr.size - start₁
       decreasing_by sorry
-      loopFinal aux start₁
+      loopFinal aux start₁ h₅
   termination_by arr.size - start₁
   decreasing_by sorry
   loop aux 0 h₅
