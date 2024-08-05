@@ -1,54 +1,5 @@
-import «LeanSorting».Basic
-
-structure Slice (α : Type) where
-  arr : Array α
-  start : ℕ
-  endExclusive : ℕ
-  start_lt_arr_size : start < arr.size
-  endExclusive_le_arr_size : endExclusive ≤ arr.size
-  start_le_endExclusive : start ≤ endExclusive
-
-def Slice.indices [Ord α] (s : Slice α) : Set ℕ :=
-  { i | i ≥ s.start ∧ i < s.endExclusive }
-
-def Slice.non_decreasing [Ord α] (s : Slice α) : Prop :=
-  (i j : ℕ) →
-    (hp : i ∈ s.indices ∧ j ∈ s.indices ∧ i.succ = j) →
-      have : i < s.arr.size := by
-        apply And.left at hp
-        simp [Slice.indices] at hp
-        apply And.right at hp
-        exact (Nat.lt_of_lt_le hp s.endExclusive_le_arr_size)
-      have : j < s.arr.size := by
-        apply And.right at hp
-        apply And.left at hp
-        simp [Slice.indices] at hp
-        apply And.right at hp
-        exact (Nat.lt_of_lt_le hp s.endExclusive_le_arr_size)
-      Ord.compare s.arr[i] s.arr[j] != Ordering.gt
-
-def mergeAdjacentChunksIntoAuxSlice
-    [Ord α]
-    (m₁ : M₁ α)
-    : Slice α :=
-  let m₁' := mergeAdjacentChunksIntoAux m₁
-  have start_lt_arr_size : m₁'.start₁ < m₁'.aux.size := by sorry
-  have endExclusive_le_arr_size : m₁'.end₂ ≤ m₁'.aux.size := by sorry
-  have start_le_endExclusive : m₁'.start₁ ≤ m₁'.end₂ := by sorry
-  {
-    arr := m₁'.aux,
-    start := m₁'.start₁,
-    endExclusive := m₁'.end₂,
-    start_lt_arr_size,
-    endExclusive_le_arr_size,
-    start_le_endExclusive,
-  }
-
-def mergeAdjacentChunksIntoAux_non_decreasing
-    [Ord α]
-    (m₁ : M₁ α)
-    : Prop :=
-  (mergeAdjacentChunksIntoAuxSlice m₁).non_decreasing
+import Mathlib.Data.Multiset.Basic
+import «LeanSorting».Total
 
 def Array.non_decreasing [Ord α] {as : Array α} : Prop :=
   ∀ i j : Fin as.size,
@@ -63,16 +14,52 @@ def Array.sorting_algorithm [Ord α] (f : Array α → Array α) : Prop :=
       (f arr).non_decreasing
     ∧ (f arr).permutation_of arr
 
--- theorem mergeChunksIntoAuxRuns
---   [Ord α]
+def Array.non_decreasing_slice [Ord α] (arr : Array α) (low high : ℕ) : Prop :=
+  ∀ i j : Fin arr.size,
+    i.val.succ = j.val ∧ i ≥ low ∧ j < high →
+      Ord.compare arr[i] arr[j] != Ordering.gt
 
+def Array.contains_sorted_slices [Ord α] (arr : Array α) (chunkSize : ℕ) : Prop :=
+  ∀ start : Fin arr.size,
+    start % chunkSize = 0 →
+      arr.non_decreasing_slice start (min (start + chunkSize) arr.size)
+
+variable
+  {α : Type}
+  [ord_a : Ord α]
+  (arr aux : Array α)
+  (start₁ start₂ end₂ i k₁ k₂ chunkSize : ℕ)
+
+theorem mergeAdjacentChunksIntoAux.loop.loopLeft.loopRight_non_decreasing_slice
+    (slice₂_sorted : arr.non_decreasing_slice start₂ end₂)
+    : mergeAdjacentChunksIntoAux.loop.loopLeft.loopRight arr start₁ start₂ end₂ k₁ aux i k₂ h₄Right
+        |>.non_decreasing_slice start₁ end₂
+    := by
+  sorry
+
+theorem mergeAdjacentChunksIntoAux_non_decreasing_slice
+    (slice₁_sorted : arr.non_decreasing_slice start₁ start₂)
+    (slice₂_sorted : arr.non_decreasing_slice start₂ end₂)
+    : mergeAdjacentChunksIntoAux arr aux start₁ start₂ end₂ h₁
+        |>.non_decreasing_slice start₁ end₂
+    := by
+  sorry
+
+-- structure Slice (arr : Array α) : Prop where
+--   start : ℕ
+--   count : ℕ
+--   start_plus_count_le_size : start + count < arr.size
+
+-- structure NonDecreasingSlice (arr : Array α) extends Slice arr where
+--   non_decreasing : arr.non_decreasing
+
+-- theorem mergeChunksIntoAux_runs
+--     : mergeChunksIntoAux
 
 theorem mergesort_non_decreasing
-    [Inhabited α]
     [Ord α]
     {arr : Array α}
     : arr.mergeSort.non_decreasing := by
-
   simp [Array.non_decreasing]
   intro i j
   intro i_succ_eq_j
@@ -80,14 +67,12 @@ theorem mergesort_non_decreasing
   sorry
 
 theorem mergesort_preserves_elements
-    [Inhabited α]
     [Ord α]
     {arr : Array α}
     : (Array.mergeSort arr).permutation_of arr := by
   sorry
 
 theorem sorting_algorithm_mergeSort
-    [Inhabited α]
     [Ord α]
     : Array.sorting_algorithm Array.mergeSort (α := α) := by
   simp [Array.sorting_algorithm]
