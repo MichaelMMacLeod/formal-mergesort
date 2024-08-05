@@ -361,6 +361,15 @@ decreasing_by
     have i_lt_aux_size : i < aux.size := h₃.i_lt_aux_size
     exact loop.loopLeft.loopRight_decreasing aux.size i i_lt_aux_size
 
+theorem mergeAdjacentChunksIntoAux_size_eq
+    {aux : Array α}
+    {h₁ : H₁ arr aux start₁ start₂ end₂}
+    : have aux' := mergeAdjacentChunksIntoAux arr aux start₁ start₂ end₂ h₁
+      arr.size = aux'.size
+    := by
+  unfold mergeAdjacentChunksIntoAux
+  exact mergeAdjacentChunksIntoAux.loop_size_eq arr start₁ start₂ end₂
+
 def H₅.next
     (h₅ : H₅ arr aux chunkSize)
     (start₁_plus_chunkSize_lt_arr_size : start₁ + chunkSize < arr.size)
