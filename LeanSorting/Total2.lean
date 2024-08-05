@@ -350,36 +350,16 @@ theorem mergeAdjacentChunksIntoAux.loop_size_eq
   unfold loop
   if k₁_k₂_in_bounds : k₁ < start₂ ∧ k₂ < end₂ then
     simp [k₁_k₂_in_bounds]
-    have h₃ := h₂.mkH₃ k₁_k₂_in_bounds -- used in decreasing_by proof
-    split
-    . case h_1 =>
-      rw [← mergeAdjacentChunksIntoAux.loop_size_eq]
-    . case h_2 =>
-      rw [← mergeAdjacentChunksIntoAux.loop_size_eq]
-    . case h_3 =>
-      rw [← mergeAdjacentChunksIntoAux.loop_size_eq]
-    -- split <;> simp [← @mergeAdjacentChunksIntoAux.loop_size_eq]
+    split <;> rw [← mergeAdjacentChunksIntoAux.loop_size_eq]
   else
     simp [k₁_k₂_in_bounds, ← mergeAdjacentChunksIntoAux.loop.loopLeft_size_eq]
 termination_by aux.size - i
 decreasing_by
-    all_goals
-      simp (config := { unfoldPartialApp := true, zetaDelta := true })
-        only
-        [invImage, InvImage, Prod.lex, sizeOfWFRel, measure, Nat.lt_wfRel, WellFoundedRelation.rel]
-        at *
-    . simp [Array.size_set]
-      have : i < aux.size := by
-        exact h₃.i_lt_aux_size
-      omega
-    . simp [Array.size_set]
-      have : i < aux.size := by
-        exact h₃.i_lt_aux_size
-      omega
-    . simp [Array.size_set]
-      have : i < aux.size := by
-        exact h₃.i_lt_aux_size
-      omega
+  all_goals
+    simp_wf
+    have h₃ := h₂.mkH₃ k₁_k₂_in_bounds
+    have i_lt_aux_size : i < aux.size := h₃.i_lt_aux_size
+    exact loop.loopLeft.loopRight_decreasing aux.size i i_lt_aux_size
 
 def H₅.next
     (h₅ : H₅ arr aux chunkSize)
