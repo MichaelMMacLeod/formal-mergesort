@@ -223,8 +223,8 @@ def mergeAdjacentChunksIntoAux
       : Array α :=
     if k₁_k₂_in_bounds : k₁ < start₂ ∧ k₂ < end₂ then
       have h₃ := h₂.mkH₃ k₁_k₂_in_bounds
-      have : k₁ < arr.size := h₃.k₁_lt_arr_size
-      have : k₂ < arr.size := h₃.k₂_lt_arr_size
+      have k₁_lt_arr_size : k₁ < arr.size := h₃.k₁_lt_arr_size
+      have k₂_lt_arr_size : k₂ < arr.size := h₃.k₂_lt_arr_size
       match Ord.compare arr[k₁] arr[k₂] with
       | .lt | .eq =>
         let aux' := aux.set ⟨i, h₃.i_lt_aux_size⟩ arr[k₁]
@@ -312,21 +312,74 @@ def H₅.mkH₁
     end₂_le_arr_size
   }
 
-theorem mergeAdjacentChunksIntoAux_size_eq
-    (h₂ : H₂ arr aux start₁ start₂ end₂ i k₁ k₂)
-    : arr.size = (mergeAdjacentChunksIntoAux arr aux start₁ start₂ end₂ h₁).size
+theorem mergeAdjacentChunksIntoAux.loop.loopLeft.loopRight_size_eq
+    {aux : Array α}
+    {i k₂ : ℕ}
+    {h₄Right : H₄Right arr aux start₁ start₂ end₂ i k₁ k₂}
+    : have aux' := mergeAdjacentChunksIntoAux.loop.loopLeft.loopRight arr start₁ start₂ end₂ k₁ aux i k₂ h₄Right
+      arr.size = aux'.size
     := by
-  induction aux, i, k₁, k₂, h₂ using mergeAdjacentChunksIntoAux.loop.induct with
-  | case1 aux i k₁ k₂ h₂ h h₃ k₁_lt_arr_size k₂_lt_arr_size x aux' ih1 =>
-    have v := ih1
+  unfold loopRight
+  if k₂_lt_end₂ : k₂ < end₂ then
+    simp [k₂_lt_end₂]
+    exact mergeAdjacentChunksIntoAux.loop.loopLeft.loopRight_size_eq
+  else
+    simp [k₂_lt_end₂, h₄Right.arr_size_eq_aux_size]
 
-    sorry
-  | case2 aux i k₁ k₂ h₂ h h₃ k₁_lt_arr_size k₂_lt_arr_size x aux' =>
-    sorry
-  | case3 aux i k₁ k₂ h₂ h h₃ k₁_lt_arr_size k₂_lt_arr_size x aux' =>
-    sorry
-  | case4 aux i k₁ k₂ h₂ h =>
-    sorry
+theorem mergeAdjacentChunksIntoAux.loop.loopLeft_size_eq
+    {aux : Array α}
+    {i k₁ : ℕ}
+    {h₂ : H₂ arr aux start₁ start₂ end₂ i k₁ k₂}
+    : have aux' := mergeAdjacentChunksIntoAux.loop.loopLeft arr start₁ start₂ end₂ k₂ aux i k₁ h₂
+      arr.size = aux'.size
+    := by
+  unfold loopLeft
+  if k₂_lt_start₂ : k₁ < start₂ then
+    simp [k₂_lt_start₂]
+    exact mergeAdjacentChunksIntoAux.loop.loopLeft_size_eq
+  else
+    simp [k₂_lt_start₂, ← mergeAdjacentChunksIntoAux.loop.loopLeft.loopRight_size_eq]
+
+theorem mergeAdjacentChunksIntoAux.loop_size_eq
+    {aux : Array α}
+    {i k₁ k₂ : ℕ}
+    {h₂ : H₂ arr aux start₁ start₂ end₂ i k₁ k₂}
+    : have aux' := mergeAdjacentChunksIntoAux.loop arr start₁ start₂ end₂ aux i k₁ k₂ h₂
+      arr.size = aux'.size
+    := by
+  unfold loop
+  if k₁_k₂_in_bounds : k₁ < start₂ ∧ k₂ < end₂ then
+    simp [k₁_k₂_in_bounds]
+    have h₃ := h₂.mkH₃ k₁_k₂_in_bounds -- used in decreasing_by proof
+    split
+    . case h_1 =>
+      rw [← mergeAdjacentChunksIntoAux.loop_size_eq]
+    . case h_2 =>
+      rw [← mergeAdjacentChunksIntoAux.loop_size_eq]
+    . case h_3 =>
+      rw [← mergeAdjacentChunksIntoAux.loop_size_eq]
+    -- split <;> simp [← @mergeAdjacentChunksIntoAux.loop_size_eq]
+  else
+    simp [k₁_k₂_in_bounds, ← mergeAdjacentChunksIntoAux.loop.loopLeft_size_eq]
+termination_by aux.size - i
+decreasing_by
+    all_goals
+      simp (config := { unfoldPartialApp := true, zetaDelta := true })
+        only
+        [invImage, InvImage, Prod.lex, sizeOfWFRel, measure, Nat.lt_wfRel, WellFoundedRelation.rel]
+        at *
+    . simp [Array.size_set]
+      have : i < aux.size := by
+        exact h₃.i_lt_aux_size
+      omega
+    . simp [Array.size_set]
+      have : i < aux.size := by
+        exact h₃.i_lt_aux_size
+      omega
+    . simp [Array.size_set]
+      have : i < aux.size := by
+        exact h₃.i_lt_aux_size
+      omega
 
 def H₅.next
     (h₅ : H₅ arr aux chunkSize)
@@ -391,3 +444,19 @@ def mergeChunksIntoAux (h₅ : H₅ arr aux chunkSize) :=
       loopFinal aux start₁
   termination_by arr.size - start₁
   loop aux 0 h₅
+
+
+-- def test₁ : 0 = (have a := 10
+--                  a - 10)
+--     := by
+--   simp only []
+
+-- def Array.bespokeMkEmpty (h₁ : n < 50) (h₂ : n < 500) : Array ℕ :=
+--   Array.mkEmpty n
+
+-- def foo (n : ℕ) (h : n < 10) : Array ℕ :=
+--   have n_lt_50 : n < 50 := by omega
+--   have n_lt_500 : n < 500 := by omega
+--   Array.bespokeMkEmpty n_lt_50 n_lt_500
+
+-- theorem foo_size_eq_zero : 0 = (foo n h).size := by

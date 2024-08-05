@@ -410,6 +410,7 @@ theorem merge_adjacent_loop_aux_size_eq_arr
 termination_by m₂.arr.size - m₂.i
 decreasing_by
   all_goals
+    simp_wf
     have i_lt_arr_size : m₂.i < m₂.arr.size := by
       rw [m₂.arr_size_eq_aux_size]
       exact (m₂.mkM₃ k₁_k₂_in_bounds).i_lt_aux_size
