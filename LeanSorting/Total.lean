@@ -76,16 +76,14 @@ def H₂.mkH₃
     (h₂ : H₂ arr₁ arr₂ low₁ high₁ low₂ high₂ ptr₁ ptr₂ i)
     (ptr₁_ptr₂_in_bounds : ptr₁ < high₁ ∧ ptr₂ < high₂)
     : H₃ arr₁ arr₂ low₁ high₁ low₂ high₂ ptr₁ ptr₂ i :=
-  have slice₁_exclusive := h₂.slice₁.mkExclusive ptr₁_ptr₂_in_bounds.left
-  have slice₂_exclusive := h₂.slice₂.mkExclusive ptr₁_ptr₂_in_bounds.right
   have slice_i_exclusive : SlicePtrExclusive arr₂ low₁ high₂ i := by
     have i_lt_high₂ : i < high₂ := by
       have := h₂.i_def
       omega
     exact h₂.slice_i.mkExclusive i_lt_high₂
   { h₂ with
-    slice₁_exclusive,
-    slice₂_exclusive,
+    slice₁_exclusive := h₂.slice₁.mkExclusive ptr₁_ptr₂_in_bounds.left,
+    slice₂_exclusive := h₂.slice₂.mkExclusive ptr₁_ptr₂_in_bounds.right,
     slice_i_exclusive
   }
 
