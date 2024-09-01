@@ -8,46 +8,85 @@ variable
   {α : Type}
   [ord_a : Ord α]
   (arr aux : Array α)
-  (start₁ start₂ end₂ i k₁ k₂ chunkSize : ℕ)
+  (i k₁ k₂ chunkSize : ℕ)
 
-structure H₁ : Prop where
-  start₁_lt_start₂ : start₁ < start₂
-  start₂_lt_end₂ : start₂ < end₂
-  end₂_le_arr_size : end₂ ≤ arr.size
-  arr_size_eq_aux_size : arr.size = aux.size
+variable
+  (arr arr₁ arr₂ arr_i : Array α)
+  (low high low₁ high₁ low₂ high₂ low_i high_i ptr ptr₁ ptr₂ : ℕ)
+  (s : @Slice α arr low high)
+  (s₁ : @Slice α arr₁ low₁ high₁)
+  (s₂ : @Slice α arr₂ low₂ high₂)
+  (s_i : @Slice α arr_i low_i high_i)
 
-structure H₂ extends H₁ arr aux start₁ start₂ end₂ : Prop where
-  i_def : i = k₁ + k₂ - start₂
-  k₂_ge_start₂ : k₂ ≥ start₂
-  k₁_lt_start₂_succ : k₁ < start₂.succ
-  k₂_lt_end₂_succ : k₂ < end₂.succ
+structure Slice : Prop where
+  low_le_high : low ≤ high
+  high_le_size : high ≤ arr.size
 
-structure H₃ extends H₂ arr aux start₁ start₂ end₂ i k₁ k₂ : Prop where
-  k₁_k₂_in_bounds : k₁ < start₂ ∧ k₂ < end₂
-  k₁_lt_arr_size : k₁ < arr.size
-  k₂_lt_arr_size : k₂ < arr.size
-  i_lt_aux_size : i < aux.size
+structure SlicePtrExclusive extends Slice arr low high : Prop where
+  ptr_ge_low : ptr ≥ low
+  ptr_lt_high : ptr < high
+
+structure SlicePtrInclusive extends Slice arr low high : Prop where
+  ptr_ge_low : ptr ≥ low
+  ptr_le_high : ptr ≤ high
+
+def SlicePtrInclusive.mkExclusive
+    (s : SlicePtrInclusive arr low high ptr)
+    (ptr_lt_high : ptr < high)
+    : SlicePtrExclusive arr low high ptr :=
+  { s with ptr_lt_high }
+
+def Slice.sorted (arr : Array α) (low high : ℕ) : Prop :=
+  ∀ i₁ i₂ : Fin arr.size,
+    i₁.val.succ = i₂.val ∧ i₁ ≥ low ∧ i₂ < high →
+      Ord.compare arr[i₁] arr[i₂] != Ordering.gt
+
+def Nat.in_range (n : ℕ) (low high : ℕ) : Prop := n ≥ low ∧ n < high
+
+def Slice.le : Prop :=
+  ∀ (i₁ : Fin arr₁.size) (i₂ : Fin arr₂.size),
+      i₁.val.in_range low₁ high₁
+    ∧ i₂.val.in_range low₂ high₂
+    → Ord.compare arr₁[i₁] arr₂[i₂] != Ordering.gt
+
+structure H₁ (arr₁ arr₂ : Array α) (low₁ high₁ low₂ high₂ ptr₁ ptr₂ : ℕ) : Prop where
+  slice₁ : SlicePtrInclusive arr₁ low₁ high₁ ptr₁
+  slice₂ : SlicePtrInclusive arr₂ low₂ high₂ ptr₂
+  contiguous : high₁ = low₂
+  size_eq : arr₁.size = arr₂.size
+  slice₁_sorted : Slice.sorted arr₁ low₁ high₁
+  slice₂_sorted : Slice.sorted arr₂ low₂ high₂
+
+@[simp]
+lemma H₁.high₁_eq_low₂ (h₁ : H₁ arr₁ arr₂ low₁ low₂ high₁ high₂ ptr₁ ptr₂) : high₁ = low₂ := by
+  simp [h₁.contiguous]
+
+structure H₂ (arr₁ arr₂ : Array α) (low₁ high₁ low₂ high₂ ptr₁ ptr₂ i : ℕ)
+    extends H₁ arr₁ arr₂ low₁ high₁ low₂ high₂ ptr₁ ptr₂ : Prop where
+  slice_i : SlicePtrInclusive arr₂ low₁ high₂ i
+  i_def : i = ptr₁ + ptr₂ - high₁
+  slice_i_finished_sorted : Slice.sorted arr₂ low₁ i
+
+structure H₃ (i : ℕ) extends H₂ arr₁ arr₂ low₁ high₁ low₂ high₂ ptr₁ ptr₂ i : Prop where
+  slice₁_exclusive : SlicePtrExclusive arr₁ low₁ high₁ ptr₁
+  slice₂_exclusive : SlicePtrExclusive arr₂ low₂ high₂ ptr₂
+  slice_i_exclusive : SlicePtrExclusive arr₂ low₁ high₂ i
 
 def H₂.mkH₃
-    (h₂ : H₂ arr aux start₁ start₂ end₂ i k₁ k₂)
-    (k₁_k₂_in_bounds : k₁ < start₂ ∧ k₂ < end₂)
-    : H₃ arr aux start₁ start₂ end₂ i k₁ k₂ :=
-  have k₁_lt_arr_size := by
-    apply And.left at k₁_k₂_in_bounds
-    have start₂_lt_arr_size := Nat.lt_of_lt_le h₂.start₂_lt_end₂ h₂.end₂_le_arr_size
-    exact (Nat.lt_trans k₁_k₂_in_bounds start₂_lt_arr_size)
-  have k₂_lt_arr_size := by
-    apply And.right at k₁_k₂_in_bounds
-    exact (Nat.lt_of_lt_le k₁_k₂_in_bounds h₂.end₂_le_arr_size)
-  have i_lt_aux_size := by
-    have := h₂.i_def
-    have := h₂.arr_size_eq_aux_size
-    omega
+    (h₂ : H₂ arr₁ arr₂ low₁ high₁ low₂ high₂ ptr₁ ptr₂ i)
+    (ptr₁_ptr₂_in_bounds : ptr₁ < high₁ ∧ ptr₂ < high₂)
+    : H₃ arr₁ arr₂ low₁ high₁ low₂ high₂ ptr₁ ptr₂ i :=
+  have slice₁_exclusive := h₂.slice₁.mkExclusive ptr₁_ptr₂_in_bounds.left
+  have slice₂_exclusive := h₂.slice₂.mkExclusive ptr₁_ptr₂_in_bounds.right
+  have slice_i_exclusive : SlicePtrExclusive arr₂ low₁ high₂ i := by
+    have i_lt_high₂ : i < high₂ := by
+      have := h₂.i_def
+      omega
+    exact h₂.slice_i.mkExclusive i_lt_high₂
   { h₂ with
-    k₁_k₂_in_bounds
-    k₁_lt_arr_size
-    k₂_lt_arr_size
-    i_lt_aux_size
+    slice₁_exclusive,
+    slice₂_exclusive,
+    slice_i_exclusive
   }
 
 def H₃.nextLeft
@@ -67,11 +106,37 @@ def H₃.nextLeft
   have arr_size_eq_aux'_size : arr.size = aux'.size := by
     simp [aux']
     exact h₃.arr_size_eq_aux_size
+  have aux'_sorted : aux'.sorted_slice start₁ i.succ := by
+    have aux_sorted := h₃.aux_sorted
+    have aux_le_left := h₃.aux_le_left
+    rw [Array.sorted_slice]
+    intro c₁ c₂ in_bounds
+    if c₂_eq_i : c₂ = i then
+      have c₁_eq_k₁ : c₁ = k₁ := by sorry
+      subst c₂ c₁
+      sorry
+    else
+      sorry
+    -- if i₂_eq_i : c₁ = ⟨i, ⟩ then
+    --   subst c₁
+    --   intro in_bounds
+    --   rw [Array.slice_has_no_greater_element] at aux_le_left
+    --   exact aux_le_left ⟨i, sorry⟩ ⟨k₁, sorry⟩
+    -- else
+
+    --   sorry
+  have aux'_le_left : aux'.Array.slice_le start₁ i.succ arr k₁.succ start₂ := by
+    sorry
+  have aux'_le_right : aux'.Array.slice_le start₁ i.succ arr k₂ end₂ := by
+    sorry
   exact
     { h₃ with
       arr_size_eq_aux_size := arr_size_eq_aux'_size
       i_def := i_succ_def
       k₁_lt_start₂_succ := k₁_succ_lt_start₂_succ
+      aux_sorted := aux'_sorted
+      aux_le_left := aux'_le_left
+      aux_le_right := aux'_le_right
     }
 
 def H₃.nextRight
