@@ -11,11 +11,9 @@ variable
   (i k₁ k₂ chunkSize : ℕ)
 
 variable
-  (arr arr₁ arr₂ arr_i : Array α)
-  (low high low₁ high₁ low₂ high₂ low_i high_i ptr ptr₁ ptr₂ : ℕ)
+  (arr arr₁ arr₂ arr_i aux : Array α)
+  (low high low₁ high₁ low₂ high₂ ptr ptr₁ ptr₂ mid : ℕ)
   (s : @Slice α arr low high)
-  (s₁ : @Slice α arr₁ low₁ high₁)
-  (s₂ : @Slice α arr₂ low₂ high₂)
   (s_i : @Slice α arr_i low_i high_i)
 
 structure Slice : Prop where
@@ -49,38 +47,34 @@ def Slice.le : Prop :=
     ∧ i₂.val.in_range low₂ high₂
     → Ord.compare arr₁[i₁] arr₂[i₂] != Ordering.gt
 
-structure H₁ (arr₁ arr₂ : Array α) (low₁ high₁ low₂ high₂ ptr₁ ptr₂ : ℕ) : Prop where
-  slice₁ : SlicePtrInclusive arr₁ low₁ high₁ ptr₁
-  slice₂ : SlicePtrInclusive arr₂ low₂ high₂ ptr₂
-  contiguous : high₁ = low₂
-  size_eq : arr₁.size = arr₂.size
-  slice₁_sorted : Slice.sorted arr₁ low₁ high₁
-  slice₂_sorted : Slice.sorted arr₂ low₂ high₂
+structure H₁ (arr aux : Array α) (low mid high ptr₁ ptr₂ : ℕ) : Prop where
+  slice₁ : SlicePtrInclusive arr low mid ptr₁
+  slice₂ : SlicePtrInclusive arr mid high ptr₂
+  size_eq : arr.size = aux.size
+  slice₁_sorted : Slice.sorted arr low mid
+  slice₂_sorted : Slice.sorted arr mid high
 
-@[simp]
-lemma H₁.high₁_eq_low₂ (h₁ : H₁ arr₁ arr₂ low₁ low₂ high₁ high₂ ptr₁ ptr₂) : high₁ = low₂ := by
-  simp [h₁.contiguous]
+structure H₂ (arr aux : Array α) (low mid high ptr₁ ptr₂ i : ℕ)
+    extends H₁ arr aux low mid high ptr₁ ptr₂ : Prop where
+  slice_i : SlicePtrInclusive aux low high i
+  i_def : i = ptr₁ + ptr₂ - mid
+  slice_i_finished_sorted : Slice.sorted aux low i
 
-structure H₂ (arr₁ arr₂ : Array α) (low₁ high₁ low₂ high₂ ptr₁ ptr₂ i : ℕ)
-    extends H₁ arr₁ arr₂ low₁ high₁ low₂ high₂ ptr₁ ptr₂ : Prop where
-  slice_i : SlicePtrInclusive arr₂ low₁ high₂ i
-  i_def : i = ptr₁ + ptr₂ - high₁
-  slice_i_finished_sorted : Slice.sorted arr₂ low₁ i
-
-structure H₃ (i : ℕ) extends H₂ arr₁ arr₂ low₁ high₁ low₂ high₂ ptr₁ ptr₂ i : Prop where
-  slice₁_exclusive : SlicePtrExclusive arr₁ low₁ high₁ ptr₁
-  slice₂_exclusive : SlicePtrExclusive arr₂ low₂ high₂ ptr₂
-  slice_i_exclusive : SlicePtrExclusive arr₂ low₁ high₂ i
+structure H₃ (arr aux : Array α) (low mid high ptr₁ ptr₂ i : ℕ)
+    extends H₂ arr aux low mid high ptr₁ ptr₂ i : Prop where
+  slice₁_exclusive : SlicePtrExclusive arr low mid ptr₁
+  slice₂_exclusive : SlicePtrExclusive arr mid high ptr₂
+  slice_i_exclusive : SlicePtrExclusive aux low high i
 
 def H₂.mkH₃
-    (h₂ : H₂ arr₁ arr₂ low₁ high₁ low₂ high₂ ptr₁ ptr₂ i)
-    (ptr₁_ptr₂_in_bounds : ptr₁ < high₁ ∧ ptr₂ < high₂)
-    : H₃ arr₁ arr₂ low₁ high₁ low₂ high₂ ptr₁ ptr₂ i :=
-  have slice_i_exclusive : SlicePtrExclusive arr₂ low₁ high₂ i := by
-    have i_lt_high₂ : i < high₂ := by
+    (h₂ : H₂ arr aux low mid high ptr₁ ptr₂ i)
+    (ptr₁_ptr₂_in_bounds : ptr₁ < mid ∧ ptr₂ < high)
+    : H₃ arr aux low mid high ptr₁ ptr₂ i :=
+  have slice_i_exclusive : SlicePtrExclusive aux low high i := by
+    have i_lt_high : i < high := by
       have := h₂.i_def
       omega
-    exact h₂.slice_i.mkExclusive i_lt_high₂
+    exact h₂.slice_i.mkExclusive i_lt_high
   { h₂ with
     slice₁_exclusive := h₂.slice₁.mkExclusive ptr₁_ptr₂_in_bounds.left,
     slice₂_exclusive := h₂.slice₂.mkExclusive ptr₁_ptr₂_in_bounds.right,
