@@ -12,12 +12,12 @@ variable
   (i k₁ k₂ chunkSize : ℕ)
 
 variable
-  (arr arr₁ arr₂ arr_i aux : Array α)
-  (low high low₁ high₁ low₂ high₂ ptr ptr₁ ptr₂ mid : ℕ)
+  {arr arr₁ arr₂ arr_i aux : Array α}
+  {low high low₁ high₁ low₂ high₂ ptr ptr₁ ptr₂ mid : ℕ}
   (s : @Slice α arr low high)
   (s_i : @Slice α arr_i low_i high_i)
 
-structure Slice : Prop where
+structure Slice (arr : Array α) (low high : ℕ) : Prop where
   low_le_high : low ≤ high
   high_le_size : high ≤ arr.size
 
@@ -46,35 +46,26 @@ structure Slice : Prop where
 --     high_le_size := by rw [size_eq]; exact s.high_le_size
 --   }
 
-structure SlicePtrExclusive extends Slice arr low high : Prop where
+structure SlicePtrExclusive (arr : Array α) (low high : ℕ) (ptr : ℕ)
+    extends Slice arr low high : Prop where
   ptr_ge_low : ptr ≥ low
   ptr_lt_high : ptr < high
 
-structure SlicePtrInclusive extends Slice arr low high : Prop where
+structure SlicePtrInclusive (arr : Array α) (low high : ℕ) (ptr : ℕ)
+    extends Slice arr low high : Prop where
   ptr_ge_low : ptr ≥ low
   ptr_le_high : ptr ≤ high
 
 -- In a slice [a, b, c, d, e, >f<, g] with pointer at 'f', the left half is [a, b, c, d, e].
-def SlicePtrInclusive.left
-    {arr : Array α}
-    {low high ptr : ℕ}
-    (s : SlicePtrInclusive arr low high ptr)
-    : Slice arr low ptr :=
+def SlicePtrInclusive.left (s : SlicePtrInclusive arr low high ptr) : Slice arr low ptr :=
   { low_le_high := s.ptr_ge_low
     high_le_size := Nat.le_trans s.ptr_le_high s.high_le_size
   }
 
-def Slice.swap_arr
-    {arr aux : Array α}
-    (s : Slice arr low high)
-    (size_eq : arr.size = aux.size)
-    : Slice aux low high :=
-  { s with
-    high_le_size := by rw [← size_eq]; exact s.high_le_size
-  }
+def Slice.swap_arr (s : Slice arr low high) (size_eq : arr.size = aux.size) : Slice aux low high :=
+  { s with high_le_size := by rw [← size_eq]; exact s.high_le_size }
 
 def SlicePtrExclusive.swap_arr
-    {arr aux : Array α}
     (s : SlicePtrExclusive arr low high ptr)
     (size_eq : arr.size = aux.size)
     : SlicePtrExclusive aux low high ptr :=
@@ -83,7 +74,6 @@ def SlicePtrExclusive.swap_arr
   }
 
 def SlicePtrInclusive.swap_arr
-    {arr aux : Array α}
     (s : SlicePtrInclusive arr low high ptr)
     (size_eq : arr.size = aux.size)
     : SlicePtrInclusive aux low high ptr :=
@@ -92,8 +82,6 @@ def SlicePtrInclusive.swap_arr
   }
 
 def SlicePtrExclusive.next
-    {arr : Array α}
-    {low high ptr : ℕ}
     (s : SlicePtrExclusive arr low high ptr)
     : SlicePtrInclusive arr low high ptr.succ :=
   { s with
@@ -107,7 +95,7 @@ def SlicePtrInclusive.mkExclusive
     : SlicePtrExclusive arr low high ptr :=
   { s with ptr_lt_high }
 
-def Slice.sorted {arr : Array α} {low high : ℕ} (_s : Slice arr low high) : Prop :=
+def Slice.sorted (_s : Slice arr low high) : Prop :=
   ∀ i₁ i₂ : Fin arr.size,
     i₁.val.succ = i₂.val ∧ i₁ ≥ low ∧ i₂ < high →
       Ord.compare arr[i₁] arr[i₂] != Ordering.gt
@@ -116,14 +104,7 @@ def Nat.in_range (n : ℕ) (low high : ℕ) : Prop := n ≥ low ∧ n < high
 
 -- A slice, s₁, is less than or equal to a slice s₂ if no element of s₁ is greater
 -- than an element of s₂.
-def Slice.le
-    {arr₁ : Array α}
-    {low₁ high₁ : ℕ}
-    {arr₂ : Array α}
-    {low₂ high₂ : ℕ}
-    (_s₁ : Slice arr₁ low₁ high₁)
-    (_s₂ : Slice arr₂ low₂ high₂)
-    : Prop :=
+def Slice.le (_s₁ : Slice arr₁ low₁ high₁) (_s₂ : Slice arr₂ low₂ high₂) : Prop :=
   ∀ (i₁ : Fin arr₁.size) (i₂ : Fin arr₂.size),
       i₁.val.in_range low₁ high₁
     ∧ i₂.val.in_range low₂ high₂
@@ -198,58 +179,49 @@ def H₃.ptr₂_lt_arr_size (h₃ : H₃ arr aux low mid high ptr₁ ptr₂ i) :
 --     : (arr.set i a)[j] = arr[j] := by
 --   exact arr.data.eq_set_of_ne_index i_ne_j
 
--- If an array is modified, but the element changed is outside the slice on the
--- right, then none of the elements in the slice changed, thus it is still sorted.
-def Slice.sorted_outside_write_sorted
-    {arr : Array α}
-    {low high : ℕ}
-    (s : Slice arr low high)
-    (s_sorted : s.sorted)
-    {arr' : Array α}
-    {i : Fin arr.size}
-    {a : α}
-    {i_ge_high : i ≥ high}
-    {arr'_def : arr' = arr.set i a}
-    : have s' : Slice arr' low high :=
-        { low_le_high := s.low_le_high,
-          high_le_size := by simp [arr'_def]; exact s.high_le_size
-        }
-      s'.sorted := by
-  intro s'
-  unfold Slice.sorted
-  intro i₁' i₂' adjacent_in_bounds'
-  unfold Slice.sorted at s_sorted
-  have i₁'_lt_arr_size : i₁' < arr.size := by omega
-  have i₂'_lt_arr_size : i₂' < arr.size := by omega
-  let i₁ : Fin arr.size := ⟨i₁', i₁'_lt_arr_size⟩
-  let i₂ : Fin arr.size := ⟨i₂', i₂'_lt_arr_size⟩
-  have i₁'_eq_i₁ : i₁'.val = i₁.val := by rfl
-  have i₂'_eq_i₂ : i₂'.val = i₂.val := by rfl
-  rw [i₁'_eq_i₁, i₂'_eq_i₂] at adjacent_in_bounds'
-  have h := s_sorted i₁ i₂ adjacent_in_bounds'
-  simp [arr'_def]
-  have i_ne_i₁' : i.val ≠ i₁' := by omega
-  have i_ne_i₂' : i.val ≠ i₂' := by omega
-  have set_get₁ := arr.get_set_ne i a i₁'_lt_arr_size i_ne_i₁'
-  have set_get₂ := arr.get_set_ne i a i₂'_lt_arr_size i_ne_i₂'
-  rw [set_get₁, set_get₂]
-  exact h
+-- -- If an array is modified, but the element changed is outside the slice on the
+-- -- right, then none of the elements in the slice changed, thus it is still sorted.
+-- def Slice.sorted_outside_write_sorted
+--     {arr : Array α}
+--     {low high : ℕ}
+--     (s : Slice arr low high)
+--     (s_sorted : s.sorted)
+--     {arr' : Array α}
+--     {i : Fin arr.size}
+--     {a : α}
+--     {i_ge_high : i ≥ high}
+--     {arr'_def : arr' = arr.set i a}
+--     : have s' : Slice arr' low high :=
+--         { low_le_high := s.low_le_high,
+--           high_le_size := by simp [arr'_def]; exact s.high_le_size
+--         }
+--       s'.sorted := by
+--   intro s'
+--   unfold Slice.sorted
+--   intro i₁' i₂' adjacent_in_bounds'
+--   unfold Slice.sorted at s_sorted
+--   have i₁'_lt_arr_size : i₁' < arr.size := by omega
+--   have i₂'_lt_arr_size : i₂' < arr.size := by omega
+--   let i₁ : Fin arr.size := ⟨i₁', i₁'_lt_arr_size⟩
+--   let i₂ : Fin arr.size := ⟨i₂', i₂'_lt_arr_size⟩
+--   have i₁'_eq_i₁ : i₁'.val = i₁.val := by rfl
+--   have i₂'_eq_i₂ : i₂'.val = i₂.val := by rfl
+--   rw [i₁'_eq_i₁, i₂'_eq_i₂] at adjacent_in_bounds'
+--   have h := s_sorted i₁ i₂ adjacent_in_bounds'
+--   simp [arr'_def]
+--   have i_ne_i₁' : i.val ≠ i₁' := by omega
+--   have i_ne_i₂' : i.val ≠ i₂' := by omega
+--   have set_get₁ := arr.get_set_ne i a i₁'_lt_arr_size i_ne_i₁'
+--   have set_get₂ := arr.get_set_ne i a i₂'_lt_arr_size i_ne_i₂'
+--   rw [set_get₁, set_get₂]
+--   exact h
 
-def Slice.le_elem
-    {arr : Array α}
-    {low high : ℕ}
-    (s : Slice arr low high)
-    (a : α)
-    : Prop :=
-  ∀ i, (in_bounds : i ≥ low ∧ i < high) →
+def Slice.le_elem (s : Slice arr low high) (a : α) : Prop :=
+  ∀ (i : ℕ) (in_bounds : i ≥ low ∧ i < high),
     have high_le_size := s.high_le_size
     Ord.compare arr[i] a != Ordering.gt
 
 def Slice.le_elem_of_le
-    {arr₁ : Array α}
-    {low₁ high₁ : ℕ}
-    {arr₂ : Array α}
-    {low₂ high₂ ptr : ℕ}
     (s₁ : Slice arr₁ low₁ high₁)
     {s₂ : Slice arr₂ low₂ high₂}
     (s₁_le_s₂ : s₁.le s₂)
@@ -258,7 +230,7 @@ def Slice.le_elem_of_le
       s₁.le_elem arr₂[ptr] := by
   intro high_le_size
   unfold Slice.le_elem
-  intros i in_bounds high_le_size
+  intro i in_bounds high_le_size
   unfold Slice.le at s₁_le_s₂
   have i_lt_arr₁_size : i < arr₁.size := by omega
   have ptr_lt_arr₂_size : ptr < arr₂.size := by omega
@@ -270,15 +242,12 @@ def Slice.le_elem_of_le
 set_option pp.proofs true
 
 def Slice.sorted_after_sorted_push
-    {arr : Array α}
-    {low high : ℕ}
-    {a : α}
     (s : Slice arr low high)
     (s_sorted : s.sorted)
     (high_lt_size : high < arr.size)
     (arr'_def : arr' = arr.set ⟨high, high_lt_size⟩ a)
     (s' : Slice arr' low high.succ)
-    (s_le_a : s.le_elem a)
+    (s_le_elem_a : s.le_elem a)
     : s'.sorted := by
   unfold Slice.sorted
   intro i₁' i₂' adjacent_in_bounds'
@@ -289,8 +258,8 @@ def Slice.sorted_after_sorted_push
     have i₁'_same := arr.get_set_ne ⟨high, high_lt_size⟩ a i₁'_lt_arr_size high_ne_i₁'
     rw [i₁'_same]
     have in_bounds : i₁' ≥ low ∧ i₁' < high := by omega
-    unfold Slice.le_elem at s_le_a
-    exact s_le_a i₁' in_bounds
+    unfold Slice.le_elem at s_le_elem_a
+    exact s_le_elem_a i₁' in_bounds
   . unfold Slice.sorted at s_sorted
     have i₁'_lt_arr_size : i₁'.val < arr.size := by omega
     have i₂'_lt_arr_size : i₂'.val < arr.size := by omega
