@@ -197,10 +197,10 @@ def Slice.le_elem_of_le
   unfold Slice.le at s₁_le_s₂
   have i_lt_arr₁_size : i < arr₁.size := by omega
   have ptr_lt_arr₂_size : ptr < arr₂.size := by omega
-  have h4 : i.in_range low₁ high₁ ∧ ptr.in_range low₂ high₂ := by
+  have h : i.in_range low₁ high₁ ∧ ptr.in_range low₂ high₂ := by
     simp [Nat.in_range]
     omega
-  exact s₁_le_s₂ ⟨i, i_lt_arr₁_size⟩ ⟨ptr, ptr_lt_arr₂_size⟩ h4
+  exact s₁_le_s₂ ⟨i, i_lt_arr₁_size⟩ ⟨ptr, ptr_lt_arr₂_size⟩ h
 
 set_option pp.proofs true
 
@@ -215,8 +215,8 @@ def Slice.sorted_after_sorted_push
   unfold Slice.sorted
   intro i₁' i₂' adjacent_in_range'
   simp [Nat.adjacent_in_range] at adjacent_in_range'
-  by_cases i₂'_eq_high_succ : i₂' = high
-  . simp [i₂'_eq_high_succ, arr'_def]
+  by_cases i₂'_eq_high : i₂' = high
+  . simp [i₂'_eq_high, arr'_def]
     have i₁'_lt_arr_size : i₁'.val < arr.size := by omega
     have high_ne_i₁' : high ≠ i₁' := by omega
     have i₁'_same := arr.get_set_ne ⟨high, high_lt_size⟩ a i₁'_lt_arr_size high_ne_i₁'
@@ -238,7 +238,7 @@ def Slice.sorted_after_sorted_push
     have i₁_def : i₁ = ⟨i₁', i₁'_lt_arr_size⟩ := by rfl
     have i₁_eq_i₁' : i₁' = i₁.val := by rw [i₁_def]
     have adjacent_in_range : i₁.val.adjacent_in_range i₂ low high := by
-      simp [Nat.adjacent_in_range, i₂'_eq_high_succ]
+      simp [Nat.adjacent_in_range, i₂'_eq_high]
       omega
     exact s_sorted i₁ i₂ adjacent_in_range
 
@@ -287,17 +287,13 @@ def H₃.nextLeft
       slice_i.left
       s_le_arr_ptr₁
   have slice_i_left_le_right₁ : slice_i.left.le slice₁.right :=
-    have i_lt_aux_size : i < aux.size := sorry
-    have ptr₂_lt_arr_size : ptr₁ < arr.size := sorry
-    have s₁' : Slice aux' low i.succ := sorry
-    have s₂' : Slice arr ptr₁.succ mid := sorry
     h₃.slice_i.left.le_of_swap_ends_le
       h₃.slice_i_left_le_right₁
-      i_lt_aux_size
-      ptr₂_lt_arr_size
+      h₃.i_lt_aux_size
+      h₃.ptr₁_lt_arr_size
       aux'_def
-      s₁'
-      s₂'
+      slice_i.left
+      slice₁.right
   have slice_i_left_le_right₂ : slice_i.left.le h₃.slice₂.right := sorry
   exact {
     h₃ with
