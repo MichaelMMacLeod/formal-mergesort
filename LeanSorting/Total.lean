@@ -5,6 +5,9 @@ theorem Nat.lt_of_lt_le {a b c : ℕ} (h : a < b) : b ≤ c → a < c := by omeg
 theorem Nat.lt_of_le_lt {a b c : ℕ} (h : a ≤ b) : b < c → a < c := by omega
 theorem Nat.sub_succ_lt_sub_of_lt {a b : ℕ} (h : a < b) : b - a.succ < b - a := by omega
 
+def Nat.in_range (n : ℕ) (low high : ℕ) : Prop := n ≥ low ∧ n < high
+def Nat.adjacent_in_range (n m low high : ℕ) : Prop := n.succ = m ∧ n ≥ low ∧ m < high
+
 variable
   {α : Type}
   [ord_a : Ord α]
@@ -20,31 +23,6 @@ variable
 structure Slice (arr : Array α) (low high : ℕ) : Prop where
   low_le_high : low ≤ high
   high_le_size : high ≤ arr.size
-
--- def Slice.extend_succ
---     {arr : Array α}
---     {low high : ℕ}
---     (s : Slice arr low high)
---     (high'_le_size : high.succ ≤ arr.size)
---     : Slice arr low high' :=
-
--- def Slice.extend_high
---     {arr : Array α}
---     {low high : ℕ}
---     (s : Slice arr low high)
---     {high' : ℕ}
---     (high_le_high' : high ≤ high')
---     (high'_le_size : high' ≤ arr.size)
---     : Slice arr low high' :=
---   { s with high_le_size := high'_le_size }
-
--- def Slice.swap_arr
---     (s : Slice arr low high)
---     (size_eq : aux.size = arr.size)
---     : Slice aux low high :=
---   { s with
---     high_le_size := by rw [size_eq]; exact s.high_le_size
---   }
 
 structure SlicePtrExclusive (arr : Array α) (low high : ℕ) (ptr : ℕ)
     extends Slice arr low high : Prop where
@@ -62,7 +40,10 @@ def SlicePtrInclusive.left (s : SlicePtrInclusive arr low high ptr) : Slice arr 
     high_le_size := Nat.le_trans s.ptr_le_high s.high_le_size
   }
 
-def Slice.swap_arr (s : Slice arr low high) (size_eq : arr.size = aux.size) : Slice aux low high :=
+def Slice.swap_arr
+    (s : Slice arr low high)
+    (size_eq : arr.size = aux.size)
+    : Slice aux low high :=
   { s with high_le_size := by rw [← size_eq]; exact s.high_le_size }
 
 def SlicePtrExclusive.swap_arr
@@ -96,11 +77,9 @@ def SlicePtrInclusive.mkExclusive
   { s with ptr_lt_high }
 
 def Slice.sorted (_s : Slice arr low high) : Prop :=
-  ∀ i₁ i₂ : Fin arr.size,
-    i₁.val.succ = i₂.val ∧ i₁ ≥ low ∧ i₂ < high →
+  ∀ (i₁ i₂ : Fin arr.size)
+    (_adjacent_in_range : i₁.val.adjacent_in_range i₂ low high),
       Ord.compare arr[i₁] arr[i₂] != Ordering.gt
-
-def Nat.in_range (n : ℕ) (low high : ℕ) : Prop := n ≥ low ∧ n < high
 
 -- A slice, s₁, is less than or equal to a slice s₂ if no element of s₁ is greater
 -- than an element of s₂.
@@ -157,27 +136,6 @@ def H₃.ptr₁_lt_arr_size (h₃ : H₃ arr aux low mid high ptr₁ ptr₂ i) :
 def H₃.ptr₂_lt_arr_size (h₃ : H₃ arr aux low mid high ptr₁ ptr₂ i) : ptr₂ < arr.size :=
   have s := h₃.slice₂_exclusive
   Nat.le_trans s.ptr_lt_high s.high_le_size
-
--- def List.eq_set_of_ne_index
---     {xs : List α}
---     {i : Fin xs.length}
---     {j : Fin xs.length}
---     {x : α}
---     (i_ne_j : i != j)
---     : (xs.set i x).get ⟨j, by simp⟩ = xs.get j := by
---   by_cases h : i = j
---   . absurd i_ne_j
---     simp [h]
---   .
-
--- def Array.eq_set_of_ne_index
---     {arr : Array α}
---     {i : Fin arr.size}
---     {j : Fin arr.size}
---     {a : α}
---     (i_ne_j : i != j)
---     : (arr.set i a)[j] = arr[j] := by
---   exact arr.data.eq_set_of_ne_index i_ne_j
 
 -- -- If an array is modified, but the element changed is outside the slice on the
 -- -- right, then none of the elements in the slice changed, thus it is still sorted.
@@ -250,35 +208,34 @@ def Slice.sorted_after_sorted_push
     (s_le_elem_a : s.le_elem a)
     : s'.sorted := by
   unfold Slice.sorted
-  intro i₁' i₂' adjacent_in_bounds'
+  intro i₁' i₂' adjacent_in_range'
+  simp [Nat.adjacent_in_range] at adjacent_in_range'
   by_cases i₂'_eq_high_succ : i₂' = high
   . simp [i₂'_eq_high_succ, arr'_def]
     have i₁'_lt_arr_size : i₁'.val < arr.size := by omega
     have high_ne_i₁' : high ≠ i₁' := by omega
     have i₁'_same := arr.get_set_ne ⟨high, high_lt_size⟩ a i₁'_lt_arr_size high_ne_i₁'
     rw [i₁'_same]
-    have in_bounds : i₁' ≥ low ∧ i₁' < high := by omega
+    have in_bounds : i₁'.val.in_range low high := by simp [Nat.in_range]; omega
     unfold Slice.le_elem at s_le_elem_a
     exact s_le_elem_a i₁' in_bounds
   . unfold Slice.sorted at s_sorted
     have i₁'_lt_arr_size : i₁'.val < arr.size := by omega
     have i₂'_lt_arr_size : i₂'.val < arr.size := by omega
-    let i₁ : Fin arr.size := ⟨i₁', i₁'_lt_arr_size⟩
-    let i₂ : Fin arr.size := ⟨i₂', i₂'_lt_arr_size⟩
-    have i₁_def : i₁ = ⟨i₁', i₁'_lt_arr_size⟩ := by rfl
-    have i₁_eq_i₁' : i₁' = i₁.val := by rw [i₁_def]
-    have v := s_sorted i₁ i₂
-    have adjacent_in_bounds : i₁.val.succ = i₂ ∧ ↑i₁ ≥ low ∧ ↑i₂ < high := by
-      simp [i₂'_eq_high_succ]
-      omega
-    have v2 := v adjacent_in_bounds
     simp [arr'_def]
     have high_ne_i₁' : high ≠ i₁' := by omega
     have high_ne_i₂' : high ≠ i₂' := by omega
     have i₁'_same := arr.get_set_ne ⟨high, high_lt_size⟩ a i₁'_lt_arr_size high_ne_i₁'
     have i₂'_same := arr.get_set_ne ⟨high, high_lt_size⟩ a i₂'_lt_arr_size high_ne_i₂'
     simp [i₁'_same, i₂'_same]
-    exact v2
+    let i₁ : Fin arr.size := ⟨i₁', i₁'_lt_arr_size⟩
+    let i₂ : Fin arr.size := ⟨i₂', i₂'_lt_arr_size⟩
+    have i₁_def : i₁ = ⟨i₁', i₁'_lt_arr_size⟩ := by rfl
+    have i₁_eq_i₁' : i₁' = i₁.val := by rw [i₁_def]
+    have adjacent_in_range : i₁.val.adjacent_in_range i₂ low high := by
+      simp [Nat.adjacent_in_range, i₂'_eq_high_succ]
+      omega
+    exact s_sorted i₁ i₂ adjacent_in_range
 
 def H₃.nextLeft
     (h₃ : H₃ arr aux low mid high ptr₁ ptr₂ i)
