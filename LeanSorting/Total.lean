@@ -235,6 +235,38 @@ def Slice.sorted_outside_write_sorted
   rw [set_get₁, set_get₂]
   exact h
 
+def Slice.le_elem
+    {arr : Array α}
+    {low high : ℕ}
+    (s : Slice arr low high)
+    (a : α)
+    : Prop :=
+  ∀ i, (in_bounds : i ≥ low ∧ i < high) →
+    have high_le_size := s.high_le_size
+    Ord.compare arr[i] a != Ordering.gt
+
+def Slice.le_elem_of_le
+    {arr₁ : Array α}
+    {low₁ high₁ : ℕ}
+    {arr₂ : Array α}
+    {low₂ high₂ ptr : ℕ}
+    (s₁ : Slice arr₁ low₁ high₁)
+    {s₂ : Slice arr₂ low₂ high₂}
+    (s₁_le_s₂ : s₁.le s₂)
+    (ptr_in_bounds₂ : ptr ≥ low₂ ∧ ptr < high₂)
+    : have high_le_size := s₂.high_le_size
+      s₁.le_elem arr₂[ptr] := by
+  intro high_le_size
+  unfold Slice.le_elem
+  intros i in_bounds high_le_size
+  unfold Slice.le at s₁_le_s₂
+  have i_lt_arr₁_size : i < arr₁.size := by omega
+  have ptr_lt_arr₂_size : ptr < arr₂.size := by omega
+  have h4 : i.in_range low₁ high₁ ∧ ptr.in_range low₂ high₂ := by
+    simp [Nat.in_range]
+    omega
+  exact s₁_le_s₂ ⟨i, i_lt_arr₁_size⟩ ⟨ptr, ptr_lt_arr₂_size⟩ h4
+
 set_option pp.proofs true
 
 def Slice.sorted_after_sorted_push
@@ -246,8 +278,7 @@ def Slice.sorted_after_sorted_push
     (high_lt_size : high < arr.size)
     (arr'_def : arr' = arr.set ⟨high, high_lt_size⟩ a)
     (s' : Slice arr' low high.succ)
-    (a_not_smaller :
-      ∀ i, (in_bounds : i ≥ low ∧ i < high) → Ord.compare arr[i] a != Ordering.gt)
+    (s_le_a : s.le_elem a)
     : s'.sorted := by
   unfold Slice.sorted
   intro i₁' i₂' adjacent_in_bounds'
@@ -258,7 +289,8 @@ def Slice.sorted_after_sorted_push
     have i₁'_same := arr.get_set_ne ⟨high, high_lt_size⟩ a i₁'_lt_arr_size high_ne_i₁'
     rw [i₁'_same]
     have in_bounds : i₁' ≥ low ∧ i₁' < high := by omega
-    exact a_not_smaller i₁' in_bounds
+    unfold Slice.le_elem at s_le_a
+    exact s_le_a i₁' in_bounds
   . unfold Slice.sorted at s_sorted
     have i₁'_lt_arr_size : i₁'.val < arr.size := by omega
     have i₂'_lt_arr_size : i₂'.val < arr.size := by omega
@@ -286,10 +318,11 @@ def H₃.nextLeft
       have ptr₂_lt_arr_size := h₃.ptr₂_lt_arr_size
       Ord.compare arr[ptr₁] arr[ptr₂] != Ordering.gt)
     : have ptr₁_lt_arr_size := h₃.ptr₁_lt_arr_size
-      have aux' := aux.set ⟨i, h₃.i_lt_aux_size⟩ arr[ptr₁]
+      let aux' := aux.set ⟨i, h₃.i_lt_aux_size⟩ arr[ptr₁]
       H₂ arr aux' low mid high ptr₁.succ ptr₂ i.succ
     := by
   intro ptr₁_lt_arr_size aux'
+  have aux'_def : aux' = aux.set ⟨i, h₃.i_lt_aux_size⟩ arr[ptr₁] := by rfl
   have slice₁ := h₃.slice₁_exclusive.next
   have size_eq : arr.size = aux'.size := by simp [aux']; exact h₃.size_eq
   have aux_size_eq : aux.size = aux'.size := by simp [aux']
@@ -299,31 +332,17 @@ def H₃.nextLeft
     have := h₃.i_def
     have := h₃.slice₂.ptr_ge_low
     omega
-  -- have slice_i_finished_sorted : Slice.sorted aux' low i.succ := by
-  --   unfold Slice.sorted
-  --   intro i₁ i₂ adjacent_in_bounds
-  have slice_i_left_sorted : slice_i.left.sorted := by
-    -- have slice_i_left_sorted : (h₃.slice_i.left.swap_arr aux_size_eq).sorted := by
-    --   have slice_i_left_sorted_old := h₃.slice_i_left_sorted
-    --   unfold Slice.swap_arr Slice.sorted
-    --   unfold Slice.sorted at slice_i_left_sorted_old
-
-    -- unfold Slice.sorted
-    intro i₁ i₂ adjacent_in_bounds
-    by_cases i₂_ne_i : i₂.val ≠ i.succ
-    . exact slice_i.left.sorted_outside_write_sorted
-        -- have : i ≥ high := by
-
-
-    . sorry
-    -- if i₂_lt_i : i₂ < i then
-
-    --   have slice_i_left_sorted := h₃.slice_i_left_sorted
-    --   unfold Slice.sorted at slice_i_left_sorted
-    --   have v := slice_i_left_sorted i₁ i₂
-
-    -- else
-    --   sorry
+  have slice_i_left_sorted : slice_i.left.sorted :=
+    have ptr₁_in_bounds : ptr₁ ≥ low ∧ ptr₁ < mid := by
+      simp [h₃.slice₁.ptr_ge_low, h₃.slice₁_exclusive.ptr_lt_high]
+    have s_le_arr_ptr₁ : h₃.slice_i.left.le_elem arr[ptr₁] :=
+      h₃.slice_i.left.le_elem_of_le h₃.slice_i_left_le₁ ptr₁_in_bounds
+    h₃.slice_i.left.sorted_after_sorted_push
+      h₃.slice_i_left_sorted
+      h₃.i_lt_aux_size
+      aux'_def
+      slice_i.left
+      s_le_arr_ptr₁
   have slice_i_left_le₁ : slice_i.left.le slice₁.toSlice := sorry
   have slice_i_left_le₂ : slice_i.left.le h₃.slice₂.toSlice := sorry
   exact {
