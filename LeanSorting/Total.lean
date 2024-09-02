@@ -40,6 +40,11 @@ def SlicePtrInclusive.left (s : SlicePtrInclusive arr low high ptr) : Slice arr 
     high_le_size := Nat.le_trans s.ptr_le_high s.high_le_size
   }
 
+def SlicePtrInclusive.right (s : SlicePtrInclusive arr low high ptr) : Slice arr ptr high :=
+  { low_le_high := s.ptr_le_high
+    high_le_size := s.high_le_size
+  }
+
 def Slice.swap_arr
     (s : Slice arr low high)
     (size_eq : arr.size = aux.size)
@@ -101,8 +106,8 @@ structure H₂ (arr aux : Array α) (low mid high ptr₁ ptr₂ i : ℕ)
   slice_i : SlicePtrInclusive aux low high i
   i_def : i = ptr₁ + ptr₂ - mid
   slice_i_left_sorted : slice_i.left.sorted
-  slice_i_left_le₁ : slice_i.left.le slice₁.toSlice
-  slice_i_left_le₂ : slice_i.left.le slice₂.toSlice
+  slice_i_left_le_right₁ : slice_i.left.le slice₁.right
+  slice_i_left_le_right₂ : slice_i.left.le slice₂.right
 
 structure H₃ (arr aux : Array α) (low mid high ptr₁ ptr₂ i : ℕ)
     extends H₂ arr aux low mid high ptr₁ ptr₂ i : Prop where
@@ -237,6 +242,18 @@ def Slice.sorted_after_sorted_push
       omega
     exact s_sorted i₁ i₂ adjacent_in_range
 
+def Slice.le_of_swap_ends_le
+    {s₁ : Slice arr₁ low₁ high₁}
+    {s₂ : Slice arr₂ low₂ high₂}
+    (s₁_le_s₂ : s₁.le s₂)
+    (high₁_lt_arr₁_size : high₁ < arr₁.size)
+    (low₂_lt_arr₂_size : low₂ < arr₂.size)
+    (arr₁'_def : arr₁' = arr₁.set ⟨high₁, high₁_lt_arr₁_size⟩ arr₂[low₂])
+    (s₁' : Slice arr₁' low₁ high₁.succ)
+    (s₂' : Slice arr₂ low₂.succ high₂)
+    : s₁'.le s₂' := by
+  sorry
+
 def H₃.nextLeft
     (h₃ : H₃ arr aux low mid high ptr₁ ptr₂ i)
     (arr_ptr₁_le_arr_ptr₂ :
@@ -259,18 +276,29 @@ def H₃.nextLeft
     have := h₃.slice₂.ptr_ge_low
     omega
   have slice_i_left_sorted : slice_i.left.sorted :=
-    have ptr₁_in_bounds : ptr₁ ≥ low ∧ ptr₁ < mid := by
+    have ptr₁_in_bounds : ptr₁ ≥ ptr₁ ∧ ptr₁ < mid := by
       simp [h₃.slice₁.ptr_ge_low, h₃.slice₁_exclusive.ptr_lt_high]
     have s_le_arr_ptr₁ : h₃.slice_i.left.le_elem arr[ptr₁] :=
-      h₃.slice_i.left.le_elem_of_le h₃.slice_i_left_le₁ ptr₁_in_bounds
+      h₃.slice_i.left.le_elem_of_le h₃.slice_i_left_le_right₁ ptr₁_in_bounds
     h₃.slice_i.left.sorted_after_sorted_push
       h₃.slice_i_left_sorted
       h₃.i_lt_aux_size
       aux'_def
       slice_i.left
       s_le_arr_ptr₁
-  have slice_i_left_le₁ : slice_i.left.le slice₁.toSlice := sorry
-  have slice_i_left_le₂ : slice_i.left.le h₃.slice₂.toSlice := sorry
+  have slice_i_left_le_right₁ : slice_i.left.le slice₁.right :=
+    have i_lt_aux_size : i < aux.size := sorry
+    have ptr₂_lt_arr_size : ptr₁ < arr.size := sorry
+    have s₁' : Slice aux' low i.succ := sorry
+    have s₂' : Slice arr ptr₁.succ mid := sorry
+    h₃.slice_i.left.le_of_swap_ends_le
+      h₃.slice_i_left_le_right₁
+      i_lt_aux_size
+      ptr₂_lt_arr_size
+      aux'_def
+      s₁'
+      s₂'
+  have slice_i_left_le_right₂ : slice_i.left.le h₃.slice₂.right := sorry
   exact {
     h₃ with
     slice₁,
@@ -278,8 +306,8 @@ def H₃.nextLeft
     slice_i,
     i_def,
     slice_i_left_sorted,
-    slice_i_left_le₁,
-    slice_i_left_le₂,
+    slice_i_left_le_right₁,
+    slice_i_left_le_right₂,
   }
   -- have i_succ_def : i.succ = k₁.succ + k₂ - start₂ := by
   --   have := h₃.i_def
