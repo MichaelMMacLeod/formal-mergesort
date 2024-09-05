@@ -86,6 +86,29 @@ def Slice.sorted (_s : Slice arr low high) : Prop :=
     (_adjacent_in_range : i₁.val.adjacent_in_range i₂ low high),
       Ord.compare arr[i₁] arr[i₂] != Ordering.gt
 
+def Slice.sorted₂ {arr : Array α} {low high : ℕ} (s : Slice arr low high) : Prop :=
+  (low_succ_lt_high : low.succ < high) →
+    let high_le_size := s.high_le_size
+    let s' : Slice arr low.succ high := {
+      low_le_high := by omega
+      high_le_size := by omega
+    }
+    let x := arr[low]
+    let y := arr[low.succ]
+    let le := Ord.compare x y != Ordering.gt
+    le ∧ Slice.sorted₂ s'
+
+theorem Slice.sorted_of_sorted₂ : s.sorted₂ → s.sorted := by
+  sorry
+
+theorem Slice.sorted₂_of_sorted : s.sorted → s.sorted₂ := by
+  sorry
+
+theorem Slice.sorted_iff_sorted₂ : s.sorted ↔ s.sorted₂ := by
+  apply Iff.intro
+  . exact s.sorted₂_of_sorted
+  . exact s.sorted_of_sorted₂
+
 -- A slice, s₁, is less than or equal to a slice s₂ if no element of s₁ is greater
 -- than an element of s₂.
 def Slice.le (_s₁ : Slice arr₁ low₁ high₁) (_s₂ : Slice arr₂ low₂ high₂) : Prop :=
@@ -184,6 +207,11 @@ def Slice.le_elem (s : Slice arr low high) (a : α) : Prop :=
     have high_le_size := s.high_le_size
     Ord.compare arr[i] a != Ordering.gt
 
+def Slice.ge_elem (s : Slice arr low high) (a : α) : Prop :=
+  ∀ (i : ℕ) (in_bounds : i ≥ low ∧ i < high),
+    have high_le_size := s.high_le_size
+    Ord.compare a arr[i] != Ordering.gt
+
 def Slice.le_elem_of_le
     (s₁ : Slice arr₁ low₁ high₁)
     {s₂ : Slice arr₂ low₂ high₂}
@@ -201,6 +229,37 @@ def Slice.le_elem_of_le
     simp [Nat.in_range]
     omega
   exact s₁_le_s₂ ⟨i, i_lt_arr₁_size⟩ ⟨ptr, ptr_lt_arr₂_size⟩ h
+
+def Slice.ge_elem_of_sorted
+    (s : Slice arr low high)
+    (s_sorted : s.sorted)
+    (i : ℕ)
+    (in_range : i.in_range low high)
+    (s' : Slice arr i.succ high)
+    : by unfold Nat.in_range at in_range
+         have high_le_size := s.high_le_size
+         exact s'.ge_elem arr[i]
+    := by
+  intro high_le_size
+  rw [Slice.sorted_iff_sorted₂] at s_sorted
+  unfold Slice.sorted₂ at s_sorted
+  unfold Slice.ge_elem
+  intro i' i'_in_range high_le_size'
+  induction i' with
+  | zero =>
+    apply And.left at i'_in_range
+    contradiction
+  | succ n ih =>
+    
+  -- have : low.succ < high := by omega
+  -- unfold Slice.ge_elem Slice.sorted at *
+  -- intro i' i'_in_range
+  -- intro high_le_size'
+  -- have i'_lt_arr_size : i' < arr.size := by omega
+  -- have i₂ : Fin arr.size := ⟨i', i'_lt_arr_size⟩
+  -- have ih := (fun i₁ => s_sorted i₁ i₂)
+  -- have i_lt_arr_size : i < arr.size := by omega
+  -- have v := ih ⟨i, i_lt_arr_size⟩
 
 set_option pp.proofs true
 
@@ -242,17 +301,61 @@ def Slice.sorted_after_sorted_push
       omega
     exact s_sorted i₁ i₂ adjacent_in_range
 
+def SlicePtrInclusive.sorted_of_right_sorted
+    (s : SlicePtrInclusive arr low high ptr)
+    (s_sorted : s.sorted)
+    : s.right.sorted := by
+  unfold Slice.sorted at *
+  intro i₁ i₂ adjacent_in_range
+  have adjacent_in_range' : i₁.val.adjacent_in_range i₂ low high := by
+    unfold Nat.adjacent_in_range at *
+    have := s.ptr_ge_low
+    omega
+  exact s_sorted i₁ i₂ adjacent_in_range'
+
 def Slice.le_of_swap_ends_le
-    {s₁ : Slice arr₁ low₁ high₁}
-    {s₂ : Slice arr₂ low₂ high₂}
-    (s₁_le_s₂ : s₁.le s₂)
+    {aux : Slice arr₁ low₁ high₁}
+    {arr : Slice arr₂ low₂ high₂}
+    (arr_sorted : arr.sorted)
+    (aux_le_arr : aux.le arr)
     (high₁_lt_arr₁_size : high₁ < arr₁.size)
     (low₂_lt_arr₂_size : low₂ < arr₂.size)
     (arr₁'_def : arr₁' = arr₁.set ⟨high₁, high₁_lt_arr₁_size⟩ arr₂[low₂])
     (s₁' : Slice arr₁' low₁ high₁.succ)
     (s₂' : Slice arr₂ low₂.succ high₂)
+    (size_eq : arr₂.size = arr₁.size)
     : s₁'.le s₂' := by
-  sorry
+  unfold Slice.le
+  intro i₁' i₂' i₂'_i₂'_in_range
+  unfold Nat.in_range at i₂'_i₂'_in_range
+  unfold Slice.le at aux_le_arr
+  by_cases h : i₁' = high₁
+  . simp [h, arr₁'_def]
+    rw [Slice.sorted] at arr_sorted
+    have low₂_in_range : low₂.in_range low₂ high₂ := by
+      simp [Nat.in_range]
+      omega
+    have x := arr.ge_elem_of_sorted arr_sorted low₂ low₂_in_range s₂'
+    simp [Slice.ge_elem] at x
+    have i₂'_in_range : low₂ + 1 ≤ ↑i₂' ∧ ↑i₂' < high₂ := by omega
+    have x2 := x i₂' i₂'_in_range
+    exact x2
+  . have i₁'_lt_arr₁_size : i₁'.val < arr₁.size := by omega
+    have i₂'_lt_arr₂_size : i₂'.val < arr₂.size := by omega
+    let i₁ : Fin arr₁.size := ⟨i₁', i₁'_lt_arr₁_size⟩
+    let i₂ : Fin arr₂.size := ⟨i₂', i₂'_lt_arr₂_size⟩
+    simp [arr₁'_def]
+    have high_ne_i₁' : high₁ ≠ i₁' := by omega
+    have i₁'_same := arr₁.get_set_ne
+      ⟨high₁, high₁_lt_arr₁_size⟩
+      arr₂[low₂]
+      i₁'_lt_arr₁_size
+      high_ne_i₁'
+    simp [i₁'_same]
+    have i₁_i₂_in_range : i₁.val.in_range low₁ high₁ ∧ i₂.val.in_range low₂ high₂ := by
+      simp [Nat.in_range]
+      omega
+    exact aux_le_arr i₁ i₂ i₁_i₂_in_range
 
 def H₃.nextLeft
     (h₃ : H₃ arr aux low mid high ptr₁ ptr₂ i)
@@ -288,12 +391,14 @@ def H₃.nextLeft
       s_le_arr_ptr₁
   have slice_i_left_le_right₁ : slice_i.left.le slice₁.right :=
     h₃.slice_i.left.le_of_swap_ends_le
+      (h₃.slice₁.sorted_of_right_sorted h₃.slice₁_sorted)
       h₃.slice_i_left_le_right₁
       h₃.i_lt_aux_size
       h₃.ptr₁_lt_arr_size
       aux'_def
       slice_i.left
       slice₁.right
+      h₃.size_eq
   have slice_i_left_le_right₂ : slice_i.left.le h₃.slice₂.right := sorry
   exact {
     h₃ with
