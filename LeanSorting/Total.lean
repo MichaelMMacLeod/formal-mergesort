@@ -1,5 +1,8 @@
 import Mathlib.Data.Nat.ModEq
+import Batteries.Classes.Order
 import Init.Data.Array.Lemmas
+
+open Batteries
 
 theorem Nat.lt_of_lt_le {a b c : ℕ} (h : a < b) : b ≤ c → a < c := by omega
 theorem Nat.lt_of_le_lt {a b c : ℕ} (h : a ≤ b) : b < c → a < c := by omega
@@ -10,11 +13,11 @@ def Nat.adjacent_in_range (n m low high : ℕ) : Prop := n.succ = m ∧ n ≥ lo
 
 variable
   {α : Type}
-  [ord_a : Ord α]
-  (arr aux : Array α)
-  (i k₁ k₂ chunkSize : ℕ)
-
-variable
+  [Ord α]
+  [LE α]
+  [LT α]
+  [BEq α]
+  [LawfulOrd α]
   {arr arr₁ arr₂ arr_i aux : Array α}
   {low high low₁ high₁ low₂ high₂ ptr ptr₁ ptr₂ mid : ℕ}
   (s : @Slice α arr low high)
@@ -84,7 +87,7 @@ def SlicePtrInclusive.mkExclusive
 def Slice.sorted (_s : Slice arr low high) : Prop :=
   ∀ (i₁ i₂ : Fin arr.size)
     (_adjacent_in_range : i₁.val.adjacent_in_range i₂ low high),
-      Ord.compare arr[i₁] arr[i₂] != Ordering.gt
+      Ord.compare arr[i₁] arr[i₂] ≠ Ordering.gt
 
 def Slice.sorted₂ {arr : Array α} {low high : ℕ} (s : Slice arr low high) : Prop :=
   (low_succ_lt_high : low.succ < high) →
@@ -95,7 +98,7 @@ def Slice.sorted₂ {arr : Array α} {low high : ℕ} (s : Slice arr low high) :
     }
     let x := arr[low]
     let y := arr[low.succ]
-    let le := Ord.compare x y != Ordering.gt
+    let le := Ord.compare x y ≠ Ordering.gt
     le ∧ Slice.sorted₂ s'
 
 theorem Slice.sorted_of_sorted₂ : s.sorted₂ → s.sorted := by
@@ -115,7 +118,7 @@ def Slice.le (_s₁ : Slice arr₁ low₁ high₁) (_s₂ : Slice arr₂ low₂ 
   ∀ (i₁ : Fin arr₁.size) (i₂ : Fin arr₂.size),
       i₁.val.in_range low₁ high₁
     ∧ i₂.val.in_range low₂ high₂
-    → Ord.compare arr₁[i₁] arr₂[i₂] != Ordering.gt
+    → Ord.compare arr₁[i₁] arr₂[i₂] ≠ Ordering.gt
 
 structure H₁ (arr aux : Array α) (low mid high ptr₁ ptr₂ : ℕ) : Prop where
   slice₁ : SlicePtrInclusive arr low mid ptr₁
@@ -205,12 +208,12 @@ def H₃.ptr₂_lt_arr_size (h₃ : H₃ arr aux low mid high ptr₁ ptr₂ i) :
 def Slice.le_elem (s : Slice arr low high) (a : α) : Prop :=
   ∀ (i : ℕ) (in_bounds : i ≥ low ∧ i < high),
     have high_le_size := s.high_le_size
-    Ord.compare arr[i] a != Ordering.gt
+    Ord.compare arr[i] a ≠ Ordering.gt
 
 def Slice.ge_elem (s : Slice arr low high) (a : α) : Prop :=
   ∀ (i : ℕ) (in_bounds : i ≥ low ∧ i < high),
     have high_le_size := s.high_le_size
-    Ord.compare a arr[i] != Ordering.gt
+    Ord.compare a arr[i] ≠ Ordering.gt
 
 def Slice.le_elem_of_le
     (s₁ : Slice arr₁ low₁ high₁)
@@ -230,6 +233,14 @@ def Slice.le_elem_of_le
     omega
   exact s₁_le_s₂ ⟨i, i_lt_arr₁_size⟩ ⟨ptr, ptr_lt_arr₂_size⟩ h
 
+def Slice.idk
+    (s : Slice arr low high)
+    (s_sorted : s.sorted)
+    (i : ℕ)
+    (in_range : i.in_range low high)
+    (s' : Slice arr i.succ high)
+    (s'_ge_elem_i : s'.ge_elem )
+
 def Slice.ge_elem_of_sorted
     (s : Slice arr low high)
     (s_sorted : s.sorted)
@@ -245,12 +256,25 @@ def Slice.ge_elem_of_sorted
   unfold Slice.sorted₂ at s_sorted
   unfold Slice.ge_elem
   intro i' i'_in_range high_le_size'
-  induction i' with
+
+  -- let loop
+  --     (i' : ℕ)
+  --     (i'_in_range : i' ≥ i.succ ∧ i' < high)
+  --     : compare arr[i] arr[i'] ≠ Ordering.gt
+  --     :=
+  --   sorry
+  -- have : 0 ≥ i.succ ∧ 0 < high := by contradiction
+  -- exact loop 0 i'_in_range
+  induction i' generalizing i'_in_range s_sorted with
   | zero =>
     apply And.left at i'_in_range
     contradiction
-  | succ n ih =>
-    
+  | succ i' ih =>
+    by_cases h2 : i' < i
+    . omega
+    .
+
+
   -- have : low.succ < high := by omega
   -- unfold Slice.ge_elem Slice.sorted at *
   -- intro i' i'_in_range
@@ -362,7 +386,7 @@ def H₃.nextLeft
     (arr_ptr₁_le_arr_ptr₂ :
       have ptr₁_lt_arr_size := h₃.ptr₁_lt_arr_size
       have ptr₂_lt_arr_size := h₃.ptr₂_lt_arr_size
-      Ord.compare arr[ptr₁] arr[ptr₂] != Ordering.gt)
+      Ord.compare arr[ptr₁] arr[ptr₂] ≠ Ordering.gt)
     : have ptr₁_lt_arr_size := h₃.ptr₁_lt_arr_size
       let aux' := aux.set ⟨i, h₃.i_lt_aux_size⟩ arr[ptr₁]
       H₂ arr aux' low mid high ptr₁.succ ptr₂ i.succ
