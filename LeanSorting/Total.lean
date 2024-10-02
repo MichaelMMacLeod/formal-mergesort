@@ -243,141 +243,54 @@ def Slice.le_elem_of_le
     omega
   exact s₁_le_s₂ ⟨i, i_lt_arr₁_size⟩ ⟨ptr, ptr_lt_arr₂_size⟩ h
 
--- def Slice.idk
---     (s : Slice arr low high)
---     (s_sorted : s.sorted)
---     (i : ℕ)
---     (in_range : i.in_range low high)
---     (s' : Slice arr i.succ high)
---     (s'_ge_elem_i : s'.ge_elem )
+theorem not_gt_of_compare_same {a : α} : compare a a ≠ Ordering.gt := by
+  have compare_refl : compare a a = .eq := by exact OrientedCmp.cmp_refl
+  intro compare_eq_gt
+  have : Ordering.eq = Ordering.gt := by rw [← compare_refl, ← compare_eq_gt]
+  contradiction
 
-def Slice.ge_elem_of_sorted₁
-    (s : Slice arr low high)
+def Slice.ge_elem_low_of_sorted
     (s_sorted : s.sorted)
     (nonempty : low < high)
     : by have := s.high_le_size
          exact s.ge_elem arr[low]
     := by
-  sorry
+  simp [Slice.ge_elem]
+  intro i in_bounds
+  simp [Slice.sorted] at s_sorted
+  have := s.low_le_high
+  have := s.high_le_size
+  let rec loop (i : ℕ) (in_bounds : i ≥ low ∧ i < high)
+      : compare arr[low] arr[i] ≠ Ordering.gt := by
+    if i_eq_low : i = low then
+      simp [i_eq_low]
+      exact not_gt_of_compare_same
+    else
+      let j := i - 1
+      have j_in_bounds : j ≥ low ∧ j < high := by omega
+      have ih := loop j j_in_bounds
+      let j_f : Fin arr.size := ⟨j, by omega⟩
+      let i_f : Fin arr.size := ⟨i, by omega⟩
+      have adj : j_f.val.adjacent_in_range i_f low high := by
+        simp [Nat.adjacent_in_range]
+        omega
+      have h := s_sorted j_f i_f adj
+      exact TransCmp.le_trans ih h
+  exact loop i in_bounds
 
--- def Slice.ge_elem_of_sorted₂
---     (s : Slice arr low high)
---     (s_sorted : s.sorted)
---     (nonempty : low < high)
-
-def Slice.ge_elem_of_sorted
-    (s : Slice arr low high)
+def Slice.ge_elem_low_succ_of_sorted
     (s_sorted : s.sorted)
     (nonempty : low < high)
     (s' : Slice arr low.succ high)
     : by have := s.high_le_size
          exact s'.ge_elem arr[low]
     := by
-  have v := s.ge_elem_of_sorted₁ s_sorted nonempty
+  have h := s.ge_elem_low_of_sorted s_sorted nonempty
   simp [Slice.ge_elem]
   intro i in_bounds
-  simp [Slice.ge_elem] at v
-  exact v i in_bounds
-  -- intro high_le_size
-  -- rw [Slice.sorted] at s_sorted
-  -- unfold Slice.ge_elem
-  -- intro i in_bounds high_le_size
-  -- induction i with
-  -- | zero =>
-  --   have h : False := by omega
-  --   contradiction
-  -- | succ i ih =>
-  --   by_cases in_bounds' : i ≥ low.succ ∧ i < high
-  --   . have v1 := ih in_bounds'
-  --     let i_f : Fin arr.size := ⟨i, by omega⟩
-  --     let i_succ_f : Fin arr.size := ⟨i.succ, by omega⟩
-  --     have adj : i_f.val.adjacent_in_range i_succ_f low high := by
-  --       rw [Nat.adjacent_in_range]
-  --       simp
-  --       omega
-  --     have v2 := s_sorted i_f i_succ_f adj
-  --     exact TransCmp.le_trans v1 v2
-  --   . have v : ¬i ≥ low.succ ∨ ¬i < high := by
-  --       rw [Classical.not_and_iff_or_not_not] at in_bounds'
-  --       exact in_bounds'
-  --     if h1 : i < low.succ then
-  --       have h : False := by omega
-  --       contradiction
-  --     else
-  --       have : i ≥ high := by omega
-  --       have h : False := by omega
-  --       contradiction
-
-  -- by_cases h : i = low
-  -- . sorry
-  -- . have i_gt_low : i > low := by omega
-
-  --   sorry
-
--- def Slice.ge_elem_of_sorted
---     (s : Slice arr low high)
---     (s_sorted : s.sorted)
---     (i : ℕ)
---     (in_range : i.in_range low high)
---     (s' : Slice arr i.succ high)
---     : by unfold Nat.in_range at in_range
---          have high_le_size := s.high_le_size
---          exact s'.ge_elem arr[i]
---     := by
---   intro high_le_size
---   rw [Slice.sorted] at s_sorted
---   unfold Slice.ge_elem
---   unfold Nat.in_range at in_range
---   -- intro i' i'_in_range high_le_size'
---   let rec loop
---       (n : ℕ)
---       (in_bounds : n ≥ i.succ ∧ n < high)
---       : compare arr[i] arr[n] ≠ .gt := by
---     by_cases h : n = i.succ
---     . sorry
---     . sorry
---   exact loop
---   -- exact loop (n_pred := sorry) (n_pred_lt_arr_size := sorry) (n_pred_def := sorry) (ih := sorry)
---   -- exact loop i (n_pred := i) (n_pred_def := )
---   -- have i'_adjancnte_in_range_i_low_high : i.adjacent_in_range i' low high := by
---   --   rw [Nat.adjacent_in_range]
---   --   simp
-
---   -- induction i' with
---   -- | zero =>
---   --   sorry
---   -- | succ i' ih =>
---   --   let i_f : Fin arr.size := ⟨i, by omega⟩
---   --   let i'_f : Fin arr.size := ⟨i', by omega⟩
---   --   let i'_succ_f : Fin arr.size := ⟨i'.succ, by omega⟩
---   --   have i_f_def : i_f = ⟨i, by omega⟩ := by rfl
---   --   have i'_succ_f_def : i'_succ_f = ⟨i'.succ, by omega⟩ := by rfl
---   --   have adj : i'_f.val.adjacent_in_range i'_succ_f low high := by
---   --     rw [Nat.adjacent_in_range]
---   --     apply And.intro
---   --     . rfl
---   --     . simp; omega
---   --   have v := s_sorted i'_f i'_succ_f adj
---   --   have i_adj : i_f.val.adjacent_in_range i'_f low high := by
---   --     rw [Nat.adjacent_in_range]
---   --     by_cases h : i.succ = i'
---   --     . simp
---   --       omega
---   --     . simp
-
---   --       apply And.intro
---   --       . simp at h
---   --         absurd h
-
-
---   --       . sorry
---   --     -- simp
-
---   --     -- sorry
---   --   have v2 := s_sorted i_f i'_f i_adj
---   --   have v3 := TransCmp.le_trans v2 v
---   --   rw [i_f_def, i'_succ_f_def] at v3
---   --   exact v3
+  simp [Slice.ge_elem] at h
+  have i_in_bounds : low ≤ i ∧ i < high := by omega
+  exact h i i_in_bounds
 
 set_option pp.proofs true
 
@@ -450,12 +363,8 @@ def Slice.le_of_swap_ends_le
   by_cases h : i₁' = high₁
   . simp [h, arr₁'_def]
     rw [Slice.sorted] at arr_sorted
-    -- have low₂_in_range : low₂.in_range low₂ high₂ := by
-    --   simp [Nat.in_range]
-    --   omega
-    -- have x := arr.ge_elem_of_sorted arr_sorted low₂ low₂_in_range s₂'
     have low₂_lt_high₂ : low₂ < high₂ := by omega
-    have x := arr.ge_elem_of_sorted arr_sorted low₂_lt_high₂ s₂'
+    have x := arr.ge_elem_low_succ_of_sorted arr_sorted low₂_lt_high₂ s₂'
     simp [Slice.ge_elem] at x
     have i₂'_in_range : low₂ + 1 ≤ ↑i₂' ∧ ↑i₂' < high₂ := by omega
     have x2 := x i₂' i₂'_in_range
