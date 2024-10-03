@@ -36,7 +36,7 @@ theorem Slice.swap_array
     : Slice aux low high :=
   { s with high_le_size := by rw [← size_eq]; exact s.high_le_size }
 
-theorem SlicePtrInclusive.swap_arr
+theorem SlicePtrInclusive.swap_array
     (s : SlicePtrInclusive arr low high ptr)
     (size_eq : arr.size = aux.size)
     : SlicePtrInclusive aux low high ptr :=
