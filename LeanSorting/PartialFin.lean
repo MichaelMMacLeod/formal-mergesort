@@ -1,7 +1,7 @@
-import Mathlib.Data.Nat.ModEq
+import Mathlib.Data.Nat.Defs
 
--- We define 'mergeSortPartial' here which is the exact same algorithm as 'mergeSort' from
--- «LeanSorting».Total, except that 'mergeSortPartial' uses panic-based (instead of Fin-based)
+-- We define 'mergeSortPartialFin' here which is the exact same algorithm as 'mergeSort' from
+-- «LeanSorting».Total, except that 'mergeSortPartialFin' uses panic-based (instead of Fin-based)
 -- array indexing. Hopefully, given that the code here is much simpler, this may help you
 -- get a better sense of how it all works.
 
@@ -11,7 +11,7 @@ Copies the regions `start₁`..`start₂` and `start₂`..`end₂` (exclusive en
 `start₁`..`end₂` in `aux`) will also be sorted. It should be the case that `arr.size = aux.size`.
 -/
 @[specialize, inline]
-partial def mergeAdjacentChunksIntoAuxPartial
+partial def mergeAdjacentChunksIntoAuxPartialFin
     [Inhabited α]
     [Ord α]
     (arr aux : Array α)
@@ -60,7 +60,7 @@ the end of `arr` it is shortened so that it fits. No merging is performed if `si
 equal to the size of `arr`. It should be the case that `arr.size = aux.size`.
 -/
 @[specialize, inline]
-partial def mergeChunksIntoAuxPartial
+partial def mergeChunksIntoAuxPartialFin
     [Inhabited α]
     [Ord α]
     (arr aux : Array α)
@@ -72,7 +72,7 @@ partial def mergeChunksIntoAuxPartial
     if start₁ + size < arr.size then
       let start₂ := start₁ + size
       let end₂ := min (start₂ + size) arr.size
-      let aux' := mergeAdjacentChunksIntoAuxPartial arr aux start₁ start₂ end₂
+      let aux' := mergeAdjacentChunksIntoAuxPartialFin arr aux start₁ start₂ end₂
       loop aux' (start₁ + 2 * size)
     else
       -- Copy any leftover elements directly to `aux`.
@@ -98,13 +98,13 @@ An implementation of the 'mergesort' algorithm that only allocates one auxiliary
 and uses panic-based indexing.
 -/
 @[specialize]
-partial def Array.mergeSortPartial [Inhabited α] [Ord α] (arr : Array α) : Array α :=
+partial def Array.mergeSortPartialFin [Inhabited α] [Ord α] (arr : Array α) : Array α :=
   let rec @[specialize] loop
       (arr aux : Array α)
       (chunkSize : ℕ)
       : Array α :=
     if chunkSize < arr.size then
-      let aux' := mergeChunksIntoAuxPartial arr aux chunkSize
+      let aux' := mergeChunksIntoAuxPartialFin arr aux chunkSize
 
       -- Note: `aux'` becomes `arr` and `arr` becomes `aux`.
       loop aux' arr (chunkSize * 2)

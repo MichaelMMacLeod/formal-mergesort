@@ -11,8 +11,7 @@ profile() {
 
 lake build lsort
 
-# profile mergeSortPartial
-profile mergeSort
-profile mergeSortUnsafe
-# profile qsort
-# profile heapSort
+profile mergeSortPartialFin
+profile mergeSortPartialFinUnsafe
+profile mergeSortPartialUSizeUnsafe
+profile qsort

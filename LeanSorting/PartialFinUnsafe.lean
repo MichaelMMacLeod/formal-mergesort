@@ -1,7 +1,7 @@
 import Mathlib.Data.Nat.ModEq
 
 @[specialize, inline]
-def mergeAdjacentChunksIntoAuxUnsafe
+partial def mergeAdjacentChunksIntoAuxPartialFinUnsafe
     [Ord α]
     (arr aux : Array α)
     (start₁ start₂ end₂ : ℕ)
@@ -38,12 +38,10 @@ def mergeAdjacentChunksIntoAuxUnsafe
               aux
           loopRight aux i k₂
       loopLeft aux i k₁
-  termination_by arr.size - i
-  decreasing_by all_goals sorry
   loop aux start₁ start₁ start₂
 
 @[specialize, inline]
-def mergeChunksIntoAuxUnsafe
+partial def mergeChunksIntoAuxPartialFinUnsafe
     [Ord α]
     (arr aux : Array α)
     (size : ℕ) :=
@@ -52,7 +50,7 @@ def mergeChunksIntoAuxUnsafe
     if start₁ + size < arr.size then
       let start₂ := start₁ + size
       let end₂ := min (start₂ + size) arr.size
-      let aux' := mergeAdjacentChunksIntoAuxUnsafe arr aux start₁ start₂ end₂
+      let aux' := mergeAdjacentChunksIntoAuxPartialFinUnsafe arr aux start₁ start₂ end₂
       loop aux' (start₁ + 2 * size)
     else
       let rec @[specialize] loopFinal (aux : Array α) (start₁ : ℕ) : Array α :=
@@ -62,22 +60,18 @@ def mergeChunksIntoAuxUnsafe
         else
           aux
       loopFinal aux start₁
-  termination_by arr.size - start₁
-  decreasing_by sorry
   loop aux 0
 
 @[specialize]
-def Array.mergeSortUnsafe [Inhabited α] [Ord α] (arr : Array α) : Array α :=
+partial def Array.mergeSortPartialFinUnsafe [Inhabited α] [Ord α] (arr : Array α) : Array α :=
   let rec @[specialize] loop
       (arr aux : Array α)
       (chunkSize : ℕ)
       : Array α :=
     if chunkSize < arr.size then
-      let aux' := mergeChunksIntoAuxUnsafe arr aux chunkSize
+      let aux' := mergeChunksIntoAuxPartialFinUnsafe arr aux chunkSize
       loop aux' arr (chunkSize * 2)
     else
       arr
-  termination_by arr.size - chunkSize
-  decreasing_by sorry
   let aux : Array α := Array.mkArray arr.size default
   loop arr aux 1
