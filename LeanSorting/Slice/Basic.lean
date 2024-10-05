@@ -159,7 +159,7 @@ A `Slice` `s` is less than or equal to an element `a` if every element of
 `s` is less than or equal to `a`.
 -/
 def Slice.le_elem (s : Slice arr low high) (a : α) : Prop :=
-  ∀ (i : ℕ) (in_bounds : i ≥ low ∧ i < high),
+  ∀ (i : ℕ) (in_range : i ≥ low ∧ i < high),
     have high_le_size := s.high_le_size
     Ord.compare arr[i] a ≠ Ordering.gt
 
@@ -168,7 +168,7 @@ A `Slice` `s` is greater than or equal to an element `a` if every element of
 `s` is greater than or equal to `a`.
 -/
 def Slice.ge_elem (s : Slice arr low high) (a : α) :=
-  ∀ (i : ℕ) (in_bounds : i ≥ low ∧ i < high),
+  ∀ (i : ℕ) (in_range : i ≥ low ∧ i < high),
     have high_le_size := s.high_le_size
     Ord.compare a arr[i] ≠ Ordering.gt
 
@@ -180,12 +180,12 @@ def Slice.le_elem_of_le
     (s₁ : Slice arr₁ low₁ high₁)
     {s₂ : Slice arr₂ low₂ high₂}
     (s₁_le_s₂ : s₁.le s₂)
-    (ptr_in_bounds₂ : ptr ≥ low₂ ∧ ptr < high₂)
+    (ptr_in_range₂ : ptr ≥ low₂ ∧ ptr < high₂)
     : have high_le_size := s₂.high_le_size
       s₁.le_elem arr₂[ptr] := by
   intro high_le_size
   unfold Slice.le_elem
-  intro i in_bounds high_le_size
+  intro i in_range high_le_size
   unfold Slice.le at s₁_le_s₂
   have i_lt_arr₁_size : i < arr₁.size := by omega
   have ptr_lt_arr₂_size : ptr < arr₂.size := by omega
@@ -210,19 +210,19 @@ def Slice.ge_elem_low_of_sorted
       s.ge_elem arr[low]
     := by
   simp [Slice.ge_elem]
-  intro i in_bounds
+  intro i in_range
   simp [Slice.sorted] at s_sorted
   have := s.low_le_high
   have := s.high_le_size
-  let rec loop (i : ℕ) (in_bounds : i ≥ low ∧ i < high)
+  let rec loop (i : ℕ) (in_range : i ≥ low ∧ i < high)
       : compare arr[low] arr[i] ≠ Ordering.gt := by
     if i_eq_low : i = low then
       simp [i_eq_low]
       exact not_gt_of_compare_same
     else
       let j := i - 1
-      have j_in_bounds : j ≥ low ∧ j < high := by omega
-      have ih := loop j j_in_bounds
+      have j_in_range : j ≥ low ∧ j < high := by omega
+      have ih := loop j j_in_range
       let j_f : Fin arr.size := ⟨j, by omega⟩
       let i_f : Fin arr.size := ⟨i, by omega⟩
       have adj : j_f.val.adjacent_in_range i_f low high := by
@@ -230,7 +230,7 @@ def Slice.ge_elem_low_of_sorted
         omega
       have h := s_sorted j_f i_f adj
       exact TransCmp.le_trans ih h
-  exact loop i in_bounds
+  exact loop i in_range
 
 def Slice.ge_elem_low_succ_of_sorted
     (s_sorted : s.sorted)
@@ -241,10 +241,10 @@ def Slice.ge_elem_low_succ_of_sorted
     := by
   have h := s.ge_elem_low_of_sorted s_sorted nonempty
   simp [Slice.ge_elem]
-  intro i in_bounds
+  intro i in_range
   simp [Slice.ge_elem] at h
-  have i_in_bounds : low ≤ i ∧ i < high := by omega
-  exact h i i_in_bounds
+  have i_in_range : low ≤ i ∧ i < high := by omega
+  exact h i i_in_range
 
 /-- Two slices, `s₁` and `s₂`, remain less than or equal when we take the first
 element off of `s₂` and put it on the end of `s₁`.
@@ -334,9 +334,9 @@ def Slice.sorted_after_sorted_push
     have high_ne_i₁' : high ≠ i₁' := by omega
     have i₁'_same := arr.get_set_ne ⟨high, high_lt_size⟩ a i₁'_lt_arr_size high_ne_i₁'
     rw [i₁'_same]
-    have in_bounds : i₁'.val.in_range low high := by simp [Nat.in_range]; omega
+    have in_range : i₁'.val.in_range low high := by simp [Nat.in_range]; omega
     unfold Slice.le_elem at s_le_elem_a
-    exact s_le_elem_a i₁' in_bounds
+    exact s_le_elem_a i₁' in_range
   . unfold Slice.sorted at s_sorted
     have i₁'_lt_arr_size : i₁'.val < arr.size := by omega
     have i₂'_lt_arr_size : i₂'.val < arr.size := by omega

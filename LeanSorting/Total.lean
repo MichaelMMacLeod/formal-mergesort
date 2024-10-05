@@ -46,7 +46,7 @@ structure H₃ (arr aux : Array α) (low mid high ptr₁ ptr₂ i : ℕ)
 
 def H₂.mkH₃
     (h₂ : H₂ arr aux low mid high ptr₁ ptr₂ i)
-    (ptr₁_ptr₂_in_bounds : ptr₁ < mid ∧ ptr₂ < high)
+    (ptr₁_ptr₂_in_range : ptr₁ < mid ∧ ptr₂ < high)
     : H₃ arr aux low mid high ptr₁ ptr₂ i :=
   have slice_i_exclusive : SlicePtrExclusive aux low high i := by
     have i_lt_high : i < high := by
@@ -54,8 +54,8 @@ def H₂.mkH₃
       omega
     exact h₂.slice_i.make_exclusive i_lt_high
   { h₂ with
-    slice₁_exclusive := h₂.slice₁.make_exclusive ptr₁_ptr₂_in_bounds.left,
-    slice₂_exclusive := h₂.slice₂.make_exclusive ptr₁_ptr₂_in_bounds.right,
+    slice₁_exclusive := h₂.slice₁.make_exclusive ptr₁_ptr₂_in_range.left,
+    slice₂_exclusive := h₂.slice₂.make_exclusive ptr₁_ptr₂_in_range.right,
     slice_i_exclusive
   }
 
@@ -93,10 +93,10 @@ def H₃.nextLeft
     have := h₃.slice₂.ptr_ge_low
     omega
   have slice_i_left_sorted : slice_i.left.sorted :=
-    have ptr₁_in_bounds : ptr₁ ≥ ptr₁ ∧ ptr₁ < mid := by
+    have ptr₁_in_range : ptr₁ ≥ ptr₁ ∧ ptr₁ < mid := by
       simp [h₃.slice₁.ptr_ge_low, h₃.slice₁_exclusive.ptr_lt_high]
     have s_le_arr_ptr₁ : h₃.slice_i.left.le_elem arr[ptr₁] :=
-      h₃.slice_i.left.le_elem_of_le h₃.slice_i_left_le_right₁ ptr₁_in_bounds
+      h₃.slice_i.left.le_elem_of_le h₃.slice_i_left_le_right₁ ptr₁_in_range
     h₃.slice_i.left.sorted_after_sorted_push
       h₃.slice_i_left_sorted
       h₃.i_lt_aux_size
@@ -138,7 +138,7 @@ def H₃.nextLeft
   --   have := h₃.k₂_ge_start₂
   --   omega
   -- have k₁_succ_lt_start₂_succ : k₁.succ < start₂.succ := by
-  --   have := h₃.k₁_k₂_in_bounds
+  --   have := h₃.k₁_k₂_in_range
   --   omega
   -- have arr_size_eq_aux'_size : arr.size = aux'.size := by
   --   simp [aux']
@@ -147,7 +147,7 @@ def H₃.nextLeft
   --   have aux_sorted := h₃.aux_sorted
   --   have aux_le_left := h₃.aux_le_left
   --   rw [Array.sorted_slice]
-  --   intro c₁ c₂ in_bounds
+  --   intro c₁ c₂ in_range
   --   if c₂_eq_i : c₂ = i then
   --     have c₁_eq_k₁ : c₁ = k₁ := by sorry
   --     subst c₂ c₁
@@ -156,7 +156,7 @@ def H₃.nextLeft
   --     sorry
   --   -- if i₂_eq_i : c₁ = ⟨i, ⟩ then
   --   --   subst c₁
-  --   --   intro in_bounds
+  --   --   intro in_range
   --   --   rw [Array.slice_has_no_greater_element] at aux_le_left
   --   --   exact aux_le_left ⟨i, sorry⟩ ⟨k₁, sorry⟩
   --   -- else
@@ -191,7 +191,7 @@ def H₃.nextLeft
 --     have := h₃.k₂_ge_start₂
 --     omega
 --   have k₂_succ_lt_end₂_succ : k₂.succ < end₂.succ := by
---     have := h₃.k₁_k₂_in_bounds
+--     have := h₃.k₁_k₂_in_range
 --     omega
 --   have k₂_succ_ge_start₂ : k₂.succ ≥ start₂ := by
 --     have := h₃.k₂_ge_start₂
@@ -323,8 +323,8 @@ def H₃.nextLeft
 --       (i k₁ k₂ : ℕ)
 --       (h₂ : H₂ arr aux start₁ start₂ end₂ i k₁ k₂)
 --       : Array α :=
---     if k₁_k₂_in_bounds : k₁ < start₂ ∧ k₂ < end₂ then
---       have h₃ := h₂.mkH₃ k₁_k₂_in_bounds
+--     if k₁_k₂_in_range : k₁ < start₂ ∧ k₂ < end₂ then
+--       have h₃ := h₂.mkH₃ k₁_k₂_in_range
 --       have k₁_lt_arr_size : k₁ < arr.size := h₃.k₁_lt_arr_size
 --       have k₂_lt_arr_size : k₂ < arr.size := h₃.k₂_lt_arr_size
 --       match Ord.compare arr[k₁] arr[k₂] with
@@ -373,7 +373,7 @@ def H₃.nextLeft
 --     all_goals
 --       have i_lt_arr_size : i < arr.size := by
 --         rw [h₂.arr_size_eq_aux_size]
---         exact (h₂.mkH₃ k₁_k₂_in_bounds).i_lt_aux_size
+--         exact (h₂.mkH₃ k₁_k₂_in_range).i_lt_aux_size
 --       exact (Nat.sub_succ_lt_sub_of_lt i_lt_arr_size)
 --   let h₂ :=
 --     { h₁ with
@@ -450,16 +450,16 @@ def H₃.nextLeft
 --       arr.size = aux'.size
 --     := by
 --   unfold loop
---   if k₁_k₂_in_bounds : k₁ < start₂ ∧ k₂ < end₂ then
---     simp [k₁_k₂_in_bounds]
+--   if k₁_k₂_in_range : k₁ < start₂ ∧ k₂ < end₂ then
+--     simp [k₁_k₂_in_range]
 --     split <;> rw [← mergeAdjacentChunksIntoAux.loop_size_eq]
 --   else
---     simp [k₁_k₂_in_bounds, ← mergeAdjacentChunksIntoAux.loop.loopLeft_size_eq]
+--     simp [k₁_k₂_in_range, ← mergeAdjacentChunksIntoAux.loop.loopLeft_size_eq]
 -- termination_by aux.size - i
 -- decreasing_by
 --   all_goals
 --     simp_wf
---     have h₃ := h₂.mkH₃ k₁_k₂_in_bounds
+--     have h₃ := h₂.mkH₃ k₁_k₂_in_range
 --     have i_lt_aux_size : i < aux.size := h₃.i_lt_aux_size
 --     exact loop.loopLeft.loopRight_decreasing aux.size i i_lt_aux_size
 
