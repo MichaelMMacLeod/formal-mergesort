@@ -236,8 +236,8 @@ def Slice.ge_elem_low_succ_of_sorted
     (s_sorted : s.sorted)
     (nonempty : low < high)
     (s' : Slice arr low.succ high)
-    : by have := s.high_le_size
-         exact s'.ge_elem arr[low]
+    : have := s.high_le_size
+      s'.ge_elem arr[low]
     := by
   have h := s.ge_elem_low_of_sorted s_sorted nonempty
   simp [Slice.ge_elem]
