@@ -155,8 +155,8 @@ def Slice.le
     → Ord.compare arr₁[i₁] arr₂[i₂] ≠ Ordering.gt
 
 /--
-A `Slice` `s₁` is less than or equal to an element `a` if every element of
-`s₁` is less than or equal to `a`.
+A `Slice` `s` is less than or equal to an element `a` if every element of
+`s` is less than or equal to `a`.
 -/
 def Slice.le_elem (s : Slice arr low high) (a : α) : Prop :=
   ∀ (i : ℕ) (in_bounds : i ≥ low ∧ i < high),
@@ -164,8 +164,8 @@ def Slice.le_elem (s : Slice arr low high) (a : α) : Prop :=
     Ord.compare arr[i] a ≠ Ordering.gt
 
 /--
-A `Slice` `s₁` is greater than or equal to an element `a` if every element of
-`s₁` is greater than or equal to `a`.
+A `Slice` `s` is greater than or equal to an element `a` if every element of
+`s` is greater than or equal to `a`.
 -/
 def Slice.ge_elem (s : Slice arr low high) (a : α) :=
   ∀ (i : ℕ) (in_bounds : i ≥ low ∧ i < high),
@@ -195,7 +195,7 @@ def Slice.le_elem_of_le
   exact s₁_le_s₂ ⟨i, i_lt_arr₁_size⟩ ⟨ptr, ptr_lt_arr₂_size⟩ h
 
 lemma not_gt_of_compare_same {a : α} : compare a a ≠ Ordering.gt := by
-  have compare_refl : compare a a = .eq := by exact Batteries.OrientedCmp.cmp_refl
+  have compare_refl : compare a a = .eq := Batteries.OrientedCmp.cmp_refl
   intro compare_eq_gt
   have : Ordering.eq = Ordering.gt := by rw [← compare_refl, ← compare_eq_gt]
   contradiction
@@ -314,7 +314,7 @@ def SlicePtrInclusive.sorted_of_right_sorted
   exact s_sorted i₁ i₂ adjacent_in_range'
 
 /--
-If `a` is greater or equal to all ements of a sorted slice `s`, then `s` remains sorted
+If `a` is greater or equal to all elements of a sorted slice `s`, then `s` remains sorted
 when `a` is appended on the right.
 -/
 def Slice.sorted_after_sorted_push
@@ -355,6 +355,13 @@ def Slice.sorted_after_sorted_push
       omega
     exact s_sorted i₁ i₂ adjacent_in_range
 
+/--
+If `a` is less than or equal to the pointed-at element in a sorted slice, all elements of the
+the slice at and after the pointed-at element are greater than or equal to `a`.
+
+For example, if `a ≤ 10`, then because `[1,5,10,15,20]` is sorted, it is the case that all
+`[10,15,20]` are greater than or equal to `a`.
+-/
 theorem SlicePtrExclusive.right_ge_elem_of_sorted_le_ptr
     (s : SlicePtrExclusive arr low high ptr)
     (s_sorted : s.sorted)
@@ -389,6 +396,25 @@ theorem SlicePtrExclusive.right_ge_elem_of_sorted_le_ptr
       exact TransCmp.le_trans ih i'_le_i
   exact loop i in_range
 
+/--
+While merging two slices into an auxiliary slice, if it is determined that the first element
+of `s₁` is less than or equal to the first element of `s₂`, then all elements of the resulting
+auxiliary slice, created by appending the first element of `s₁` on its end, are each less than
+or equal to all elements of `s₂` (the slice we didn't take any elements from).
+
+For example,
+
+```
+s₁   = [10, 20, 30]
+s₂   = [100, 200, 300]
+aux := [1, 2, 3]
+-- Given that 10 ≤ 100, we will merge 10 into aux, giving us:
+aux' := [1, 2, 3, 10]
+-- Because it was true that all elements of aux were less than all elements
+-- of s₂, and because 10 ≤ 100, it remains the case that all elements of
+-- aux' are less than all elements of s₂.
+```
+-/
 theorem slice_ptr_le_of_succ
     (slice₁_ptr : SlicePtrExclusive arr low mid ptr₁)
     (slice₂_ptr : SlicePtrExclusive arr mid high ptr₂)
