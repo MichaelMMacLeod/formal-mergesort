@@ -6,19 +6,21 @@ open Batteries
 
 variable
   {α : Type}
-  [Ord α]
-  [LE α]
-  [LT α]
-  [BEq α]
-  [LawfulOrd α]
+  -- [Ord α]
+  -- [LE α]
+  -- [LT α]
+  -- [BEq α]
+  -- [LawfulOrd α]
   {arr arr₁ arr₂ arr_i aux : Array α}
   {low high low₁ high₁ low₂ high₂ ptr ptr₁ ptr₂ mid : ℕ}
-  (s : @Slice α arr low high)
-  (s_i : @Slice α arr_i low_i high_i)
 
 structure Slice (arr : Array α) (low high : ℕ) : Prop where
   low_le_high : low ≤ high
   high_le_size : high ≤ arr.size
+
+variable
+  (s : @Slice α arr low high)
+  (s_i : @Slice α arr_i low_i high_i)
 
 structure SlicePtrExclusive (arr : Array α) (low high : ℕ) (ptr : ℕ)
     extends Slice arr low high : Prop where
@@ -29,6 +31,16 @@ structure SlicePtrInclusive (arr : Array α) (low high : ℕ) (ptr : ℕ)
     extends Slice arr low high : Prop where
   ptr_ge_low : ptr ≥ low
   ptr_le_high : ptr ≤ high
+
+theorem SlicePtrExclusive.make_inclusive
+    (s : SlicePtrExclusive arr low high ptr)
+    : SlicePtrInclusive arr low high ptr :=
+  { s with ptr_le_high := Nat.le_of_lt s.ptr_lt_high }
+
+theorem SlicePtrExclusive.nonempty
+    (s : SlicePtrExclusive arr low high ptr)
+    : low < high :=
+  Nat.lt_of_le_of_lt s.ptr_ge_low s.ptr_lt_high
 
 theorem Slice.swap_array
     (s : Slice arr low high)
@@ -58,6 +70,26 @@ theorem SlicePtrExclusive.ptr_lt_size
     : ptr < arr.size :=
   Nat.le_trans s.ptr_lt_high s.high_le_size
 
+theorem SlicePtrExclusive.low_lt_size
+    (s : SlicePtrExclusive arr low high ptr)
+    : low < arr.size :=
+  Nat.le_trans s.nonempty s.high_le_size
+
+def SlicePtrExclusive.ptrFin
+    (s : SlicePtrExclusive arr low high ptr)
+    : Fin arr.size :=
+  ⟨ptr, s.ptr_lt_size⟩
+
+def SlicePtrExclusive.ptrFin_eq
+    (s : SlicePtrExclusive arr low high ptr)
+    : s.ptrFin = ⟨ptr, s.ptr_lt_size⟩ :=
+  rfl
+
+def SlicePtrExclusive.ptrFin_val_eq
+    (s : SlicePtrExclusive arr low high ptr)
+    : s.ptrFin.val = ptr :=
+  rfl
+
 theorem SlicePtrInclusive.left
     (s : SlicePtrInclusive arr low high ptr)
     : Slice arr low ptr :=
@@ -72,6 +104,16 @@ theorem SlicePtrInclusive.right
     high_le_size := s.high_le_size
   }
 
+theorem SlicePtrExclusive.left
+    (s : SlicePtrExclusive arr low high ptr)
+    : Slice arr low ptr :=
+  s.make_inclusive.left
+
+theorem SlicePtrExclusive.right
+    (s : SlicePtrExclusive arr low high ptr)
+    : Slice arr ptr high :=
+  s.make_inclusive.right
+
 theorem SlicePtrExclusive.increment_ptr
     (s : SlicePtrExclusive arr low high ptr)
     : SlicePtrInclusive arr low high ptr.succ :=
@@ -85,6 +127,13 @@ def SlicePtrInclusive.make_exclusive
     (ptr_lt_high : ptr < high)
     : SlicePtrExclusive arr low high ptr :=
   { s with ptr_lt_high }
+
+variable
+  [Ord α]
+  [LE α]
+  [LT α]
+  [BEq α]
+  [LawfulOrd α]
 
 -- TODO: must also be a permutation of input
 def Slice.sorted (_s : Slice arr low high) : Prop :=
@@ -305,3 +354,96 @@ def Slice.sorted_after_sorted_push
       simp [Nat.adjacent_in_range, i₂'_eq_high]
       omega
     exact s_sorted i₁ i₂ adjacent_in_range
+
+theorem SlicePtrExclusive.ge_elem_of_sorted_le_ptr
+    (s : SlicePtrExclusive arr low high ptr)
+    (s_sorted : s.sorted)
+    {a : α}
+    (a_le_ptr :
+      have := s.ptr_lt_size
+      Ord.compare a arr[ptr] ≠ .gt)
+    : s.right.ge_elem a := by
+  simp [Slice.ge_elem]
+  intro i in_range
+  let rec loop
+      (i : ℕ)
+      (in_range : ptr ≤ i ∧ i < high)
+      : have := s.high_le_size
+        Ord.compare a arr[i] ≠ .gt := by
+    if i_eq_ptr : i = ptr then
+      simp [i_eq_ptr, a_le_ptr]
+    else
+      let i' := i - 1
+      have i'_in_range : ptr ≤ i' ∧ i' < high := by omega
+      have ih := loop i' i'_in_range
+      have := s.high_le_size
+      have i'_le_i : Ord.compare arr[i'] arr[i] ≠ .gt := by
+        simp [Slice.sorted] at s_sorted
+        let i'_f : Fin arr.size := ⟨i', by omega⟩
+        let i_f : Fin arr.size := ⟨i, by omega⟩
+        have adj : i'_f.val.adjacent_in_range i_f low high := by
+          simp [Nat.adjacent_in_range]
+          have := s.ptr_ge_low
+          omega
+        exact s_sorted i'_f i_f adj
+      exact TransCmp.le_trans ih i'_le_i
+  exact loop i in_range
+
+theorem slice_ptr_le_of_succ
+    (slice₁_ptr : SlicePtrExclusive arr low mid ptr₁)
+    (slice₂_ptr : SlicePtrExclusive arr mid high ptr₂)
+    (slice₂_sorted : slice₂_ptr.sorted)
+    (slice_aux_ptr : SlicePtrExclusive aux low high i)
+    (slice_aux_ptr' : SlicePtrInclusive aux' low high i.succ)
+    (aux'_def :
+      have h₁ := slice_aux_ptr.ptr_lt_size
+      have h₂ := slice₁_ptr.ptr_lt_size
+      aux' = aux.set ⟨i, h₁⟩ (arr[ptr₁]'h₂))
+    (slice_aux_left_le_slice₂_right : slice_aux_ptr.left.le slice₂_ptr.right)
+    (slice₁_ptr_le_slice₂_ptr :
+      have h₁ := slice₁_ptr.ptr_lt_size
+      have h₂ := slice₂_ptr.ptr_lt_size
+      Ord.compare (arr[ptr₁]'h₁) arr[ptr₂] ≠ .gt)
+    : slice_aux_ptr'.left.le slice₂_ptr.right
+    := by
+  simp [Slice.le]
+  intro i₁ i₂ i₁_in_range i₂_in_range
+  by_cases i₁_lt_i : i₁ < i
+  . simp [Slice.le] at slice_aux_left_le_slice₂_right
+    simp [aux'_def]
+    have i₁_lt_aux_size : i₁ < aux.size := by
+      have := slice_aux_ptr.ptr_lt_size
+      omega
+    let i_f : Fin aux.size := ⟨i, slice_aux_ptr.ptr_lt_size⟩
+    have ptr₁_lt_arr_size := slice₁_ptr.ptr_lt_size
+    have i₁_ne_i : i_f.val ≠ i₁ := by
+      simp [i_f]
+      omega
+    rw [Array.get_set_ne aux i_f arr[ptr₁] i₁_lt_aux_size i₁_ne_i]
+    let i₁_orig : Fin aux.size := ⟨i₁, i₁_lt_aux_size⟩
+    have i₁_orig_eq_i₁ : i₁_orig.val = i₁.val := rfl
+    have i₁_orig_in_range : i₁_orig.val.in_range low i := by
+      simp [Nat.in_range] at *
+      omega
+    have h :=
+      slice_aux_left_le_slice₂_right
+        i₁_orig
+        i₂
+        i₁_orig_in_range
+        i₂_in_range
+    simp [i₁_orig] at h
+    simp [aux'_def, Array.get_set_ne]
+    exact h
+  . simp [Nat.in_range] at i₁_in_range i₂_in_range
+    have i₁_eq_i : i₁ = i := by omega
+    simp [i₁_eq_i, aux'_def]
+    have := slice₁_ptr.ptr_lt_size
+    have h :=
+      slice₂_ptr.ge_elem_of_sorted_le_ptr
+        slice₂_sorted
+        slice₁_ptr_le_slice₂_ptr
+    have i₂_in_range : ptr₂ ≤ i₂ ∧ i₂ < high := by
+      have := slice₂_ptr.ptr_ge_low
+      omega
+    simp [Slice.ge_elem] at h
+    exact h i₂ i₂_in_range

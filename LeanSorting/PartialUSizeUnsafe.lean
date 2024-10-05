@@ -1,8 +1,5 @@
 import Init.Data.Array.Basic
 
--- TODO: replace calls to Array.size.toUsize with Array.usize when lean 4.12.0 comes out
---       see: https://github.com/leanprover/lean4/commit/8f0631ab1f30cf0dbd64194967f7705d4821cf51
-
 abbrev USize.succ (n : USize) := n + 1
 
 @[specialize, inline]
@@ -52,14 +49,14 @@ partial def mergeChunksIntoAuxPartialUSizeUnsafe
     (size : USize) :=
   let rec @[specialize] loop (aux : Array α) (start₁: USize)
       : Array α :=
-    if start₁ + size < arr.size.toUSize then
+    if start₁ + size < arr.usize then
       let start₂ := start₁ + size
-      let end₂ := min (start₂ + size) arr.size.toUSize
+      let end₂ := min (start₂ + size) arr.usize
       let aux' := mergeAdjacentChunksIntoAuxPartialUSizeUnsafe arr aux start₁ start₂ end₂
       loop aux' (start₁ + 2 * size)
     else
       let rec @[specialize] loopFinal (aux : Array α) (start₁ : USize) : Array α :=
-        if start₁ < aux.size.toUSize then
+        if start₁ < aux.usize then
           let aux' := aux.uset start₁ (arr[start₁]'sorry) sorry
           loopFinal aux' start₁.succ
         else
@@ -73,7 +70,7 @@ partial def Array.mergeSortPartialUSizeUnsafe [Inhabited α] [Ord α] (arr : Arr
       (arr aux : Array α)
       (chunkSize : USize)
       : Array α :=
-    if chunkSize < arr.size.toUSize then
+    if chunkSize < arr.usize then
       let aux' := mergeChunksIntoAuxPartialUSizeUnsafe arr aux chunkSize
       loop aux' arr (chunkSize * 2)
     else

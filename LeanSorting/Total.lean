@@ -3,6 +3,8 @@ import Batteries.Classes.Order
 import Init.Data.Array.Lemmas
 import LeanSorting.Slice.Basic
 
+set_option pp.proofs true
+
 open Batteries
 
 theorem Nat.lt_of_lt_le {a b c : ℕ} (h : a < b) : b ≤ c → a < c := by omega
@@ -69,20 +71,6 @@ def H₃.ptr₂_lt_arr_size (h₃ : H₃ arr aux low mid high ptr₁ ptr₂ i) :
   have s := h₃.slice₂_exclusive
   Nat.le_trans s.ptr_lt_high s.high_le_size
 
-def slice_ptr_le_of_succ
-    (slice₁_ptr : SlicePtrExclusive arr low high ptr₁)
-    (slice₂_ptr : SlicePtrInclusive arr mid high ptr₂)
-    (slice_aux_ptr : SlicePtrExclusive aux low high i)
-    (slice_aux_ptr' : SlicePtrInclusive aux' low high i.succ)
-    (aux'_def : by
-      have h₁ := slice_aux_ptr.ptr_lt_size
-      have h₂ := slice₁_ptr.ptr_lt_size
-      exact aux' = aux.set ⟨i, h₁⟩ (arr[ptr₁]'h₂))
-    (slice₁_left_le_slice₂_right : slice₁_ptr.left.le slice₂_ptr.right)
-    : slice_aux_ptr'.left.le slice₂_ptr.right
-    := by
-  sorry
-
 def H₃.nextLeft
     (h₃ : H₃ arr aux low mid high ptr₁ ptr₂ i)
     (arr_ptr₁_le_arr_ptr₂ :
@@ -127,9 +115,14 @@ def H₃.nextLeft
       h₃.size_eq
   have slice_i_left_le_right₂ : slice_i.left.le h₃.slice₂.right :=
     slice_ptr_le_of_succ
-      h₃.slice₂
-      h₃.slice_i
+      h₃.slice₁_exclusive
+      h₃.slice₂_exclusive
+      h₃.slice₂_sorted
+      h₃.slice_i_exclusive
       slice_i
+      aux'_def
+      h₃.slice_i_left_le_right₂
+      arr_ptr₁_le_arr_ptr₂
   exact {
     h₃ with
     slice₁,
