@@ -355,7 +355,7 @@ def Slice.sorted_after_sorted_push
       omega
     exact s_sorted i₁ i₂ adjacent_in_range
 
-theorem SlicePtrExclusive.ge_elem_of_sorted_le_ptr
+theorem SlicePtrExclusive.right_ge_elem_of_sorted_le_ptr
     (s : SlicePtrExclusive arr low high ptr)
     (s_sorted : s.sorted)
     {a : α}
@@ -403,7 +403,7 @@ theorem slice_ptr_le_of_succ
     (slice₁_ptr_le_slice₂_ptr :
       have h₁ := slice₁_ptr.ptr_lt_size
       have h₂ := slice₂_ptr.ptr_lt_size
-      Ord.compare (arr[ptr₁]'h₁) arr[ptr₂] ≠ .gt)
+      Ord.compare arr[ptr₁] arr[ptr₂] ≠ .gt)
     : slice_aux_ptr'.left.le slice₂_ptr.right
     := by
   simp [Slice.le]
@@ -439,7 +439,7 @@ theorem slice_ptr_le_of_succ
     simp [i₁_eq_i, aux'_def]
     have := slice₁_ptr.ptr_lt_size
     have h :=
-      slice₂_ptr.ge_elem_of_sorted_le_ptr
+      slice₂_ptr.right_ge_elem_of_sorted_le_ptr
         slice₂_sorted
         slice₁_ptr_le_slice₂_ptr
     have i₂_in_range : ptr₂ ≤ i₂ ∧ i₂ < high := by
