@@ -60,16 +60,13 @@ def H₂.mkH₃
   }
 
 def H₃.i_lt_aux_size (h₃ : H₃ arr aux low mid high ptr₁ ptr₂ i) : i < aux.size :=
-  have s := h₃.slice_i_exclusive
-  Nat.le_trans s.ptr_lt_high s.high_le_size
+  h₃.slice_i_exclusive.ptr_lt_size
 
 def H₃.ptr₁_lt_arr_size (h₃ : H₃ arr aux low mid high ptr₁ ptr₂ i) : ptr₁ < arr.size :=
-  have s := h₃.slice₁_exclusive
-  Nat.le_trans s.ptr_lt_high s.high_le_size
+  h₃.slice₁_exclusive.ptr_lt_size
 
 def H₃.ptr₂_lt_arr_size (h₃ : H₃ arr aux low mid high ptr₁ ptr₂ i) : ptr₂ < arr.size :=
-  have s := h₃.slice₂_exclusive
-  Nat.le_trans s.ptr_lt_high s.high_le_size
+  h₃.slice₂_exclusive.ptr_lt_size
 
 def H₃.nextLeft
     (h₃ : H₃ arr aux low mid high ptr₁ ptr₂ i)
@@ -114,7 +111,7 @@ def H₃.nextLeft
       slice₁.right
       h₃.size_eq
   have slice_i_left_le_right₂ : slice_i.left.le h₃.slice₂.right :=
-    slice_ptr_le_of_succ
+    slice₁_ptr_le_of_succ
       h₃.slice₁_exclusive
       h₃.slice₂_exclusive
       h₃.slice₂_sorted
@@ -133,76 +130,69 @@ def H₃.nextLeft
     slice_i_left_le_right₁,
     slice_i_left_le_right₂,
   }
-  -- have i_succ_def : i.succ = k₁.succ + k₂ - start₂ := by
-  --   have := h₃.i_def
-  --   have := h₃.k₂_ge_start₂
-  --   omega
-  -- have k₁_succ_lt_start₂_succ : k₁.succ < start₂.succ := by
-  --   have := h₃.k₁_k₂_in_range
-  --   omega
-  -- have arr_size_eq_aux'_size : arr.size = aux'.size := by
-  --   simp [aux']
-  --   exact h₃.arr_size_eq_aux_size
-  -- have aux'_sorted : aux'.sorted_slice start₁ i.succ := by
-  --   have aux_sorted := h₃.aux_sorted
-  --   have aux_le_left := h₃.aux_le_left
-  --   rw [Array.sorted_slice]
-  --   intro c₁ c₂ in_range
-  --   if c₂_eq_i : c₂ = i then
-  --     have c₁_eq_k₁ : c₁ = k₁ := by sorry
-  --     subst c₂ c₁
-  --     sorry
-  --   else
-  --     sorry
-  --   -- if i₂_eq_i : c₁ = ⟨i, ⟩ then
-  --   --   subst c₁
-  --   --   intro in_range
-  --   --   rw [Array.slice_has_no_greater_element] at aux_le_left
-  --   --   exact aux_le_left ⟨i, sorry⟩ ⟨k₁, sorry⟩
-  --   -- else
 
-  --   --   sorry
-  -- have aux'_le_left : aux'.Array.slice_le start₁ i.succ arr k₁.succ start₂ := by
-  --   sorry
-  -- have aux'_le_right : aux'.Array.slice_le start₁ i.succ arr k₂ end₂ := by
-  --   sorry
-  -- exact
-  --   { h₃ with
-  --     arr_size_eq_aux_size := arr_size_eq_aux'_size
-  --     i_def := i_succ_def
-  --     k₁_lt_start₂_succ := k₁_succ_lt_start₂_succ
-  --     aux_sorted := aux'_sorted
-  --     aux_le_left := aux'_le_left
-  --     aux_le_right := aux'_le_right
-  --   }
-
--- def H₃.nextRight
---     (h₃ : H₃ arr aux start₁ start₂ end₂ i k₁ k₂)
---     : have i_lt_aux_size := h₃.i_lt_aux_size
---       have k₂_lt_arr_size := h₃.k₂_lt_arr_size
---       have aux' := aux.set ⟨i, i_lt_aux_size⟩ arr[k₂]
---       H₂ arr aux' start₁ start₂ end₂ i.succ k₁ k₂.succ := by
---   intro i_lt_aux_size k₂_lt_arr_size aux'
---   have arr_size_eq_aux'_size : arr.size = aux'.size := by
---     simp [aux']
---     exact h₃.arr_size_eq_aux_size
---   have i_succ_def : i.succ = k₁ + k₂.succ - start₂ := by
---     have := h₃.i_def
---     have := h₃.k₂_ge_start₂
---     omega
---   have k₂_succ_lt_end₂_succ : k₂.succ < end₂.succ := by
---     have := h₃.k₁_k₂_in_range
---     omega
---   have k₂_succ_ge_start₂ : k₂.succ ≥ start₂ := by
---     have := h₃.k₂_ge_start₂
---     omega
---   exact
---     { h₃ with
---       arr_size_eq_aux_size := arr_size_eq_aux'_size
---       i_def := i_succ_def
---       k₂_lt_end₂_succ := k₂_succ_lt_end₂_succ
---       k₂_ge_start₂ := k₂_succ_ge_start₂
---     }
+def H₃.nextRight
+    (h₃ : H₃ arr aux low mid high ptr₁ ptr₂ i)
+    (arr_ptr₂_lt_arr_ptr₁ :
+      have ptr₁_lt_arr_size := h₃.ptr₁_lt_arr_size
+      have ptr₂_lt_arr_size := h₃.ptr₂_lt_arr_size
+      Ord.compare arr[ptr₁] arr[ptr₂] = Ordering.gt)
+    : have ptr₂_lt_arr_size := h₃.ptr₂_lt_arr_size
+      let aux' := aux.set ⟨i, h₃.i_lt_aux_size⟩ arr[ptr₂]
+      H₂ arr aux' low mid high ptr₁ ptr₂.succ i.succ
+    := by
+  intro ptr₂_lt_arr_size aux'
+  have aux'_def : aux' = aux.set ⟨i, h₃.i_lt_aux_size⟩ arr[ptr₂] := by rfl
+  have slice₂ := h₃.slice₂_exclusive.increment_ptr
+  have size_eq : arr.size = aux'.size := by simp [aux']; exact h₃.size_eq
+  have aux_size_eq : aux.size = aux'.size := by simp [aux']
+  have slice_i : SlicePtrInclusive aux' low high i.succ :=
+    h₃.slice_i_exclusive.increment_ptr.swap_array aux_size_eq
+  have i_def : i.succ = ptr₁ + ptr₂.succ - mid := by
+    have := h₃.i_def
+    have := h₃.slice₂.ptr_ge_low
+    omega
+  have slice_i_left_sorted : slice_i.left.sorted :=
+    have ptr₂_in_range : ptr₂ ≥ ptr₂ ∧ ptr₂ < high := by
+      simp [h₃.slice₂.ptr_ge_low, h₃.slice₂_exclusive.ptr_lt_high]
+    have s_le_arr_ptr₁ : h₃.slice_i.left.le_elem arr[ptr₂] :=
+      h₃.slice_i.left.le_elem_of_le h₃.slice_i_left_le_right₂ ptr₂_in_range
+    h₃.slice_i.left.sorted_after_sorted_push
+      h₃.slice_i_left_sorted
+      h₃.i_lt_aux_size
+      aux'_def
+      slice_i.left
+      s_le_arr_ptr₁
+  have slice_i_left_le_right₂ : slice_i.left.le slice₂.right :=
+    h₃.slice_i.left.le_of_swap_ends_le
+      (h₃.slice₂.sorted_of_right_sorted h₃.slice₂_sorted)
+      h₃.slice_i_left_le_right₂
+      h₃.i_lt_aux_size
+      h₃.ptr₂_lt_arr_size
+      aux'_def
+      slice_i.left
+      slice₂.right
+      h₃.size_eq
+  have slice_i_left_le_right₁ : slice_i.left.le h₃.slice₁.right :=
+    slice₂_ptr_le_of_succ
+      h₃.slice₁_exclusive
+      h₃.slice₂_exclusive
+      h₃.slice₁_sorted
+      h₃.slice_i_exclusive
+      slice_i
+      aux'_def
+      h₃.slice_i_left_le_right₁
+      arr_ptr₂_lt_arr_ptr₁
+  exact {
+    h₃ with
+    slice₂,
+    size_eq,
+    slice_i,
+    i_def,
+    slice_i_left_sorted,
+    slice_i_left_le_right₁,
+    slice_i_left_le_right₂,
+  }
 
 -- def H₂.mk_i_lt_aux_size
 --     (h₂ : H₂ arr aux start₁ start₂ end₂ i k₁ k₂)

@@ -2,6 +2,9 @@ import Mathlib.Data.Nat.Defs
 import Batteries.Classes.Order
 import LeanSorting.Nat.Extras
 
+set_option pp.proofs true
+set_option linter.unusedSectionVars false
+
 open Batteries
 
 variable
@@ -396,6 +399,16 @@ theorem SlicePtrExclusive.right_ge_elem_of_sorted_le_ptr
       exact TransCmp.le_trans ih i'_le_i
   exact loop i in_range
 
+-- theorem SlicePtrExclusive.right_ge_elem_of_sorted_le_ptr'
+--     (s : SlicePtrExclusive arr low high ptr)
+--     (s_sorted : s.sorted)
+--     {a : α}
+--     (a_le_ptr :
+--       have := s.ptr_lt_size
+--       Ord.compare a arr[ptr] ≠ .gt)
+--     : s.right.ge_elem a := by
+--   sorry
+
 /--
 While merging two slices into an auxiliary slice, if it is determined that the first element
 of `s₁` is less than or equal to the first element of `s₂`, then all elements of the resulting
@@ -415,7 +428,7 @@ aux' := [1, 2, 3, 10]
 -- aux' are less than all elements of s₂.
 ```
 -/
-theorem slice_ptr_le_of_succ
+theorem slice₁_ptr_le_of_succ
     (slice₁_ptr : SlicePtrExclusive arr low mid ptr₁)
     (slice₂_ptr : SlicePtrExclusive arr mid high ptr₂)
     (slice₂_sorted : slice₂_ptr.sorted)
@@ -469,6 +482,67 @@ theorem slice_ptr_le_of_succ
         slice₂_sorted
         slice₁_ptr_le_slice₂_ptr
     have i₂_in_range : ptr₂ ≤ i₂ ∧ i₂ < high := by
+      have := slice₂_ptr.ptr_ge_low
+      omega
+    simp [Slice.ge_elem] at h
+    exact h i₂ i₂_in_range
+
+theorem slice₂_ptr_le_of_succ
+    (slice₁_ptr : SlicePtrExclusive arr low mid ptr₁)
+    (slice₂_ptr : SlicePtrExclusive arr mid high ptr₂)
+    (slice₁_sorted : slice₁_ptr.sorted)
+    (slice_aux_ptr : SlicePtrExclusive aux low high i)
+    (slice_aux_ptr' : SlicePtrInclusive aux' low high i.succ)
+    (aux'_def :
+      have h₁ := slice_aux_ptr.ptr_lt_size
+      have h₂ := slice₂_ptr.ptr_lt_size
+      aux' = aux.set ⟨i, h₁⟩ (arr[ptr₂]'h₂))
+    (slice_aux_left_le_slice₁_right : slice_aux_ptr.left.le slice₁_ptr.right)
+    (slice₂_ptr_lt_slice₁_ptr :
+      have h₁ := slice₁_ptr.ptr_lt_size
+      have h₂ := slice₂_ptr.ptr_lt_size
+      Ord.compare arr[ptr₁] arr[ptr₂] = .gt)
+    : slice_aux_ptr'.left.le slice₁_ptr.right
+    := by
+  simp [Slice.le]
+  intro i₁ i₂ i₁_in_range i₂_in_range
+  by_cases i₁_lt_i : i₁ < i
+  . simp [Slice.le] at slice_aux_left_le_slice₁_right
+    simp [aux'_def]
+    have i₁_lt_aux_size : i₁ < aux.size := by
+      have := slice_aux_ptr.ptr_lt_size
+      omega
+    let i_f : Fin aux.size := ⟨i, slice_aux_ptr.ptr_lt_size⟩
+    have ptr₂_lt_arr_size := slice₂_ptr.ptr_lt_size
+    have i₁_ne_i : i_f.val ≠ i₁ := by
+      simp [i_f]
+      omega
+    rw [Array.get_set_ne aux i_f arr[ptr₂] i₁_lt_aux_size i₁_ne_i]
+    let i₁_orig : Fin aux.size := ⟨i₁, i₁_lt_aux_size⟩
+    have i₁_orig_eq_i₁ : i₁_orig.val = i₁.val := rfl
+    have i₁_orig_in_range : i₁_orig.val.in_range low i := by
+      simp [Nat.in_range] at *
+      omega
+    have h :=
+      slice_aux_left_le_slice₁_right
+        i₁_orig
+        i₂
+        i₁_orig_in_range
+        i₂_in_range
+    simp [i₁_orig] at h
+    simp [aux'_def, Array.get_set_ne]
+    exact h
+  . simp [Nat.in_range] at i₁_in_range i₂_in_range
+    have i₁_eq_i : i₁ = i := by omega
+    simp [i₁_eq_i, aux'_def]
+    have := slice₂_ptr.ptr_lt_size
+    have ptr₂_lt_ptr₁ : Ord.compare arr[ptr₂] arr[ptr₁] ≠ .gt :=
+      TransCmp.gt_asymm slice₂_ptr_lt_slice₁_ptr
+    have h :=
+      slice₁_ptr.right_ge_elem_of_sorted_le_ptr
+        slice₁_sorted
+        ptr₂_lt_ptr₁
+    have i₂_in_range : ptr₁ ≤ i₂ ∧ i₂ < mid := by
       have := slice₂_ptr.ptr_ge_low
       omega
     simp [Slice.ge_elem] at h
