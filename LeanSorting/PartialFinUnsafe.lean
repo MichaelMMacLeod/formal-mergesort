@@ -75,3 +75,22 @@ partial def Array.mergeSortPartialFinUnsafe [Inhabited α] [Ord α] (arr : Array
       arr
   let aux : Array α := Array.mkArray arr.size default
   loop arr aux 1
+
+@[specialize]
+partial def Array.mergeSortPartialFinUnsafe'
+    [Inhabited α] [Ord α]
+    (arr aux : Array α)
+    : Array α × Array α := Id.run do
+  let mut aux := aux
+  while aux.size < arr.size do
+    aux := aux.push default
+  let rec @[specialize] loop
+      (arr aux : Array α)
+      (chunkSize : ℕ)
+      : Array α × Array α :=
+    if chunkSize < arr.size then
+      let aux' := mergeChunksIntoAuxPartialFinUnsafe arr aux chunkSize
+      loop aux' arr (chunkSize * 2)
+    else
+      (arr, aux)
+  loop arr aux 1

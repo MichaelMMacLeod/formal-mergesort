@@ -21,9 +21,16 @@ structure Slice (arr : Array α) (low high : ℕ) : Prop where
   low_le_high : low ≤ high
   high_le_size : high ≤ arr.size
 
+def Slice.append
+    (s₁ : Slice arr low mid)
+    (s₂ : Slice arr mid high)
+    : Slice arr low high :=
+  { low_le_high := Nat.le_trans s₁.low_le_high s₂.low_le_high,
+    high_le_size := s₂.high_le_size
+  }
+
 variable
   (s : @Slice α arr low high)
-  (s_i : @Slice α arr_i low_i high_i)
 
 structure SlicePtrExclusive (arr : Array α) (low high : ℕ) (ptr : ℕ)
     extends Slice arr low high : Prop where
@@ -175,11 +182,28 @@ def Slice.ge_elem (s : Slice arr low high) (a : α) :=
     have high_le_size := s.high_le_size
     Ord.compare a arr[i] ≠ Ordering.gt
 
+theorem Slice.sorted_of_empty
+    {s : Slice arr low high}
+    (empty : low = high)
+    : s.sorted := by
+  intro i₁ i₂ adjacent_in_range
+  simp [Nat.adjacent_in_range] at adjacent_in_range
+  omega
+
+theorem Slice.le_of_empty
+    {s₁ : Slice arr₁ low₁ high₁}
+    {s₂ : Slice arr₂ low₂ high₂}
+    (empty : low₁ = high₁)
+    : s₁.le s₂ := by
+  intro i₁ i₂ i₁_i₂_in_range
+  simp [Nat.in_range] at i₁_i₂_in_range
+  omega
+
 /--
 For slices `s₁` and `s₂`, `s₁.le s₂` implies `s₁.le_elem a`, where `a` is any
 element of `s₂`.
 -/
-def Slice.le_elem_of_le
+theorem Slice.le_elem_of_le
     (s₁ : Slice arr₁ low₁ high₁)
     {s₂ : Slice arr₂ low₂ high₂}
     (s₁_le_s₂ : s₁.le s₂)
@@ -206,7 +230,7 @@ lemma not_gt_of_compare_same {a : α} : compare a a ≠ Ordering.gt := by
 /--
 If a Slice `s` is sorted and `a` is its first element, then `s.ge_elem a` is true.
 -/
-def Slice.ge_elem_low_of_sorted
+theorem Slice.ge_elem_low_of_sorted
     (s_sorted : s.sorted)
     (nonempty : low < high)
     : have := s.high_le_size
@@ -235,7 +259,7 @@ def Slice.ge_elem_low_of_sorted
       exact TransCmp.le_trans ih h
   exact loop i in_range
 
-def Slice.ge_elem_low_succ_of_sorted
+theorem Slice.ge_elem_low_succ_of_sorted
     (s_sorted : s.sorted)
     (nonempty : low < high)
     (s' : Slice arr low.succ high)
@@ -258,7 +282,7 @@ For example:
 [1,2,3,4] ≤ [5,6]   is true as well
 ```
 -/
-def Slice.le_of_swap_ends_le
+theorem Slice.le_of_swap_ends_le
     {aux : Slice arr₁ low₁ high₁}
     {arr : Slice arr₂ low₂ high₂}
     (arr_sorted : arr.sorted)
@@ -304,7 +328,7 @@ def Slice.le_of_swap_ends_le
 The elements at and following a pointer into a sorted slice are themselves
 sorted.
 -/
-def SlicePtrInclusive.sorted_of_right_sorted
+theorem SlicePtrInclusive.sorted_of_right_sorted
     (s : SlicePtrInclusive arr low high ptr)
     (s_sorted : s.sorted)
     : s.right.sorted := by
@@ -320,7 +344,7 @@ def SlicePtrInclusive.sorted_of_right_sorted
 If `a` is greater or equal to all elements of a sorted slice `s`, then `s` remains sorted
 when `a` is appended on the right.
 -/
-def Slice.sorted_after_sorted_push
+theorem Slice.sorted_after_sorted_push
     (s : Slice arr low high)
     (s_sorted : s.sorted)
     (high_lt_size : high < arr.size)

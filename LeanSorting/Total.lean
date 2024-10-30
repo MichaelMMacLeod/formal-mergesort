@@ -23,20 +23,66 @@ variable
   (s : @Slice α arr low high)
   (s_i : @Slice α arr_i low_i high_i)
 
-structure H₁ (arr aux : Array α) (low mid high ptr₁ ptr₂ : ℕ) : Prop where
-  slice₁ : SlicePtrInclusive arr low mid ptr₁
-  slice₂ : SlicePtrInclusive arr mid high ptr₂
+structure H₁ (arr aux : Array α) (low mid high : ℕ) : Prop where
+  slice₁ : Slice arr low mid
+  slice₂ : Slice arr mid high
   size_eq : arr.size = aux.size
   slice₁_sorted : slice₁.sorted
   slice₂_sorted : slice₂.sorted
 
 structure H₂ (arr aux : Array α) (low mid high ptr₁ ptr₂ i : ℕ)
-    extends H₁ arr aux low mid high ptr₁ ptr₂ : Prop where
+    extends H₁ arr aux low mid high : Prop where
+  slice₁_inclusive : SlicePtrInclusive arr low mid ptr₁
+  slice₂_inclusive : SlicePtrInclusive arr mid high ptr₂
   slice_i : SlicePtrInclusive aux low high i
   i_def : i = ptr₁ + ptr₂ - mid
   slice_i_left_sorted : slice_i.left.sorted
-  slice_i_left_le_right₁ : slice_i.left.le slice₁.right
-  slice_i_left_le_right₂ : slice_i.left.le slice₂.right
+  slice_i_left_le_right₁ : slice_i.left.le slice₁_inclusive.right
+  slice_i_left_le_right₂ : slice_i.left.le slice₂_inclusive.right
+
+def H₁.make_h₂
+    (h₁ : H₁ arr aux low mid high)
+    (ptr₁_def : ptr₁ = low)
+    (ptr₂_def : ptr₂ = mid)
+    (i_def : i = ptr₁)
+    : H₂ arr aux low mid high ptr₁ ptr₂ i :=
+  have slice₁_inclusive : SlicePtrInclusive arr low mid ptr₁ :=
+    { h₁.slice₁ with
+      ptr_ge_low := Nat.le_of_eq (Eq.symm ptr₁_def)
+      ptr_le_high := le_of_eq_of_le ptr₁_def h₁.slice₁.low_le_high
+    }
+  have slice₂_inclusive : SlicePtrInclusive arr mid high ptr₂ :=
+    { h₁.slice₂ with
+      ptr_ge_low := Nat.le_of_eq (Eq.symm ptr₂_def)
+      ptr_le_high := le_of_eq_of_le ptr₂_def h₁.slice₂.low_le_high
+    }
+  have slice_i : SlicePtrInclusive aux low high i :=
+    let s : Slice arr low high := h₁.slice₁.append slice₂_inclusive.toSlice
+    let s : Slice aux low high := s.swap_array h₁.size_eq
+    { s with
+      ptr_ge_low := by omega
+      ptr_le_high := by
+        have := slice₁_inclusive.ptr_le_high
+        have := slice₂_inclusive.ptr_le_high
+        omega
+    }
+  have i_def : i = ptr₁ + ptr₂ - mid := by omega
+  have slice_i_empty : low = i := by omega
+  have slice_i_left_sorted : slice_i.left.sorted :=
+    slice_i.left.sorted_of_empty slice_i_empty
+  have slice_i_left_le_right₁ : slice_i.left.le slice₁_inclusive.right :=
+    slice_i.left.le_of_empty slice_i_empty
+  have slice_i_left_le_right₂ : slice_i.left.le slice₂_inclusive.right :=
+    slice_i.left.le_of_empty slice_i_empty
+  { h₁ with
+    slice₁_inclusive,
+    slice₂_inclusive,
+    slice_i,
+    i_def,
+    slice_i_left_sorted,
+    slice_i_left_le_right₁,
+    slice_i_left_le_right₂
+  }
 
 structure H₃ (arr aux : Array α) (low mid high ptr₁ ptr₂ i : ℕ)
     extends H₂ arr aux low mid high ptr₁ ptr₂ i : Prop where
@@ -54,8 +100,8 @@ def H₂.mkH₃
       omega
     exact h₂.slice_i.make_exclusive i_lt_high
   { h₂ with
-    slice₁_exclusive := h₂.slice₁.make_exclusive ptr₁_ptr₂_in_range.left,
-    slice₂_exclusive := h₂.slice₂.make_exclusive ptr₁_ptr₂_in_range.right,
+    slice₁_exclusive := h₂.slice₁_inclusive.make_exclusive ptr₁_ptr₂_in_range.left,
+    slice₂_exclusive := h₂.slice₂_inclusive.make_exclusive ptr₁_ptr₂_in_range.right,
     slice_i_exclusive
   }
 
@@ -80,18 +126,18 @@ def H₃.nextLeft
     := by
   intro ptr₁_lt_arr_size aux'
   have aux'_def : aux' = aux.set ⟨i, h₃.i_lt_aux_size⟩ arr[ptr₁] := by rfl
-  have slice₁ := h₃.slice₁_exclusive.increment_ptr
+  have slice₁_inclusive := h₃.slice₁_exclusive.increment_ptr
   have size_eq : arr.size = aux'.size := by simp [aux']; exact h₃.size_eq
   have aux_size_eq : aux.size = aux'.size := by simp [aux']
   have slice_i : SlicePtrInclusive aux' low high i.succ :=
     h₃.slice_i_exclusive.increment_ptr.swap_array aux_size_eq
   have i_def : i.succ = ptr₁.succ + ptr₂ - mid := by
     have := h₃.i_def
-    have := h₃.slice₂.ptr_ge_low
+    have := h₃.slice₂_inclusive.ptr_ge_low
     omega
   have slice_i_left_sorted : slice_i.left.sorted :=
     have ptr₁_in_range : ptr₁ ≥ ptr₁ ∧ ptr₁ < mid := by
-      simp [h₃.slice₁.ptr_ge_low, h₃.slice₁_exclusive.ptr_lt_high]
+      simp [h₃.slice₁_inclusive.ptr_ge_low, h₃.slice₁_exclusive.ptr_lt_high]
     have s_le_arr_ptr₁ : h₃.slice_i.left.le_elem arr[ptr₁] :=
       h₃.slice_i.left.le_elem_of_le h₃.slice_i_left_le_right₁ ptr₁_in_range
     h₃.slice_i.left.sorted_after_sorted_push
@@ -100,17 +146,17 @@ def H₃.nextLeft
       aux'_def
       slice_i.left
       s_le_arr_ptr₁
-  have slice_i_left_le_right₁ : slice_i.left.le slice₁.right :=
+  have slice_i_left_le_right₁ : slice_i.left.le slice₁_inclusive.right :=
     h₃.slice_i.left.le_of_swap_ends_le
-      (h₃.slice₁.sorted_of_right_sorted h₃.slice₁_sorted)
+      (h₃.slice₁_inclusive.sorted_of_right_sorted h₃.slice₁_sorted)
       h₃.slice_i_left_le_right₁
       h₃.i_lt_aux_size
       h₃.ptr₁_lt_arr_size
       aux'_def
       slice_i.left
-      slice₁.right
+      slice₁_inclusive.right
       h₃.size_eq
-  have slice_i_left_le_right₂ : slice_i.left.le h₃.slice₂.right :=
+  have slice_i_left_le_right₂ : slice_i.left.le h₃.slice₂_inclusive.right :=
     slice₁_ptr_le_of_succ
       h₃.slice₁_exclusive
       h₃.slice₂_exclusive
@@ -122,7 +168,7 @@ def H₃.nextLeft
       arr_ptr₁_le_arr_ptr₂
   exact {
     h₃ with
-    slice₁,
+    slice₁_inclusive,
     size_eq,
     slice_i,
     i_def,
@@ -143,18 +189,18 @@ def H₃.nextRight
     := by
   intro ptr₂_lt_arr_size aux'
   have aux'_def : aux' = aux.set ⟨i, h₃.i_lt_aux_size⟩ arr[ptr₂] := by rfl
-  have slice₂ := h₃.slice₂_exclusive.increment_ptr
+  have slice₂_inclusive := h₃.slice₂_exclusive.increment_ptr
   have size_eq : arr.size = aux'.size := by simp [aux']; exact h₃.size_eq
   have aux_size_eq : aux.size = aux'.size := by simp [aux']
   have slice_i : SlicePtrInclusive aux' low high i.succ :=
     h₃.slice_i_exclusive.increment_ptr.swap_array aux_size_eq
   have i_def : i.succ = ptr₁ + ptr₂.succ - mid := by
     have := h₃.i_def
-    have := h₃.slice₂.ptr_ge_low
+    have := h₃.slice₂_inclusive.ptr_ge_low
     omega
   have slice_i_left_sorted : slice_i.left.sorted :=
     have ptr₂_in_range : ptr₂ ≥ ptr₂ ∧ ptr₂ < high := by
-      simp [h₃.slice₂.ptr_ge_low, h₃.slice₂_exclusive.ptr_lt_high]
+      simp [h₃.slice₂_inclusive.ptr_ge_low, h₃.slice₂_exclusive.ptr_lt_high]
     have s_le_arr_ptr₁ : h₃.slice_i.left.le_elem arr[ptr₂] :=
       h₃.slice_i.left.le_elem_of_le h₃.slice_i_left_le_right₂ ptr₂_in_range
     h₃.slice_i.left.sorted_after_sorted_push
@@ -163,17 +209,17 @@ def H₃.nextRight
       aux'_def
       slice_i.left
       s_le_arr_ptr₁
-  have slice_i_left_le_right₂ : slice_i.left.le slice₂.right :=
+  have slice_i_left_le_right₂ : slice_i.left.le slice₂_inclusive.right :=
     h₃.slice_i.left.le_of_swap_ends_le
-      (h₃.slice₂.sorted_of_right_sorted h₃.slice₂_sorted)
+      (h₃.slice₂_inclusive.sorted_of_right_sorted h₃.slice₂_sorted)
       h₃.slice_i_left_le_right₂
       h₃.i_lt_aux_size
       h₃.ptr₂_lt_arr_size
       aux'_def
       slice_i.left
-      slice₂.right
+      slice₂_inclusive.right
       h₃.size_eq
-  have slice_i_left_le_right₁ : slice_i.left.le h₃.slice₁.right :=
+  have slice_i_left_le_right₁ : slice_i.left.le h₃.slice₁_inclusive.right :=
     slice₂_ptr_le_of_succ
       h₃.slice₁_exclusive
       h₃.slice₂_exclusive
@@ -185,7 +231,7 @@ def H₃.nextRight
       arr_ptr₂_lt_arr_ptr₁
   exact {
     h₃ with
-    slice₂,
+    slice₂_inclusive,
     size_eq,
     slice_i,
     i_def,
@@ -303,76 +349,83 @@ def H₃.nextRight
 --     : end₂ - (k₂ + 1) < end₂ - k₂ := by
 --   omega
 
--- @[specialize, inline]
--- def mergeAdjacentChunksIntoAux
---     (h₁ : H₁ arr aux start₁ start₂ end₂)
---     : Array α :=
---   -- Copy the lowest element from the left and right regions until one of them is fully copied.
---   let rec @[specialize] loop
---       (aux : Array α)
---       (i k₁ k₂ : ℕ)
---       (h₂ : H₂ arr aux start₁ start₂ end₂ i k₁ k₂)
---       : Array α :=
---     if k₁_k₂_in_range : k₁ < start₂ ∧ k₂ < end₂ then
---       have h₃ := h₂.mkH₃ k₁_k₂_in_range
---       have k₁_lt_arr_size : k₁ < arr.size := h₃.k₁_lt_arr_size
---       have k₂_lt_arr_size : k₂ < arr.size := h₃.k₂_lt_arr_size
---       match Ord.compare arr[k₁] arr[k₂] with
---       | .lt | .eq =>
---         let aux' := aux.set ⟨i, h₃.i_lt_aux_size⟩ arr[k₁]
---         loop aux' i.succ k₁.succ k₂ h₃.nextLeft
---       | .gt =>
---         let aux' := aux.set ⟨i, h₃.i_lt_aux_size⟩ arr[k₂]
---         loop aux' i.succ k₁ k₂.succ h₃.nextRight
---     else
---       -- If the left region is not yet empty, finish copying it.
---       let rec @[specialize] loopLeft
---           (aux : Array α)
---           (i k₁ : ℕ)
---           (h₂ : H₂ arr aux start₁ start₂ end₂ i k₁ k₂)
---           : Array α :=
---         if k₁_lt_start₂ : k₁ < start₂ then
---           have : k₁ < arr.size := h₂.mk_k₁_lt_arr_size k₁_lt_start₂
---           have i_lt_aux_size : i < aux.size := h₂.mk_i_lt_aux_size k₁_lt_start₂
---           let aux' := aux.set ⟨i, i_lt_aux_size⟩ arr[k₁]
---           loopLeft aux' i.succ k₁.succ (h₂.nextLeft k₁_lt_start₂)
---         else
---           -- If the right region is not yet empty, finish copying it.
---           let rec @[specialize] loopRight
---               (aux : Array α)
---               (i k₂ : ℕ)
---               (h₄Right : H₄Right arr aux start₁ start₂ end₂ i k₁ k₂)
---               : Array α :=
---             if k₂_lt_end₂ : k₂ < end₂ then
---               have : k₂ < arr.size := h₄Right.mk_k₂_lt_arr_size k₂_lt_end₂
---               have i_lt_aux_size : i < aux.size := h₄Right.mk_i_lt_aux_size k₂_lt_end₂
---               let aux' := aux.set ⟨i, i_lt_aux_size⟩ arr[k₂]
---               loopRight aux' i.succ k₂.succ (h₄Right.next k₂_lt_end₂)
---             else
---               aux
---           -- These termination proofs can be automatically inferred, but stating
---           -- them explicitly makes this function compile a lot faster.
---           termination_by end₂ - k₂
---           decreasing_by exact mergeAdjacentChunksIntoAux.loop.loopLeft.loopRight_decreasing end₂ k₂ k₂_lt_end₂
---           loopRight aux i k₂ (h₂.mkH₄Right k₁_lt_start₂)
---       termination_by start₂ - k₁
---       decreasing_by exact mergeAdjacentChunksIntoAux.loop.loopLeft_decreasing start₂ k₁ k₁_lt_start₂
---       loopLeft aux i k₁ h₂
---   termination_by arr.size - i
---   decreasing_by
---     all_goals
---       have i_lt_arr_size : i < arr.size := by
---         rw [h₂.arr_size_eq_aux_size]
---         exact (h₂.mkH₃ k₁_k₂_in_range).i_lt_aux_size
---       exact (Nat.sub_succ_lt_sub_of_lt i_lt_arr_size)
---   let h₂ :=
---     { h₁ with
---       i_def := Nat.eq_sub_of_add_eq rfl
---       k₂_ge_start₂ := Nat.le_refl start₂
---       k₁_lt_start₂_succ := Nat.lt_succ_of_lt h₁.start₁_lt_start₂
---       k₂_lt_end₂_succ := Nat.lt_succ_of_lt h₁.start₂_lt_end₂
---     }
---   loop aux start₁ start₁ start₂ h₂
+@[specialize, inline]
+def mergeAdjacentChunksIntoAux
+    (h₁ : H₁ arr aux low mid high)
+    : Array α :=
+  -- Copy the lowest element from the left and right regions until one of them is fully copied.
+  let rec @[specialize] loop
+      (aux : Array α)
+      (i ptr₁ ptr₂ : ℕ)
+      (h₂ : H₂ arr aux low mid high ptr₁ ptr₂ i)
+      : Array α :=
+    if ptr₁_ptr₂_in_range : ptr₁ < mid ∧ ptr₂ < high then
+      have h₃ := h₂.mkH₃ ptr₁_ptr₂_in_range
+      have ptr₁_lt_arr_size := h₃.ptr₁_lt_arr_size
+      have ptr₂_lt_arr_size := h₃.ptr₂_lt_arr_size
+      let comparison := Ord.compare arr[ptr₁] arr[ptr₂]
+      if h : comparison ≠ .gt then
+        let aux' := aux.set ⟨i, h₃.i_lt_aux_size⟩ arr[ptr₁]
+        loop aux' i.succ ptr₁.succ ptr₂ (h₃.nextLeft h)
+      else
+        have h : comparison = .gt := by simp at h; exact h
+        let aux' := aux.set ⟨i, h₃.i_lt_aux_size⟩ arr[ptr₂]
+        loop aux' i.succ ptr₁ ptr₂.succ (h₃.nextRight h)
+    else
+      sorry
+      -- If the left region is not yet empty, finish copying it.
+      -- let rec @[specialize] loopLeft
+      --     (aux : Array α)
+      --     (i k₁ : ℕ)
+      --     (h₂ : H₂ arr aux low mid high ptr₁ ptr₂ i)
+      --     : Array α :=
+      --   if k₁_lt_start₂ : k₁ < start₂ then
+      --     have : k₁ < arr.size := h₂.mk_k₁_lt_arr_size k₁_lt_start₂
+      --     have i_lt_aux_size : i < aux.size := h₂.mk_i_lt_aux_size k₁_lt_start₂
+      --     let aux' := aux.set ⟨i, i_lt_aux_size⟩ arr[k₁]
+      --     loopLeft aux' i.succ k₁.succ (h₂.nextLeft k₁_lt_start₂)
+      --   else
+      --     sorry
+      --     -- If the right region is not yet empty, finish copying it.
+      --     -- let rec @[specialize] loopRight
+      --     --     (aux : Array α)
+      --     --     (i k₂ : ℕ)
+      --     --     (h₄Right : H₄Right arr aux start₁ start₂ end₂ i k₁ k₂)
+      --     --     : Array α :=
+      --     --   if k₂_lt_end₂ : k₂ < end₂ then
+      --     --     have : k₂ < arr.size := h₄Right.mk_k₂_lt_arr_size k₂_lt_end₂
+      --     --     have i_lt_aux_size : i < aux.size := h₄Right.mk_i_lt_aux_size k₂_lt_end₂
+      --     --     let aux' := aux.set ⟨i, i_lt_aux_size⟩ arr[k₂]
+      --     --     loopRight aux' i.succ k₂.succ (h₄Right.next k₂_lt_end₂)
+      --     --   else
+      --     --     aux
+      --     -- -- These termination proofs can be automatically inferred, but stating
+      --     -- -- them explicitly makes this function compile a lot faster.
+      --     -- termination_by end₂ - k₂
+      --     -- decreasing_by exact mergeAdjacentChunksIntoAux.loop.loopLeft.loopRight_decreasing end₂ k₂ k₂_lt_end₂
+      --     -- loopRight aux i k₂ (h₂.mkH₄Right k₁_lt_start₂)
+      -- -- termination_by start₂ - k₁
+      -- -- decreasing_by exact mergeAdjacentChunksIntoAux.loop.loopLeft_decreasing start₂ k₁ k₁_lt_start₂
+      -- loopLeft aux i k₁ h₂
+  -- termination_by arr.size - i
+  -- decreasing_by
+  --   all_goals
+  --     have i_lt_arr_size : i < arr.size := by
+  --       rw [h₂.arr_size_eq_aux_size]
+  --       exact (h₂.mkH₃ k₁_k₂_in_range).i_lt_aux_size
+  --     exact (Nat.sub_succ_lt_sub_of_lt i_lt_arr_size)
+  -- let h₂ :=
+  --   { h₁ with
+  --     i_def := Nat.eq_sub_of_add_eq rfl
+  --     k₂_ge_start₂ := Nat.le_refl start₂
+  --     k₁_lt_start₂_succ := Nat.lt_succ_of_lt h₁.start₁_lt_start₂
+  --     k₂_lt_end₂_succ := Nat.lt_succ_of_lt h₁.start₂_lt_end₂
+  --   }
+  let ptr₁ := low
+  let ptr₂ := mid
+  let i := ptr₁
+  have h₂ := h₁.make_h₂ rfl rfl rfl
+  loop aux i ptr₁ ptr₂ h₂
 
 -- structure H₅ : Prop where
 --   arr_size_eq_aux_size : arr.size = aux.size
@@ -646,3 +699,6 @@ def H₃.nextRight
 --     chunkSize_gt_0 := by decide
 --   }
 --   loop arr aux 1 h₅
+
+#eval 975*2/200
+#check (Sort 0 : Sort 1)
