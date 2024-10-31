@@ -134,18 +134,6 @@ def H₂.ptr₁_lt_arr_size
     : ptr₁ < arr.size :=
   Nat.le_trans ptr₁_lt_mid h₂.slice₁.high_le_size
 
-
--- def H₂.mk_i_lt_aux_size
---     (h₂ : H₂ arr aux start₁ start₂ end₂ i k₁ k₂)
---     (k₁_lt_start₂ : k₁ < start₂)
---     : i < aux.size := by
---   have := h₂.start₂_lt_end₂
---   have := h₂.end₂_le_arr_size
---   have := h₂.arr_size_eq_aux_size
---   have := h₂.i_def
---   have := h₂.k₂_lt_end₂_succ
---   omega
-
 def H₂.i_lt_aux_size
     (h₂ : H₂ arr aux low mid high ptr₁ ptr₂ i)
     (ptr₁_lt_mid : ptr₁ < mid)
@@ -155,14 +143,6 @@ def H₂.i_lt_aux_size
   have : ptr₁ < high := Nat.le_trans ptr₁_lt_mid h₂.slice₂.low_le_high
   have i_lt_high : i < high := by omega
   exact (h₂.slice_i.make_exclusive i_lt_high).ptr_lt_size
-  -- have : mid < high := by
-  --   -- have := h₂.
-  --   omega
-  -- have : high ≤ arr.size := sorry
-  -- have : arr.size = aux.size := sorry
-  -- have : i = ptr₁ + ptr₂ - mid := sorry
-  -- have : ptr₂ < high.succ := sorry
-  -- omega
 
 structure H₃ (arr aux : Array α) (low mid high ptr₁ ptr₂ i : ℕ)
     extends H₂ arr aux low mid high ptr₁ ptr₂ i : Prop where
@@ -320,115 +300,6 @@ def H₃.nextRight
     slice_i_left_le_right₂,
   }
 
--- def H₂.mk_i_lt_aux_size
---     (h₂ : H₂ arr aux start₁ start₂ end₂ i k₁ k₂)
---     (k₁_lt_start₂ : k₁ < start₂)
---     : i < aux.size := by
---   have := h₂.start₂_lt_end₂
---   have := h₂.end₂_le_arr_size
---   have := h₂.arr_size_eq_aux_size
---   have := h₂.i_def
---   have := h₂.k₂_lt_end₂_succ
---   omega
-
--- def H₂.mk_k₁_lt_arr_size
---     (h₂ : H₂ arr aux start₁ start₂ end₂ i k₁ k₂)
---     (k₁_lt_start₂ : k₁ < start₂)
---     : k₁ < arr.size := by
---   have := h₂.start₂_lt_end₂
---   have := h₂.end₂_le_arr_size
---   omega
-
--- def H₂.nextLeft
---     (h₂ : H₂ arr aux start₁ start₂ end₂ i k₁ k₂)
---     (k₁_lt_start₂ : k₁ < start₂)
---     : have i_lt_aux_size : i < aux.size := h₂.mk_i_lt_aux_size k₁_lt_start₂
---       have k₁_lt_arr_size : k₁ < arr.size := h₂.mk_k₁_lt_arr_size k₁_lt_start₂
---       have aux' := aux.set ⟨i, i_lt_aux_size⟩ arr[k₁]
---       H₂ arr aux' start₁ start₂ end₂ i.succ k₁.succ k₂
---     := by
---   intro i_lt_aux_size k₁_lt_arr_size aux'
---   let arr_size_eq_aux'_size : arr.size = aux'.size := by
---     simp [aux']
---     exact h₂.arr_size_eq_aux_size
---   have i_succ_def : i.succ = k₁.succ + k₂ - start₂ := by
---     have := h₂.i_def
---     have := h₂.k₂_ge_start₂
---     omega
---   have k₁_succ_lt_start₂_succ : k₁.succ < start₂.succ := by
---     omega
---   exact
---     { h₂ with
---       arr_size_eq_aux_size := arr_size_eq_aux'_size
---       i_def := i_succ_def
---       k₁_lt_start₂_succ := k₁_succ_lt_start₂_succ
---     }
-
--- structure H₄Right extends H₁ arr aux start₁ start₂ end₂ : Prop where
---   i_def : i = k₁ + k₂ - start₂
---   k₂_ge_start₂ : k₂ ≥ start₂
---   k₁_lt_start₂_succ : k₁ < start₂.succ
---   not_k₁_lt_start₂ : ¬k₁ < start₂
-
--- def H₂.mkH₄Right
---     (h₂ : H₂ arr aux start₁ start₂ end₂ i k₁ k₂)
---     (not_k₁_lt_start₂ : ¬k₁ < start₂)
---     : H₄Right arr aux start₁ start₂ end₂ i k₁ k₂ :=
---   { h₂ with not_k₁_lt_start₂ }
-
--- def H₄Right.mk_i_lt_aux_size
---     (h₄Right : H₄Right arr aux start₁ start₂ end₂ i k₁ k₂)
---     (k₂_lt_end₂ : k₂ < end₂)
---     : i < aux.size := by
---   have := h₄Right.end₂_le_arr_size
---   have := h₄Right.arr_size_eq_aux_size
---   have := h₄Right.i_def
---   have := h₄Right.k₁_lt_start₂_succ
---   omega
-
--- def H₄Right.mk_k₂_lt_arr_size
---     (h₄Right : H₄Right arr aux start₁ start₂ end₂ i k₁ k₂)
---     (k₂_lt_end₂ : k₂ < end₂)
---     : k₂ < arr.size := by
---   have := h₄Right.end₂_le_arr_size
---   omega
-
--- def H₄Right.next
---     (h₄Right : H₄Right arr aux start₁ start₂ end₂ i k₁ k₂)
---     (k₂_lt_end₂ : k₂ < end₂)
---     : have i_lt_aux_size := h₄Right.mk_i_lt_aux_size k₂_lt_end₂
---       have k₂_lt_arr_Size := h₄Right.mk_k₂_lt_arr_size k₂_lt_end₂
---       let aux' := aux.set ⟨i, i_lt_aux_size⟩ arr[k₂]
---       H₄Right arr aux' start₁ start₂ end₂ i.succ k₁ k₂.succ
---     := by
---   intro i_lt_aux_size k₂_lt_arr_size aux'
---   have arr_size_eq_aux'_size : arr.size = aux'.size := by
---     simp [aux']
---     exact h₄Right.arr_size_eq_aux_size
---   have i_succ_def : i.succ = k₁ + k₂.succ - start₂ := by
---     have := h₄Right.i_def
---     have := h₄Right.k₂_ge_start₂
---     omega
---   have k₂_succ_ge_start₂ : k₂.succ ≥ start₂ := by
---     have := h₄Right.k₂_ge_start₂
---     omega
---   exact
---     { h₄Right with
---       arr_size_eq_aux_size := arr_size_eq_aux'_size
---       i_def := i_succ_def
---       k₂_ge_start₂ := k₂_succ_ge_start₂
---     }
-
--- def mergeAdjacentChunksIntoAux.loop.loopLeft_decreasing
---     (k₁_lt_start₂ : k₁ < start₂)
---     : start₂ - (k₁ + 1) < start₂ - k₁ := by
---   omega
-
--- def mergeAdjacentChunksIntoAux.loop.loopLeft.loopRight_decreasing
---     (k₂_lt_end₂ : k₂ < end₂)
---     : end₂ - (k₂ + 1) < end₂ - k₂ := by
---   omega
-
 def H₂a.make_h₂a₁
     (h₂a : H₂a arr aux low mid high ptr₁ ptr₂ i)
     (ptr₁_lt_mid : ptr₁ < mid)
@@ -552,6 +423,60 @@ def H₂a₃.i_lt_aux_size
     (h₂a₃ : H₂a₃ arr aux low mid high ptr₁ ptr₂ i)
     : i < aux.size :=
   h₂a₃.slice_i_exclusive.ptr_lt_size
+
+def H₂a₃.nextRight
+    (h₂a₃ : H₂a₃ arr aux low mid high ptr₁ ptr₂ i)
+    : have ptr₂_lt_arr_size := h₂a₃.ptr₂_lt_arr_size
+      let aux' := aux.set ⟨i, h₂a₃.i_lt_aux_size⟩ arr[ptr₂]
+      H₂a₂ arr aux' low mid high ptr₁ ptr₂.succ i.succ := by
+  intro ptr₂_lt_arr_size aux'
+  have size_eq : arr.size = aux'.size := by simp [aux']; exact h₂a₃.size_eq
+  have aux_size_eq : aux.size = aux'.size := by simp [aux']
+  have slice₂_inclusive : SlicePtrInclusive arr mid high ptr₂.succ :=
+    h₂a₃.slice₂_exclusive.increment_ptr
+  have slice_i : SlicePtrInclusive aux' low high i.succ :=
+    h₂a₃.slice_i_exclusive.increment_ptr.swap_array aux_size_eq
+  have not_ptr₁_ptr₂_in_range : ptr₁ = mid ∨ ptr₂.succ = high := by
+    apply Or.intro_left
+    exact h₂a₃.ptr₁_eq_mid
+  have i_def : i.succ = ptr₁ + ptr₂.succ - mid := by
+    have := h₂a₃.i_def
+    have := h₂a₃.slice₂_inclusive.ptr_ge_low
+    omega
+  have slice_i_left_sorted : slice_i.left.sorted :=
+    have ptr₂_in_range : ptr₂ ≥ ptr₂ ∧ ptr₂ < high := by
+      simp [h₂a₃.slice₂_inclusive.ptr_ge_low, h₂a₃.slice₂_exclusive.ptr_lt_high]
+    have s_le_arr_ptr₁ : h₂a₃.slice_i.left.le_elem arr[ptr₂] :=
+      h₂a₃.slice_i.left.le_elem_of_le h₂a₃.slice_i_left_le_right₂ ptr₂_in_range
+    h₂a₃.slice_i.left.sorted_after_sorted_push
+      h₂a₃.slice_i_left_sorted
+      h₂a₃.i_lt_aux_size
+      rfl
+      slice_i.left
+      s_le_arr_ptr₁
+  have slice_i_left_le_right₁ : slice_i.left.le h₂a₃.slice₁_inclusive.right :=
+    slice_i.left.le_of_empty₂ h₂a₃.ptr₁_eq_mid
+  have slice_i_left_le_right₂ : slice_i.left.le slice₂_inclusive.right :=
+    h₂a₃.slice_i.left.le_of_swap_ends_le
+      (h₂a₃.slice₂_inclusive.sorted_of_right_sorted h₂a₃.slice₂_sorted)
+      h₂a₃.slice_i_left_le_right₂
+      h₂a₃.i_lt_aux_size
+      h₂a₃.ptr₂_lt_arr_size
+      rfl
+      slice_i.left
+      slice₂_inclusive.right
+      h₂a₃.size_eq
+  exact {
+    h₂a₃ with
+    slice₂_inclusive,
+    slice_i,
+    not_ptr₁_ptr₂_in_range,
+    i_def,
+    slice_i_left_sorted,
+    slice_i_left_le_right₁,
+    slice_i_left_le_right₂,
+    size_eq,
+  }
 
 @[specialize, inline]
 def mergeAdjacentChunksIntoAux
