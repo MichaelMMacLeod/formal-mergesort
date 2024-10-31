@@ -40,14 +40,14 @@ structure H₂ (arr aux : Array α) (low mid high ptr₁ ptr₂ i : ℕ)
   slice_i_left_le_right₁ : slice_i.left.le slice₁_inclusive.right
   slice_i_left_le_right₂ : slice_i.left.le slice₂_inclusive.right
 
-structure H₂a (arr aux : Array α) (low mid high ptr₁ ptr₂ i : ℕ)
+structure H₄ (arr aux : Array α) (low mid high ptr₁ ptr₂ i : ℕ)
     extends H₂ arr aux low mid high ptr₁ ptr₂ i : Prop where
   not_ptr₁_ptr₂_in_range : ptr₁ = mid ∨ ptr₂ = high
 
-def H₂.make_h₂a
+def H₂.make_H₄
   (h₂ : H₂ arr aux low mid high ptr₁ ptr₂ i)
   (not_ptr₁_ptr₂_in_range : ¬(ptr₁ < mid ∧ ptr₂ < high))
-  : H₂a arr aux low mid high ptr₁ ptr₂ i :=
+  : H₄ arr aux low mid high ptr₁ ptr₂ i :=
   { h₂ with
     not_ptr₁_ptr₂_in_range := by
       have := h₂.slice₁_inclusive.ptr_le_high
@@ -55,36 +55,36 @@ def H₂.make_h₂a
       omega
   }
 
-structure H₂a₁ (arr aux : Array α) (low mid high ptr₁ ptr₂ i : ℕ)
-    extends H₂a arr aux low mid high ptr₁ ptr₂ i : Prop where
+structure H₅ (arr aux : Array α) (low mid high ptr₁ ptr₂ i : ℕ)
+    extends H₄ arr aux low mid high ptr₁ ptr₂ i : Prop where
   ptr₁_lt_mid : ptr₁ < mid
 
-structure H₂a₂ (arr aux : Array α) (low mid high ptr₁ ptr₂ i : ℕ)
-    extends H₂a arr aux low mid high ptr₁ ptr₂ i : Prop where
+structure H₆ (arr aux : Array α) (low mid high ptr₁ ptr₂ i : ℕ)
+    extends H₄ arr aux low mid high ptr₁ ptr₂ i : Prop where
   ptr₁_eq_mid : ptr₁ = mid
 
-structure H₂a₃ (arr aux : Array α) (low mid high ptr₁ ptr₂ i : ℕ)
-    extends H₂a₂ arr aux low mid high ptr₁ ptr₂ i : Prop where
+structure H₇ (arr aux : Array α) (low mid high ptr₁ ptr₂ i : ℕ)
+    extends H₆ arr aux low mid high ptr₁ ptr₂ i : Prop where
   ptr₂_lt_high : ptr₂ < high
 
-def H₂a₂.make_h₂a₃
-    (h₂a₂ : H₂a₂ arr aux low mid high ptr₁ ptr₂ i)
+def H₆.make_H₇
+    (h₆ : H₆ arr aux low mid high ptr₁ ptr₂ i)
     (ptr₂_lt_high : ptr₂ < high)
-    : H₂a₃ arr aux low mid high ptr₁ ptr₂ i :=
-  { h₂a₂ with ptr₂_lt_high }
+    : H₇ arr aux low mid high ptr₁ ptr₂ i :=
+  { h₆ with ptr₂_lt_high }
 
-def H₂a.make_h₂a₂
-    (h₂a : H₂a arr aux low mid high ptr₁ ptr₂ i)
+def H₄.make_H₆
+    (h₄ : H₄ arr aux low mid high ptr₁ ptr₂ i)
     (not_ptr₁_lt_mid : ¬ptr₁ < mid)
-    : H₂a₂ arr aux low mid high ptr₁ ptr₂ i :=
-  { h₂a with
+    : H₆ arr aux low mid high ptr₁ ptr₂ i :=
+  { h₄ with
     ptr₁_eq_mid := by
-      have := h₂a.not_ptr₁_ptr₂_in_range
-      have := h₂a.slice₁_inclusive.ptr_le_high
+      have := h₄.not_ptr₁_ptr₂_in_range
+      have := h₄.slice₁_inclusive.ptr_le_high
       omega
   }
 
-def H₁.make_h₂
+def H₁.make_H₂
     (h₁ : H₁ arr aux low mid high)
     (ptr₁_def : ptr₁ = low)
     (ptr₂_def : ptr₂ = mid)
@@ -150,7 +150,7 @@ structure H₃ (arr aux : Array α) (low mid high ptr₁ ptr₂ i : ℕ)
   slice₂_exclusive : SlicePtrExclusive arr mid high ptr₂
   slice_i_exclusive : SlicePtrExclusive aux low high i
 
-def H₂.mkH₃
+def H₂.make_H₃
     (h₂ : H₂ arr aux low mid high ptr₁ ptr₂ i)
     (ptr₁_ptr₂_in_range : ptr₁ < mid ∧ ptr₂ < high)
     : H₃ arr aux low mid high ptr₁ ptr₂ i :=
@@ -174,7 +174,7 @@ def H₃.ptr₁_lt_arr_size (h₃ : H₃ arr aux low mid high ptr₁ ptr₂ i) :
 def H₃.ptr₂_lt_arr_size (h₃ : H₃ arr aux low mid high ptr₁ ptr₂ i) : ptr₂ < arr.size :=
   h₃.slice₂_exclusive.ptr_lt_size
 
-def H₃.nextLeft
+def H₃.next₁
     (h₃ : H₃ arr aux low mid high ptr₁ ptr₂ i)
     (arr_ptr₁_le_arr_ptr₂ :
       have ptr₁_lt_arr_size := h₃.ptr₁_lt_arr_size
@@ -237,7 +237,7 @@ def H₃.nextLeft
     slice_i_left_le_right₂,
   }
 
-def H₃.nextRight
+def H₃.next₂
     (h₃ : H₃ arr aux low mid high ptr₁ ptr₂ i)
     (arr_ptr₂_lt_arr_ptr₁ :
       have ptr₁_lt_arr_size := h₃.ptr₁_lt_arr_size
@@ -300,92 +300,92 @@ def H₃.nextRight
     slice_i_left_le_right₂,
   }
 
-def H₂a.make_h₂a₁
-    (h₂a : H₂a arr aux low mid high ptr₁ ptr₂ i)
+def H₄.make_H₅
+    (h₄ : H₄ arr aux low mid high ptr₁ ptr₂ i)
     (ptr₁_lt_mid : ptr₁ < mid)
-    : H₂a₁ arr aux low mid high ptr₁ ptr₂ i :=
-  { h₂a with ptr₁_lt_mid }
+    : H₅ arr aux low mid high ptr₁ ptr₂ i :=
+  { h₄ with ptr₁_lt_mid }
 
-def H₂a₁.ptr₂_eq_high
-    (h₂a₁ : H₂a₁ arr aux low mid high ptr₁ ptr₂ i)
+def H₅.ptr₂_eq_high
+    (h₅ : H₅ arr aux low mid high ptr₁ ptr₂ i)
     : ptr₂ = high := by
-  have := h₂a₁.ptr₁_lt_mid
-  have := h₂a₁.not_ptr₁_ptr₂_in_range
+  have := h₅.ptr₁_lt_mid
+  have := h₅.not_ptr₁_ptr₂_in_range
   omega
 
-def H₂a₁.slice₁_exclusive
-    (h₂a₁ : H₂a₁ arr aux low mid high ptr₁ ptr₂ i)
+def H₅.slice₁_exclusive
+    (h₅ : H₅ arr aux low mid high ptr₁ ptr₂ i)
     : SlicePtrExclusive arr low mid ptr₁ :=
-  h₂a₁.slice₁_inclusive.make_exclusive h₂a₁.ptr₁_lt_mid
+  h₅.slice₁_inclusive.make_exclusive h₅.ptr₁_lt_mid
 
-def H₂a₁.ptr₁_lt_arr_size
-    (h₂a₁ : H₂a₁ arr aux low mid high ptr₁ ptr₂ i)
+def H₅.ptr₁_lt_arr_size
+    (h₅ : H₅ arr aux low mid high ptr₁ ptr₂ i)
     : ptr₁ < arr.size :=
-  h₂a₁.slice₁_exclusive.ptr_lt_size
+  h₅.slice₁_exclusive.ptr_lt_size
 
-def H₂a₁.i_lt_high
-    (h₂a₁ : H₂a₁ arr aux low mid high ptr₁ ptr₂ i)
+def H₅.i_lt_high
+    (h₅ : H₅ arr aux low mid high ptr₁ ptr₂ i)
     : i < high := by
-  have := h₂a₁.not_ptr₁_ptr₂_in_range
-  have := h₂a₁.ptr₁_lt_mid
-  have : i = ptr₁ + ptr₂ - mid := h₂a₁.i_def
-  have : ptr₁ < high := Nat.le_trans h₂a₁.ptr₁_lt_mid h₂a₁.slice₂.low_le_high
+  have := h₅.not_ptr₁_ptr₂_in_range
+  have := h₅.ptr₁_lt_mid
+  have : i = ptr₁ + ptr₂ - mid := h₅.i_def
+  have : ptr₁ < high := Nat.le_trans h₅.ptr₁_lt_mid h₅.slice₂.low_le_high
   omega
 
-def H₂a₁.slice_i_exclusive
-    (h₂a₁ : H₂a₁ arr aux low mid high ptr₁ ptr₂ i)
+def H₅.slice_i_exclusive
+    (h₅ : H₅ arr aux low mid high ptr₁ ptr₂ i)
     : SlicePtrExclusive aux low high i :=
-  h₂a₁.slice_i.make_exclusive h₂a₁.i_lt_high
+  h₅.slice_i.make_exclusive h₅.i_lt_high
 
-def H₂a₁.i_lt_aux_size
-    (h₂a₁ : H₂a₁ arr aux low mid high ptr₁ ptr₂ i)
+def H₅.i_lt_aux_size
+    (h₅ : H₅ arr aux low mid high ptr₁ ptr₂ i)
     : i < aux.size :=
-  h₂a₁.slice_i_exclusive.ptr_lt_size
+  h₅.slice_i_exclusive.ptr_lt_size
 
-def H₂a₁.nextLeft
-    (h₂a₁ : H₂a₁ arr aux low mid high ptr₁ ptr₂ i)
-    : have ptr₁_lt_arr_size := h₂a₁.ptr₁_lt_arr_size
-      let aux' := aux.set ⟨i, h₂a₁.i_lt_aux_size⟩ arr[ptr₁]
-      H₂a arr aux' low mid high ptr₁.succ ptr₂ i.succ := by
+def H₅.next
+    (h₅ : H₅ arr aux low mid high ptr₁ ptr₂ i)
+    : have ptr₁_lt_arr_size := h₅.ptr₁_lt_arr_size
+      let aux' := aux.set ⟨i, h₅.i_lt_aux_size⟩ arr[ptr₁]
+      H₄ arr aux' low mid high ptr₁.succ ptr₂ i.succ := by
   intro ptr₁_lt_arr_size aux'
   have not_ptr₁_ptr₂_in_range : ptr₁.succ = mid ∨ ptr₂ = high := by
     apply Or.intro_right
-    exact h₂a₁.ptr₂_eq_high
-  have size_eq : arr.size = aux'.size := by simp [aux']; exact h₂a₁.size_eq
+    exact h₅.ptr₂_eq_high
+  have size_eq : arr.size = aux'.size := by simp [aux']; exact h₅.size_eq
   have aux_size_eq : aux.size = aux'.size := by simp [aux']
   have slice_i : SlicePtrInclusive aux' low high i.succ :=
-    h₂a₁.slice_i_exclusive.increment_ptr.swap_array aux_size_eq
+    h₅.slice_i_exclusive.increment_ptr.swap_array aux_size_eq
   have slice₁_inclusive : SlicePtrInclusive arr low mid ptr₁.succ :=
-    h₂a₁.slice₁_exclusive.increment_ptr
+    h₅.slice₁_exclusive.increment_ptr
   have i_def : i.succ = ptr₁.succ + ptr₂ - mid := by
-    have := h₂a₁.i_def
-    have := h₂a₁.slice₂_inclusive.ptr_ge_low
+    have := h₅.i_def
+    have := h₅.slice₂_inclusive.ptr_ge_low
     omega
   have slice_i_left_sorted : slice_i.left.sorted :=
     have ptr₁_in_range : ptr₁ ≥ ptr₁ ∧ ptr₁ < mid := by
-      simp [h₂a₁.slice₁_inclusive.ptr_ge_low, h₂a₁.slice₁_exclusive.ptr_lt_high]
-    have s_le_arr_ptr₁ : h₂a₁.slice_i.left.le_elem arr[ptr₁] :=
-      h₂a₁.slice_i.left.le_elem_of_le h₂a₁.slice_i_left_le_right₁ ptr₁_in_range
-    h₂a₁.slice_i.left.sorted_after_sorted_push
-      h₂a₁.slice_i_left_sorted
-      h₂a₁.i_lt_aux_size
+      simp [h₅.slice₁_inclusive.ptr_ge_low, h₅.slice₁_exclusive.ptr_lt_high]
+    have s_le_arr_ptr₁ : h₅.slice_i.left.le_elem arr[ptr₁] :=
+      h₅.slice_i.left.le_elem_of_le h₅.slice_i_left_le_right₁ ptr₁_in_range
+    h₅.slice_i.left.sorted_after_sorted_push
+      h₅.slice_i_left_sorted
+      h₅.i_lt_aux_size
       rfl
       slice_i.left
       s_le_arr_ptr₁
   have slice_i_left_le_right₁ : slice_i.left.le slice₁_inclusive.right :=
-    h₂a₁.slice_i.left.le_of_swap_ends_le
-      (h₂a₁.slice₁_inclusive.sorted_of_right_sorted h₂a₁.slice₁_sorted)
-      h₂a₁.slice_i_left_le_right₁
-      h₂a₁.i_lt_aux_size
-      h₂a₁.ptr₁_lt_arr_size
+    h₅.slice_i.left.le_of_swap_ends_le
+      (h₅.slice₁_inclusive.sorted_of_right_sorted h₅.slice₁_sorted)
+      h₅.slice_i_left_le_right₁
+      h₅.i_lt_aux_size
+      h₅.ptr₁_lt_arr_size
       rfl
       slice_i.left
       slice₁_inclusive.right
-      h₂a₁.size_eq
-  have slice_i_left_le_right₂ : slice_i.left.le h₂a₁.slice₂_inclusive.right :=
-    slice_i.left.le_of_empty₂ (s₂ := h₂a₁.slice₂_inclusive.right) h₂a₁.ptr₂_eq_high
+      h₅.size_eq
+  have slice_i_left_le_right₂ : slice_i.left.le h₅.slice₂_inclusive.right :=
+    slice_i.left.le_of_empty₂ (s₂ := h₅.slice₂_inclusive.right) h₅.ptr₂_eq_high
   exact {
-    h₂a₁ with
+    h₅ with
     slice₁_inclusive,
     slice_i,
     not_ptr₁_ptr₂_in_range,
@@ -396,78 +396,78 @@ def H₂a₁.nextLeft
     size_eq,
   }
 
-def H₂a₃.slice₂_exclusive
-    (h₂a₃ : H₂a₃ arr aux low mid high ptr₁ ptr₂ i)
+def H₇.slice₂_exclusive
+    (h₇ : H₇ arr aux low mid high ptr₁ ptr₂ i)
     : SlicePtrExclusive arr mid high ptr₂ :=
-  h₂a₃.slice₂_inclusive.make_exclusive h₂a₃.ptr₂_lt_high
+  h₇.slice₂_inclusive.make_exclusive h₇.ptr₂_lt_high
 
-def H₂a₃.ptr₂_lt_arr_size
-    (h₂a₃ : H₂a₃ arr aux low mid high ptr₁ ptr₂ i)
+def H₇.ptr₂_lt_arr_size
+    (h₇ : H₇ arr aux low mid high ptr₁ ptr₂ i)
     : ptr₂ < arr.size :=
-  h₂a₃.slice₂_exclusive.ptr_lt_size
+  h₇.slice₂_exclusive.ptr_lt_size
 
-def H₂a₃.i_lt_high
-    (h₂a₃ : H₂a₃ arr aux low mid high ptr₁ ptr₂ i)
+def H₇.i_lt_high
+    (h₇ : H₇ arr aux low mid high ptr₁ ptr₂ i)
     : i < high := by
-  have : i = ptr₁ + ptr₂ - mid := h₂a₃.i_def
-  have := h₂a₃.ptr₁_eq_mid
-  have := h₂a₃.slice₂_exclusive.ptr_lt_high
+  have : i = ptr₁ + ptr₂ - mid := h₇.i_def
+  have := h₇.ptr₁_eq_mid
+  have := h₇.slice₂_exclusive.ptr_lt_high
   omega
 
-def H₂a₃.slice_i_exclusive
-    (h₂a₃ : H₂a₃ arr aux low mid high ptr₁ ptr₂ i)
+def H₇.slice_i_exclusive
+    (h₇ : H₇ arr aux low mid high ptr₁ ptr₂ i)
     : SlicePtrExclusive aux low high i :=
-  h₂a₃.slice_i.make_exclusive h₂a₃.i_lt_high
+  h₇.slice_i.make_exclusive h₇.i_lt_high
 
-def H₂a₃.i_lt_aux_size
-    (h₂a₃ : H₂a₃ arr aux low mid high ptr₁ ptr₂ i)
+def H₇.i_lt_aux_size
+    (h₇ : H₇ arr aux low mid high ptr₁ ptr₂ i)
     : i < aux.size :=
-  h₂a₃.slice_i_exclusive.ptr_lt_size
+  h₇.slice_i_exclusive.ptr_lt_size
 
-def H₂a₃.nextRight
-    (h₂a₃ : H₂a₃ arr aux low mid high ptr₁ ptr₂ i)
-    : have ptr₂_lt_arr_size := h₂a₃.ptr₂_lt_arr_size
-      let aux' := aux.set ⟨i, h₂a₃.i_lt_aux_size⟩ arr[ptr₂]
-      H₂a₂ arr aux' low mid high ptr₁ ptr₂.succ i.succ := by
+def H₇.next
+    (h₇ : H₇ arr aux low mid high ptr₁ ptr₂ i)
+    : have ptr₂_lt_arr_size := h₇.ptr₂_lt_arr_size
+      let aux' := aux.set ⟨i, h₇.i_lt_aux_size⟩ arr[ptr₂]
+      H₆ arr aux' low mid high ptr₁ ptr₂.succ i.succ := by
   intro ptr₂_lt_arr_size aux'
-  have size_eq : arr.size = aux'.size := by simp [aux']; exact h₂a₃.size_eq
+  have size_eq : arr.size = aux'.size := by simp [aux']; exact h₇.size_eq
   have aux_size_eq : aux.size = aux'.size := by simp [aux']
   have slice₂_inclusive : SlicePtrInclusive arr mid high ptr₂.succ :=
-    h₂a₃.slice₂_exclusive.increment_ptr
+    h₇.slice₂_exclusive.increment_ptr
   have slice_i : SlicePtrInclusive aux' low high i.succ :=
-    h₂a₃.slice_i_exclusive.increment_ptr.swap_array aux_size_eq
+    h₇.slice_i_exclusive.increment_ptr.swap_array aux_size_eq
   have not_ptr₁_ptr₂_in_range : ptr₁ = mid ∨ ptr₂.succ = high := by
     apply Or.intro_left
-    exact h₂a₃.ptr₁_eq_mid
+    exact h₇.ptr₁_eq_mid
   have i_def : i.succ = ptr₁ + ptr₂.succ - mid := by
-    have := h₂a₃.i_def
-    have := h₂a₃.slice₂_inclusive.ptr_ge_low
+    have := h₇.i_def
+    have := h₇.slice₂_inclusive.ptr_ge_low
     omega
   have slice_i_left_sorted : slice_i.left.sorted :=
     have ptr₂_in_range : ptr₂ ≥ ptr₂ ∧ ptr₂ < high := by
-      simp [h₂a₃.slice₂_inclusive.ptr_ge_low, h₂a₃.slice₂_exclusive.ptr_lt_high]
-    have s_le_arr_ptr₁ : h₂a₃.slice_i.left.le_elem arr[ptr₂] :=
-      h₂a₃.slice_i.left.le_elem_of_le h₂a₃.slice_i_left_le_right₂ ptr₂_in_range
-    h₂a₃.slice_i.left.sorted_after_sorted_push
-      h₂a₃.slice_i_left_sorted
-      h₂a₃.i_lt_aux_size
+      simp [h₇.slice₂_inclusive.ptr_ge_low, h₇.slice₂_exclusive.ptr_lt_high]
+    have s_le_arr_ptr₁ : h₇.slice_i.left.le_elem arr[ptr₂] :=
+      h₇.slice_i.left.le_elem_of_le h₇.slice_i_left_le_right₂ ptr₂_in_range
+    h₇.slice_i.left.sorted_after_sorted_push
+      h₇.slice_i_left_sorted
+      h₇.i_lt_aux_size
       rfl
       slice_i.left
       s_le_arr_ptr₁
-  have slice_i_left_le_right₁ : slice_i.left.le h₂a₃.slice₁_inclusive.right :=
-    slice_i.left.le_of_empty₂ h₂a₃.ptr₁_eq_mid
+  have slice_i_left_le_right₁ : slice_i.left.le h₇.slice₁_inclusive.right :=
+    slice_i.left.le_of_empty₂ h₇.ptr₁_eq_mid
   have slice_i_left_le_right₂ : slice_i.left.le slice₂_inclusive.right :=
-    h₂a₃.slice_i.left.le_of_swap_ends_le
-      (h₂a₃.slice₂_inclusive.sorted_of_right_sorted h₂a₃.slice₂_sorted)
-      h₂a₃.slice_i_left_le_right₂
-      h₂a₃.i_lt_aux_size
-      h₂a₃.ptr₂_lt_arr_size
+    h₇.slice_i.left.le_of_swap_ends_le
+      (h₇.slice₂_inclusive.sorted_of_right_sorted h₇.slice₂_sorted)
+      h₇.slice_i_left_le_right₂
+      h₇.i_lt_aux_size
+      h₇.ptr₂_lt_arr_size
       rfl
       slice_i.left
       slice₂_inclusive.right
-      h₂a₃.size_eq
+      h₇.size_eq
   exact {
-    h₂a₃ with
+    h₇ with
     slice₂_inclusive,
     slice_i,
     not_ptr₁_ptr₂_in_range,
@@ -482,58 +482,59 @@ def H₂a₃.nextRight
 def mergeAdjacentChunksIntoAux
     (h₁ : H₁ arr aux low mid high)
     : Array α :=
-  -- Copy the lowest element from the left and right regions until one of them is fully copied.
+  -- Copy the lowest element from the left (slice₁) and right (slice₂)
+  -- regions until one of them is fully copied.
   let rec @[specialize] loop
       (aux : Array α)
       (i ptr₁ ptr₂ : ℕ)
       (h₂ : H₂ arr aux low mid high ptr₁ ptr₂ i)
       : Array α :=
     if ptr₁_ptr₂_in_range : ptr₁ < mid ∧ ptr₂ < high then
-      have h₃ := h₂.mkH₃ ptr₁_ptr₂_in_range
+      have h₃ := h₂.make_H₃ ptr₁_ptr₂_in_range
       have ptr₁_lt_arr_size := h₃.ptr₁_lt_arr_size
       have ptr₂_lt_arr_size := h₃.ptr₂_lt_arr_size
       let comparison := Ord.compare arr[ptr₁] arr[ptr₂]
       if h : comparison ≠ .gt then
         let aux' := aux.set ⟨i, h₃.i_lt_aux_size⟩ arr[ptr₁]
-        loop aux' i.succ ptr₁.succ ptr₂ (h₃.nextLeft h)
+        loop aux' i.succ ptr₁.succ ptr₂ (h₃.next₁ h)
       else
         have h : comparison = .gt := by simp at h; exact h
         let aux' := aux.set ⟨i, h₃.i_lt_aux_size⟩ arr[ptr₂]
-        loop aux' i.succ ptr₁ ptr₂.succ (h₃.nextRight h)
+        loop aux' i.succ ptr₁ ptr₂.succ (h₃.next₂ h)
     else
-      -- If the left region is not yet empty, finish copying it.
+      -- If the left region (slice₁) is not yet empty, finish copying it.
       let rec @[specialize] loopLeft
           (aux : Array α)
           (i ptr₁ : ℕ)
-          (h₂a : H₂a arr aux low mid high ptr₁ ptr₂ i)
+          (h₄ : H₄ arr aux low mid high ptr₁ ptr₂ i)
           : Array α :=
         if ptr₁_lt_mid : ptr₁ < mid then
-          have h₂a₁ := h₂a.make_h₂a₁ ptr₁_lt_mid
-          have : ptr₁ < arr.size := h₂a₁.ptr₁_lt_arr_size
-          have i_lt_aux_size : i < aux.size := h₂a₁.i_lt_aux_size
+          have h₅ := h₄.make_H₅ ptr₁_lt_mid
+          have : ptr₁ < arr.size := h₅.ptr₁_lt_arr_size
+          have i_lt_aux_size : i < aux.size := h₅.i_lt_aux_size
           let aux' := aux.set ⟨i, i_lt_aux_size⟩ arr[ptr₁]
-          loopLeft aux' i.succ ptr₁.succ h₂a₁.nextLeft
+          loopLeft aux' i.succ ptr₁.succ h₅.next
         else
-          -- If the right region is not yet empty, finish copying it.
+          -- If the right region (slice₂) is not yet empty, finish copying it.
           let rec @[specialize] loopRight
               (aux : Array α)
               (i ptr₂ : ℕ)
-              (h₂a₂ : H₂a₂ arr aux low mid high ptr₁ ptr₂ i)
+              (h₆ : H₆ arr aux low mid high ptr₁ ptr₂ i)
               : Array α :=
             if ptr₂_lt_high : ptr₂ < high then
-              have h₂a₃ := h₂a₂.make_h₂a₃ ptr₂_lt_high
-              have : ptr₂ < arr.size := h₂a₃.ptr₂_lt_arr_size
-              have i_lt_aux_size : i < aux.size := h₂a₃.i_lt_aux_size
+              have h₇ := h₆.make_H₇ ptr₂_lt_high
+              have : ptr₂ < arr.size := h₇.ptr₂_lt_arr_size
+              have i_lt_aux_size : i < aux.size := h₇.i_lt_aux_size
               let aux' := aux.set ⟨i, i_lt_aux_size⟩ arr[ptr₂]
-              loopRight aux' i.succ ptr₂.succ h₂a₃.nextRight
+              loopRight aux' i.succ ptr₂.succ h₇.next
             else
               aux
-          loopRight aux i ptr₂ (h₂a.make_h₂a₂ ptr₁_lt_mid)
-      loopLeft aux i ptr₁ (h₂.make_h₂a ptr₁_ptr₂_in_range)
+          loopRight aux i ptr₂ (h₄.make_H₆ ptr₁_lt_mid)
+      loopLeft aux i ptr₁ (h₂.make_H₄ ptr₁_ptr₂_in_range)
   let ptr₁ := low
   let ptr₂ := mid
   let i := ptr₁
-  have h₂ := h₁.make_h₂ rfl rfl rfl
+  have h₂ := h₁.make_H₂ rfl rfl rfl
   loop aux i ptr₁ ptr₂ h₂
 
 -- structure H₅ : Prop where
@@ -611,7 +612,7 @@ def mergeAdjacentChunksIntoAux
 -- decreasing_by
 --   all_goals
 --     simp_wf
---     have h₃ := h₂.mkH₃ k₁_k₂_in_range
+--     have h₃ := h₂.make_H₃ k₁_k₂_in_range
 --     have i_lt_aux_size : i < aux.size := h₃.i_lt_aux_size
 --     exact loop.loopLeft.loopRight_decreasing aux.size i i_lt_aux_size
 
