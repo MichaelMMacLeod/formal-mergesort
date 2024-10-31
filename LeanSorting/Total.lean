@@ -448,11 +448,35 @@ def H₂a₁.nextLeft
   have aux_size_eq : aux.size = aux'.size := by simp [aux']
   have slice_i : SlicePtrInclusive aux' low high i.succ :=
     h₂a₁.slice_i_exclusive.increment_ptr.swap_array aux_size_eq
-  have slice₁_inclusive : SlicePtrInclusive arr low mid ptr₁.succ := sorry
-  have i_def : i.succ = ptr₁.succ + ptr₂ - mid := sorry
-  have slice_i_left_sorted : slice_i.left.sorted := sorry
-  have slice_i_left_le_right₁ : slice_i.left.le slice₁_inclusive.right := sorry
-  have slice_i_left_le_right₂ : slice_i.left.le h₂a₁.slice₂_inclusive.right := sorry
+  have slice₁_inclusive : SlicePtrInclusive arr low mid ptr₁.succ :=
+    h₂a₁.slice₁_exclusive.increment_ptr
+  have i_def : i.succ = ptr₁.succ + ptr₂ - mid := by
+    have := h₂a₁.i_def
+    have := h₂a₁.slice₂_inclusive.ptr_ge_low
+    omega
+  have slice_i_left_sorted : slice_i.left.sorted :=
+    have ptr₁_in_range : ptr₁ ≥ ptr₁ ∧ ptr₁ < mid := by
+      simp [h₂a₁.slice₁_inclusive.ptr_ge_low, h₂a₁.slice₁_exclusive.ptr_lt_high]
+    have s_le_arr_ptr₁ : h₂a₁.slice_i.left.le_elem arr[ptr₁] :=
+      h₂a₁.slice_i.left.le_elem_of_le h₂a₁.slice_i_left_le_right₁ ptr₁_in_range
+    h₂a₁.slice_i.left.sorted_after_sorted_push
+      h₂a₁.slice_i_left_sorted
+      h₂a₁.i_lt_aux_size
+      rfl
+      slice_i.left
+      s_le_arr_ptr₁
+  have slice_i_left_le_right₁ : slice_i.left.le slice₁_inclusive.right :=
+    h₂a₁.slice_i.left.le_of_swap_ends_le
+      (h₂a₁.slice₁_inclusive.sorted_of_right_sorted h₂a₁.slice₁_sorted)
+      h₂a₁.slice_i_left_le_right₁
+      h₂a₁.i_lt_aux_size
+      h₂a₁.ptr₁_lt_arr_size
+      rfl
+      slice_i.left
+      slice₁_inclusive.right
+      h₂a₁.size_eq
+  have slice_i_left_le_right₂ : slice_i.left.le h₂a₁.slice₂_inclusive.right :=
+    slice_i.left.le_of_empty₂ (s₂ := h₂a₁.slice₂_inclusive.right) h₂a₁.ptr₂_eq_high
   exact {
     h₂a₁ with
     slice₁_inclusive,
@@ -515,13 +539,6 @@ def mergeAdjacentChunksIntoAux
           --     loopRight aux' i.succ k₂.succ (h₄Right.next k₂_lt_end₂)
           --   else
           --     aux
-          -- -- These termination proofs can be automatically inferred, but stating
-          -- -- them explicitly makes this function compile a lot faster.
-          -- termination_by end₂ - k₂
-          -- decreasing_by exact mergeAdjacentChunksIntoAux.loop.loopLeft.loopRight_decreasing end₂ k₂ k₂_lt_end₂
-          -- loopRight aux i k₂ (h₂.mkH₄Right k₁_lt_start₂)
-      -- termination_by start₂ - k₁
-      -- decreasing_by exact mergeAdjacentChunksIntoAux.loop.loopLeft_decreasing start₂ k₁ k₁_lt_start₂
       loopLeft aux i ptr₁
         { h₂ with
           not_ptr₁_ptr₂_in_range := by
@@ -529,13 +546,6 @@ def mergeAdjacentChunksIntoAux
             have := h₂.slice₂_inclusive.ptr_le_high
             omega
         }
-  -- termination_by arr.size - i
-  -- decreasing_by
-  --   all_goals
-  --     have i_lt_arr_size : i < arr.size := by
-  --       rw [h₂.arr_size_eq_aux_size]
-  --       exact (h₂.mkH₃ k₁_k₂_in_range).i_lt_aux_size
-  --     exact (Nat.sub_succ_lt_sub_of_lt i_lt_arr_size)
   let ptr₁ := low
   let ptr₂ := mid
   let i := ptr₁

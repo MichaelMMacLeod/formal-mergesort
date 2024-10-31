@@ -191,9 +191,18 @@ theorem Slice.sorted_of_empty
   omega
 
 theorem Slice.le_of_empty
-    {s₁ : Slice arr₁ low₁ high₁}
+    (s₁ : Slice arr₁ low₁ high₁)
     {s₂ : Slice arr₂ low₂ high₂}
     (empty : low₁ = high₁)
+    : s₁.le s₂ := by
+  intro i₁ i₂ i₁_i₂_in_range
+  simp [Nat.in_range] at i₁_i₂_in_range
+  omega
+
+theorem Slice.le_of_empty₂
+    (s₁ : Slice arr₁ low₁ high₁)
+    {s₂ : Slice arr₂ low₂ high₂}
+    (empty : low₂ = high₂)
     : s₁.le s₂ := by
   intro i₁ i₂ i₁_i₂_in_range
   simp [Nat.in_range] at i₁_i₂_in_range

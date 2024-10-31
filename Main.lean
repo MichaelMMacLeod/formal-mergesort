@@ -14,47 +14,43 @@ import LeanSorting.PartialUSizeUnsafe
 -- def String.toInt
 
 def main : List String → IO UInt32
-  | "--algorithm" :: algorithm :: "--files" :: files => do
-    let filesLines : List (Array UInt64) ← files.mapM fun file => do
-      let nats := (← IO.FS.lines ⟨file⟩).map fun str =>
-        let nat := str.toNat!
-        UInt64.ofNat nat
-      pure nats
-    -- let filesLines : List (Array Nat) := filesLines.map (·.map String.toNat!)
-    let mut aux := #[]
-    for lines in filesLines do
-      let start ← IO.monoMsNow
-      match algorithm with
-      -- | "Array.mergeSort" => sorry
-      | "Array.qsortOrd" =>
-        let mut sum := 0
-        for line in lines.qsortOrd do
-          sum := sum + line
-        println! "sum = {sum}"
-      | "Array.mergeSortPartialFin" =>
-        let mut sum := 0
-        for line in lines.mergeSortPartialFin do
-          sum := sum + line
-        println! "sum = {sum}"
-      | "Array.mergeSortPartialFinUnsafe" =>
-        let mut sum := 0
-        for line in lines.mergeSortPartialFinUnsafe do
-          sum := sum + line
-        println! "sum = {sum}"
-      | "Array.mergeSortPartialFinUnsafeAux" =>
-        let mut sum := 0
-        let mut lines := lines
-        (lines, aux) := lines.mergeSortPartialFinUnsafe' aux
-        for line in lines do
-          sum := sum + line
-        println! "sum = {sum}"
-      | _ =>
-        println! "unknown algorithm: {algorithm}"
-        return 1
-      let endTime ← IO.monoMsNow
-      let elapsed := endTime - start
-      println! "elapsed = {elapsed}"
+  | "--algorithm" :: algorithm :: "--file" :: file :: [] => do
+    let lines : Array String ← IO.FS.lines file
+    -- let lines : Array UInt64 :=
+    --   let nats := (← IO.FS.lines ⟨file⟩).map fun str =>
+    --     let nat := str.toNat!
+    --     UInt64.ofNat nat
+    --   nats
+    let start ← IO.monoMsNow
+    match algorithm with
+    -- | "Array.mergeSort" => sorry
+    | "Array.qsortOrd" =>
+      let mut sum := 0
+      for line in lines.qsortOrd do
+        sum := sum + line.length
+      println! "sum = {sum}"
+    | "Array.mergeSortPartialFin" =>
+      let mut sum := 0
+      for line in lines.mergeSortPartialFin do
+        sum := sum + line.length
+      println! "sum = {sum}"
+    | "Array.mergeSortPartialFinUnsafe" =>
+      let mut sum := 0
+      for line in lines.mergeSortPartialFinUnsafe do
+        sum := sum + line.length
+      println! "sum = {sum}"
+    | "Array.mergeSortPartialUSizeUnsafe" =>
+      let mut sum := 0
+      for line in lines.mergeSortPartialUSizeUnsafe do
+        sum := sum + line.length
+      println! "sum = {sum}"
+    | _ =>
+      println! "unknown algorithm: {algorithm}"
+      return 1
+    let endTime ← IO.monoMsNow
+    let elapsed := endTime - start
+    println! "elapsed = {elapsed}"
     pure 0
   | _ => do
-    println! "Usage: --algorithm <ALGO> --files <FILE> ..."
+    println! "Usage: --algorithm <ALGO> --file <FILE>"
     pure 1
