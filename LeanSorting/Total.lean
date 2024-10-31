@@ -40,6 +40,14 @@ structure H₂ (arr aux : Array α) (low mid high ptr₁ ptr₂ i : ℕ)
   slice_i_left_le_right₁ : slice_i.left.le slice₁_inclusive.right
   slice_i_left_le_right₂ : slice_i.left.le slice₂_inclusive.right
 
+structure H₂a (arr aux : Array α) (low mid high ptr₁ ptr₂ i : ℕ)
+    extends H₂ arr aux low mid high ptr₁ ptr₂ i : Prop where
+  not_ptr₁_ptr₂_in_range : ptr₁ = mid ∨ ptr₂ = high
+
+structure H₂a₁ (arr aux : Array α) (low mid high ptr₁ ptr₂ i : ℕ)
+    extends H₂a arr aux low mid high ptr₁ ptr₂ i : Prop where
+  ptr₁_lt_mid : ptr₁ < mid
+
 def H₁.make_h₂
     (h₁ : H₁ arr aux low mid high)
     (ptr₁_def : ptr₁ = low)
@@ -83,6 +91,42 @@ def H₁.make_h₂
     slice_i_left_le_right₁,
     slice_i_left_le_right₂
   }
+
+def H₂.ptr₁_lt_arr_size
+    (h₂ : H₂ arr aux low mid high ptr₁ ptr₂ i)
+    (ptr₁_lt_mid : ptr₁ < mid)
+    : ptr₁ < arr.size :=
+  Nat.le_trans ptr₁_lt_mid h₂.slice₁.high_le_size
+
+
+-- def H₂.mk_i_lt_aux_size
+--     (h₂ : H₂ arr aux start₁ start₂ end₂ i k₁ k₂)
+--     (k₁_lt_start₂ : k₁ < start₂)
+--     : i < aux.size := by
+--   have := h₂.start₂_lt_end₂
+--   have := h₂.end₂_le_arr_size
+--   have := h₂.arr_size_eq_aux_size
+--   have := h₂.i_def
+--   have := h₂.k₂_lt_end₂_succ
+--   omega
+
+def H₂.i_lt_aux_size
+    (h₂ : H₂ arr aux low mid high ptr₁ ptr₂ i)
+    (ptr₁_lt_mid : ptr₁ < mid)
+    (ptr₂_eq_high : ptr₂ = high)
+    : i < aux.size := by
+  have : i = ptr₁ + ptr₂ - mid := h₂.i_def
+  have : ptr₁ < high := Nat.le_trans ptr₁_lt_mid h₂.slice₂.low_le_high
+  have i_lt_high : i < high := by omega
+  exact (h₂.slice_i.make_exclusive i_lt_high).ptr_lt_size
+  -- have : mid < high := by
+  --   -- have := h₂.
+  --   omega
+  -- have : high ≤ arr.size := sorry
+  -- have : arr.size = aux.size := sorry
+  -- have : i = ptr₁ + ptr₂ - mid := sorry
+  -- have : ptr₂ < high.succ := sorry
+  -- omega
 
 structure H₃ (arr aux : Array α) (low mid high ptr₁ ptr₂ i : ℕ)
     extends H₂ arr aux low mid high ptr₁ ptr₂ i : Prop where
@@ -349,6 +393,78 @@ def H₃.nextRight
 --     : end₂ - (k₂ + 1) < end₂ - k₂ := by
 --   omega
 
+def H₂a.make_h₂a₁
+    (h₂a : H₂a arr aux low mid high ptr₁ ptr₂ i)
+    (ptr₁_lt_mid : ptr₁ < mid)
+    : H₂a₁ arr aux low mid high ptr₁ ptr₂ i :=
+  { h₂a with ptr₁_lt_mid }
+
+def H₂a₁.ptr₂_eq_high
+    (h₂a₁ : H₂a₁ arr aux low mid high ptr₁ ptr₂ i)
+    : ptr₂ = high := by
+  have := h₂a₁.ptr₁_lt_mid
+  have := h₂a₁.not_ptr₁_ptr₂_in_range
+  omega
+
+def H₂a₁.slice₁_exclusive
+    (h₂a₁ : H₂a₁ arr aux low mid high ptr₁ ptr₂ i)
+    : SlicePtrExclusive arr low mid ptr₁ :=
+  h₂a₁.slice₁_inclusive.make_exclusive h₂a₁.ptr₁_lt_mid
+
+def H₂a₁.ptr₁_lt_arr_size
+    (h₂a₁ : H₂a₁ arr aux low mid high ptr₁ ptr₂ i)
+    : ptr₁ < arr.size :=
+  h₂a₁.slice₁_exclusive.ptr_lt_size
+
+def H₂a₁.i_lt_high
+    (h₂a₁ : H₂a₁ arr aux low mid high ptr₁ ptr₂ i)
+    : i < high := by
+  have := h₂a₁.not_ptr₁_ptr₂_in_range
+  have := h₂a₁.ptr₁_lt_mid
+  have : i = ptr₁ + ptr₂ - mid := h₂a₁.i_def
+  have : ptr₁ < high := Nat.le_trans h₂a₁.ptr₁_lt_mid h₂a₁.slice₂.low_le_high
+  omega
+
+def H₂a₁.slice_i_exclusive
+    (h₂a₁ : H₂a₁ arr aux low mid high ptr₁ ptr₂ i)
+    : SlicePtrExclusive aux low high i :=
+  h₂a₁.slice_i.make_exclusive h₂a₁.i_lt_high
+
+def H₂a₁.i_lt_aux_size
+    (h₂a₁ : H₂a₁ arr aux low mid high ptr₁ ptr₂ i)
+    : i < aux.size := by
+  exact h₂a₁.slice_i_exclusive.ptr_lt_size
+
+def H₂a₁.nextLeft
+    (h₂a₁ : H₂a₁ arr aux low mid high ptr₁ ptr₂ i)
+    : have ptr₁_lt_arr_size := h₂a₁.ptr₁_lt_arr_size
+      let aux' := aux.set ⟨i, h₂a₁.i_lt_aux_size⟩ arr[ptr₁]
+      H₂a arr aux' low mid high ptr₁.succ ptr₂ i.succ := by
+  intro ptr₁_lt_arr_size aux'
+  have not_ptr₁_ptr₂_in_range : ptr₁.succ = mid ∨ ptr₂ = high := by
+    apply Or.intro_right
+    exact h₂a₁.ptr₂_eq_high
+  have size_eq : arr.size = aux'.size := by simp [aux']; exact h₂a₁.size_eq
+  have aux_size_eq : aux.size = aux'.size := by simp [aux']
+  have slice_i : SlicePtrInclusive aux' low high i.succ :=
+    h₂a₁.slice_i_exclusive.increment_ptr.swap_array aux_size_eq
+  have slice₁_inclusive : SlicePtrInclusive arr low mid ptr₁.succ := sorry
+  have i_def : i.succ = ptr₁.succ + ptr₂ - mid := sorry
+  have slice_i_left_sorted : slice_i.left.sorted := sorry
+  have slice_i_left_le_right₁ : slice_i.left.le slice₁_inclusive.right := sorry
+  have slice_i_left_le_right₂ : slice_i.left.le h₂a₁.slice₂_inclusive.right := sorry
+  exact {
+    h₂a₁ with
+    slice₁_inclusive,
+    slice_i,
+    not_ptr₁_ptr₂_in_range,
+    i_def,
+    slice_i_left_sorted,
+    slice_i_left_le_right₁,
+    slice_i_left_le_right₂,
+    size_eq,
+  }
+
 @[specialize, inline]
 def mergeAdjacentChunksIntoAux
     (h₁ : H₁ arr aux low mid high)
@@ -372,41 +488,47 @@ def mergeAdjacentChunksIntoAux
         let aux' := aux.set ⟨i, h₃.i_lt_aux_size⟩ arr[ptr₂]
         loop aux' i.succ ptr₁ ptr₂.succ (h₃.nextRight h)
     else
-      sorry
       -- If the left region is not yet empty, finish copying it.
-      -- let rec @[specialize] loopLeft
-      --     (aux : Array α)
-      --     (i k₁ : ℕ)
-      --     (h₂ : H₂ arr aux low mid high ptr₁ ptr₂ i)
-      --     : Array α :=
-      --   if k₁_lt_start₂ : k₁ < start₂ then
-      --     have : k₁ < arr.size := h₂.mk_k₁_lt_arr_size k₁_lt_start₂
-      --     have i_lt_aux_size : i < aux.size := h₂.mk_i_lt_aux_size k₁_lt_start₂
-      --     let aux' := aux.set ⟨i, i_lt_aux_size⟩ arr[k₁]
-      --     loopLeft aux' i.succ k₁.succ (h₂.nextLeft k₁_lt_start₂)
-      --   else
-      --     sorry
-      --     -- If the right region is not yet empty, finish copying it.
-      --     -- let rec @[specialize] loopRight
-      --     --     (aux : Array α)
-      --     --     (i k₂ : ℕ)
-      --     --     (h₄Right : H₄Right arr aux start₁ start₂ end₂ i k₁ k₂)
-      --     --     : Array α :=
-      --     --   if k₂_lt_end₂ : k₂ < end₂ then
-      --     --     have : k₂ < arr.size := h₄Right.mk_k₂_lt_arr_size k₂_lt_end₂
-      --     --     have i_lt_aux_size : i < aux.size := h₄Right.mk_i_lt_aux_size k₂_lt_end₂
-      --     --     let aux' := aux.set ⟨i, i_lt_aux_size⟩ arr[k₂]
-      --     --     loopRight aux' i.succ k₂.succ (h₄Right.next k₂_lt_end₂)
-      --     --   else
-      --     --     aux
-      --     -- -- These termination proofs can be automatically inferred, but stating
-      --     -- -- them explicitly makes this function compile a lot faster.
-      --     -- termination_by end₂ - k₂
-      --     -- decreasing_by exact mergeAdjacentChunksIntoAux.loop.loopLeft.loopRight_decreasing end₂ k₂ k₂_lt_end₂
-      --     -- loopRight aux i k₂ (h₂.mkH₄Right k₁_lt_start₂)
-      -- -- termination_by start₂ - k₁
-      -- -- decreasing_by exact mergeAdjacentChunksIntoAux.loop.loopLeft_decreasing start₂ k₁ k₁_lt_start₂
-      -- loopLeft aux i k₁ h₂
+      let rec @[specialize] loopLeft
+          (aux : Array α)
+          (i ptr₁ : ℕ)
+          (h₂a : H₂a arr aux low mid high ptr₁ ptr₂ i)
+          : Array α :=
+        if ptr₁_lt_mid : ptr₁ < mid then
+          have h₂a₁ := h₂a.make_h₂a₁ ptr₁_lt_mid
+          have : ptr₁ < arr.size := h₂a₁.ptr₁_lt_arr_size
+          have i_lt_aux_size : i < aux.size := h₂a₁.i_lt_aux_size
+          let aux' := aux.set ⟨i, i_lt_aux_size⟩ arr[ptr₁]
+          loopLeft aux' i.succ ptr₁.succ h₂a₁.nextLeft
+        else
+          sorry
+          -- If the right region is not yet empty, finish copying it.
+          -- let rec @[specialize] loopRight
+          --     (aux : Array α)
+          --     (i k₂ : ℕ)
+          --     (h₄Right : H₄Right arr aux start₁ start₂ end₂ i k₁ k₂)
+          --     : Array α :=
+          --   if k₂_lt_end₂ : k₂ < end₂ then
+          --     have : k₂ < arr.size := h₄Right.mk_k₂_lt_arr_size k₂_lt_end₂
+          --     have i_lt_aux_size : i < aux.size := h₄Right.mk_i_lt_aux_size k₂_lt_end₂
+          --     let aux' := aux.set ⟨i, i_lt_aux_size⟩ arr[k₂]
+          --     loopRight aux' i.succ k₂.succ (h₄Right.next k₂_lt_end₂)
+          --   else
+          --     aux
+          -- -- These termination proofs can be automatically inferred, but stating
+          -- -- them explicitly makes this function compile a lot faster.
+          -- termination_by end₂ - k₂
+          -- decreasing_by exact mergeAdjacentChunksIntoAux.loop.loopLeft.loopRight_decreasing end₂ k₂ k₂_lt_end₂
+          -- loopRight aux i k₂ (h₂.mkH₄Right k₁_lt_start₂)
+      -- termination_by start₂ - k₁
+      -- decreasing_by exact mergeAdjacentChunksIntoAux.loop.loopLeft_decreasing start₂ k₁ k₁_lt_start₂
+      loopLeft aux i ptr₁
+        { h₂ with
+          not_ptr₁_ptr₂_in_range := by
+            have := h₂.slice₁_inclusive.ptr_le_high
+            have := h₂.slice₂_inclusive.ptr_le_high
+            omega
+        }
   -- termination_by arr.size - i
   -- decreasing_by
   --   all_goals
@@ -414,13 +536,6 @@ def mergeAdjacentChunksIntoAux
   --       rw [h₂.arr_size_eq_aux_size]
   --       exact (h₂.mkH₃ k₁_k₂_in_range).i_lt_aux_size
   --     exact (Nat.sub_succ_lt_sub_of_lt i_lt_arr_size)
-  -- let h₂ :=
-  --   { h₁ with
-  --     i_def := Nat.eq_sub_of_add_eq rfl
-  --     k₂_ge_start₂ := Nat.le_refl start₂
-  --     k₁_lt_start₂_succ := Nat.lt_succ_of_lt h₁.start₁_lt_start₂
-  --     k₂_lt_end₂_succ := Nat.lt_succ_of_lt h₁.start₂_lt_end₂
-  --   }
   let ptr₁ := low
   let ptr₂ := mid
   let i := ptr₁
@@ -699,6 +814,3 @@ def mergeAdjacentChunksIntoAux
 --     chunkSize_gt_0 := by decide
 --   }
 --   loop arr aux 1 h₅
-
-#eval 975*2/200
-#check (Sort 0 : Sort 1)
