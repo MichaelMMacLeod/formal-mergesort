@@ -5,12 +5,12 @@ import Lean.Elab.Tactic
 
 #check List.mergeSort
 #check List.sorted_mergeSort
--- #check UInt64.le_of_eq
+-- #check USize.le_of_eq
 
 variable
   {α : Type}
   {arr aux : Array α}
-  {low mid high ptr₁ ptr₂ i : UInt64}
+  {low mid high ptr₁ ptr₂ i : USize}
 
 def Array.toMultiset (a : Array α) : Multiset α := Multiset.ofList a.toList
 
@@ -19,19 +19,18 @@ def Array.sorted_by (arr : Array α) (le : α → α → Prop) : Prop :=
     l.val.succ = r →
       le arr[l] arr[r]
 
-#check Array.sorted_by (α := UInt64) #[1, 2, 3] (· ≤ ·)
+#check Array.sorted_by (α := USize) #[1, 2, 3] (· ≤ ·)
 
-abbrev UInt64.succ (n : UInt64) := n + 1
-abbrev Array.uint64Size (arr : Array α) : UInt64 := arr.usize.toUInt64
+abbrev USize.succ (n : USize) := n + 1
 
-structure H₁ (arr aux : Array α) (low mid high : UInt64) : Prop where
+structure H₁ (arr aux : Array α) (low mid high : USize) : Prop where
   low_le_mid : low ≤ mid
-  mid_le_size : mid ≤ arr.uint64Size
+  mid_le_size : mid ≤ arr.usize
   mid_le_high : mid ≤ high
-  high_le_size : high ≤ arr.uint64Size
+  high_le_size : high ≤ arr.usize
   size_eq : arr.size = aux.size
 
-structure H₂ (arr aux : Array α) (low mid high ptr₁ ptr₂ i : UInt64) : Prop
+structure H₂ (arr aux : Array α) (low mid high ptr₁ ptr₂ i : USize) : Prop
     extends H₁ arr aux low mid high where
   ptr₁_ge_low : ptr₁ ≥ low
   ptr₁_le_mid : ptr₁ ≤ mid
@@ -41,8 +40,22 @@ structure H₂ (arr aux : Array α) (low mid high ptr₁ ptr₂ i : UInt64) : Pr
   i_le_high : i ≤ high
   i_def : i = ptr₁ + ptr₂ - mid
 
+/--
+low_le_mid
+mid_le_size
+mid_le_high
+high_le_size
+size_eq
+ptr₁_ge_low
+ptr₁_le_mid
+ptr₂_ge_mid
+ptr₂_le_high
+i_ge_low
+i_le_high
+i_def
+--/
 
-def UInt64.ge_of_eq {a b : UInt64} (h : a = b) : a ≥ b := UInt64.le_of_eq (Eq.symm h)
+def USize.ge_of_eq {a b : USize} (h : a = b) : a ≥ b := USize.le_of_eq (Eq.symm h)
 
 def H₁.make_H₂
     (h₁ : H₁ arr aux low mid high)
@@ -50,78 +63,109 @@ def H₁.make_H₂
     (ptr₂_def : ptr₂ = mid)
     (i_def : i = ptr₁)
     : H₂ arr aux low mid high ptr₁ ptr₂ i :=
+  have i_eq_low := ptr₁_def ▸ i_def
   {
     h₁ with
-    ptr₁_ge_low := UInt64.ge_of_eq ptr₁_def
-    ptr₁_le_mid := UInt64.le_trans (UInt64.le_of_eq ptr₁_def) h₁.low_le_mid
-    ptr₂_ge_mid := UInt64.ge_of_eq ptr₂_def
-    ptr₂_le_high := UInt64.le_trans (UInt64.le_of_eq ptr₂_def) h₁.mid_le_high
-    i_ge_low := UInt64.ge_of_eq (ptr₁_def ▸ i_def)
-    i_le_high := UInt64.le_trans (UInt64.le_of_eq <| ptr₁_def ▸ i_def) (UInt64.le_trans h₁.low_le_mid h₁.mid_le_high)
-    i_def := by simp only [ptr₁_def, ptr₂_def, UInt64.add_sub_cancel, ptr₁_def ▸ i_def]
+    ptr₁_ge_low := USize.ge_of_eq ptr₁_def
+    ptr₁_le_mid := USize.le_trans (USize.le_of_eq ptr₁_def) h₁.low_le_mid
+    ptr₂_ge_mid := USize.ge_of_eq ptr₂_def
+    ptr₂_le_high := USize.le_trans (USize.le_of_eq ptr₂_def) h₁.mid_le_high
+    i_ge_low := USize.ge_of_eq i_eq_low
+    i_le_high := USize.le_trans (USize.le_of_eq i_eq_low) (USize.le_trans h₁.low_le_mid h₁.mid_le_high)
+    i_def := by simp only [ptr₁_def, ptr₂_def, USize.add_sub_cancel, i_eq_low]
   }
+
+structure H₃ (arr aux : Array α) (low mid high ptr₁ ptr₂ i : USize) : Prop
+    extends H₂ arr aux low mid high ptr₁ ptr₂ i where
+  ptr₁_lt_mid : ptr₁ < mid
+  ptr₂_lt_high : ptr₂ < high
+  i_lt_high : i < high
+
+def H₂.make_H₃
+    (h₂ : H₂ arr aux low mid high ptr₁ ptr₂ i)
+    (ptr₁_ptr₂_in_range : ptr₁ < mid ∧ ptr₂ < high)
+    : H₃ arr aux low mid high ptr₁ ptr₂ i :=
+  { h₂ with
+    ptr₁_lt_mid := by cases System.Platform.numBits_eq <;> bv_normalize
+    ptr₂_lt_high := by cases System.Platform.numBits_eq <;> bv_normalize
+    i_lt_high := by
+      rw [h₂.i_def]
+      cases System.Platform.numBits_eq
+      . bv_check "Basic.lean-H₂.make_H₃-94-8.lrat"
+      . bv_check "Basic.lean-H₂.make_H₃-95-8.lrat"
+  }
+
+def H₃.ptr₁_lt_size
+    (h₃ : H₃ arr aux low mid high ptr₁ ptr₂ i)
+    (v : high < (10 |>.toUSize))
+    : ptr₁.toNat < arr.size := by
+  cases System.Platform.numBits_eq
+  . bv_decide
+  . bv_decide
 
 @[specialize, inline]
 def mergeAdjacentChunksIntoAux
     [Ord α]
     (arr aux : Array α)
-    (start₁ start₂ end₂ : UInt64)
-    (h₁ : H₁ arr aux low mid high)
+    (start₁ start₂ end₂ : USize)
+    (h₁ : H₁ arr aux start₁ start₂ end₂)
     : Array α :=
   let rec @[specialize] loop
       (aux : Array α)
-      (ptr₁ ptr₂ i : UInt64)
-      (h₂ : H₂ arr aux low mid high ptr₁ ptr₂ i)
+      (ptr₁ ptr₂ i : USize)
+      (h₂ : H₂ arr aux start₁ start₂ end₂ ptr₁ ptr₂ i)
       : Array α :=
-    if ptr₁ < start₂ ∧ ptr₂ < end₂ then
-      match Ord.compare (arr[ptr₁.toUSize]'sorry) (arr[ptr₂.toUSize]'sorry) with
+    if ptr₁_ptr₂_in_range : ptr₁ < start₂ ∧ ptr₂ < end₂ then
+      have h₃ := h₂.make_H₃ ptr₁_ptr₂_in_range
+      have v := h₃.ptr₁_lt_size
+      match Ord.compare arr[ptr₁] (arr[ptr₂]'sorry) with
       | .lt | .eq =>
-        let aux' := aux.uset i.toUSize (arr[ptr₁.toUSize]'sorry) sorry
+        let aux' := aux.uset i (arr[ptr₁]'sorry) sorry
         loop aux' ptr₁.succ ptr₂ i.succ sorry
       | .gt =>
-        let aux' := aux.uset i.toUSize (arr[ptr₂.toUSize]'sorry) sorry
+        let aux' := aux.uset i (arr[ptr₂]'sorry) sorry
         loop aux' ptr₁ ptr₂.succ i.succ sorry
     else
       let rec @[specialize] loopLeft
           (aux : Array α)
-          (ptr₁ i : UInt64)
+          (ptr₁ i : USize)
           : Array α :=
         if ptr₁ < start₂ then
-          let aux' := aux.uset i.toUSize (arr[ptr₁.toUSize]'sorry) sorry
+          let aux' := aux.uset i (arr[ptr₁]'sorry) sorry
           loopLeft aux' ptr₁.succ i.succ
         else
           let rec @[specialize] loopRight
               (aux : Array α)
-              (ptr₂ i : UInt64)
+              (ptr₂ i : USize)
               : Array α :=
             if ptr₂ < end₂ then
-              let aux' := aux.uset i.toUSize (arr[ptr₂.toUSize]'sorry) sorry
+              let aux' := aux.uset i (arr[ptr₂]'sorry) sorry
               loopRight aux' ptr₂.succ i.succ
             else
               aux
           loopRight aux ptr₂ i
       loopLeft aux ptr₁ i
-  let ptr₁ := low
-  let ptr₂ := mid
+  let ptr₁ := start₁
+  let ptr₂ := start₂
   let i := ptr₁
-  loop aux low mid ptr₁ (h₁.make_H₂ rfl rfl rfl)
+  loop aux start₁ start₂ ptr₁ (h₁.make_H₂ rfl rfl rfl)
 
 @[specialize, inline]
 def mergeChunksIntoAux
     [Ord α]
     (arr aux : Array α)
-    (size : UInt64) :=
-  let rec @[specialize] loop (aux : Array α) (start₁: UInt64)
+    (size : USize) :=
+  let rec @[specialize] loop (aux : Array α) (start₁: USize)
       : Array α :=
-    if start₁ + size < arr.uint64Size then
+    if start₁ + size < arr.usize then
       let start₂ := start₁ + size
-      let end₂ := min (start₂ + size) arr.uint64Size
+      let end₂ := min (start₂ + size) arr.usize
       let aux' := mergeAdjacentChunksIntoAux arr aux start₁ start₂ end₂ sorry
       loop aux' (start₁ + 2 * size)
     else
-      let rec @[specialize] loopFinal (aux : Array α) (start₁ : UInt64) : Array α :=
-        if start₁ < aux.uint64Size then
-          let aux' := aux.uset start₁.toUSize (arr[start₁.toUSize]'sorry) sorry
+      let rec @[specialize] loopFinal (aux : Array α) (start₁ : USize) : Array α :=
+        if start₁ < aux.usize then
+          let aux' := aux.uset start₁ (arr[start₁]'sorry) sorry
           loopFinal aux' start₁.succ
         else
           aux
@@ -137,9 +181,9 @@ def Array.mergeSortWithAuxiliary
   : Array α :=
   let rec @[specialize] loop
       (arr aux : Array α)
-      (chunkSize : UInt64)
+      (chunkSize : USize)
       : Array α :=
-    if chunkSize < arr.uint64Size then
+    if chunkSize < arr.usize then
       let aux' := mergeChunksIntoAux arr aux chunkSize
       loop aux' arr (chunkSize * 2)
     else
@@ -150,7 +194,7 @@ def Array.mergeSortWithAuxiliary
 def Array.mergeSort [Inhabited α] [Ord α] (arr : Array α) : Array α :=
   mergeSortWithAuxiliary arr (aux := .replicate arr.size default) size_replicate
 
--- def UInt64.maxValue : UInt64 := 2 ^ 64 |>.toUInt64
+-- def USize.maxValue : USize := 2 ^ 64 |>.toUSize
 
 -- class ArraySortingAlgorithm
 --   (cmp : α → α → Bool)
