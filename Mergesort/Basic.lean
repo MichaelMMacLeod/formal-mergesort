@@ -24,6 +24,7 @@ def Array.sorted_by (arr : Array α) (le : α → α → Prop) : Prop :=
 abbrev USize.succ (n : USize) := n + 1
 
 structure H₁ (arr aux : Array α) (low mid high : USize) : Prop where
+  arr_size_lt_usize_size : arr.size < USize.size
   low_le_mid : low ≤ mid
   mid_le_size : mid ≤ arr.usize
   mid_le_high : mid ≤ high
@@ -91,17 +92,18 @@ def H₂.make_H₃
     i_lt_high := by
       rw [h₂.i_def]
       cases System.Platform.numBits_eq
-      . bv_check "Basic.lean-H₂.make_H₃-94-8.lrat"
-      . bv_check "Basic.lean-H₂.make_H₃-95-8.lrat"
+      . bv_decide
+      . bv_decide
   }
 
 def H₃.ptr₁_lt_size
     (h₃ : H₃ arr aux low mid high ptr₁ ptr₂ i)
-    (v : high < (10 |>.toUSize))
     : ptr₁.toNat < arr.size := by
-  cases System.Platform.numBits_eq
-  . bv_decide
-  . bv_decide
+  have ptr₁_lt_size : ptr₁ < arr.usize := by
+    cases System.Platform.numBits_eq
+    . bv_decide
+    . bv_decide
+  exact (USize.lt_ofNat_iff h₃.arr_size_lt_usize_size).mp ptr₁_lt_size
 
 @[specialize, inline]
 def mergeAdjacentChunksIntoAux
