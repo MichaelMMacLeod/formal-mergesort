@@ -107,15 +107,15 @@ def H₃.ptr₁_lt_size
 def mergeAdjacentChunksIntoAux
     [Ord α]
     (arr aux : Array α)
-    (start₁ start₂ end₂ : USize)
-    (h₁ : H₁ arr aux start₁ start₂ end₂)
+    (low mid high : USize)
+    (h₁ : H₁ arr aux low mid high)
     : Array α :=
   let rec @[specialize] loop
       (aux : Array α)
       (ptr₁ ptr₂ i : USize)
-      (h₂ : H₂ arr aux start₁ start₂ end₂ ptr₁ ptr₂ i)
+      (h₂ : H₂ arr aux low mid high ptr₁ ptr₂ i)
       : Array α :=
-    if ptr₁_ptr₂_in_range : ptr₁ < start₂ ∧ ptr₂ < end₂ then
+    if ptr₁_ptr₂_in_range : ptr₁ < mid ∧ ptr₂ < high then
       have h₃ := h₂.make_H₃ ptr₁_ptr₂_in_range
       have v := h₃.ptr₁_lt_size
       match Ord.compare arr[ptr₁] (arr[ptr₂]'sorry) with
@@ -130,7 +130,7 @@ def mergeAdjacentChunksIntoAux
           (aux : Array α)
           (ptr₁ i : USize)
           : Array α :=
-        if ptr₁ < start₂ then
+        if ptr₁ < mid then
           let aux' := aux.uset i (arr[ptr₁]'sorry) sorry
           loopLeft aux' ptr₁.succ i.succ
         else
@@ -138,17 +138,14 @@ def mergeAdjacentChunksIntoAux
               (aux : Array α)
               (ptr₂ i : USize)
               : Array α :=
-            if ptr₂ < end₂ then
+            if ptr₂ < high then
               let aux' := aux.uset i (arr[ptr₂]'sorry) sorry
               loopRight aux' ptr₂.succ i.succ
             else
               aux
           loopRight aux ptr₂ i
       loopLeft aux ptr₁ i
-  let ptr₁ := start₁
-  let ptr₂ := start₂
-  let i := ptr₁
-  loop aux start₁ start₂ ptr₁ (h₁.make_H₂ rfl rfl rfl)
+  loop aux (ptr₁ := low) (ptr₂ := mid) (i := low) (h₁.make_H₂ rfl rfl rfl)
 
 @[specialize, inline]
 def mergeChunksIntoAux
