@@ -365,6 +365,16 @@ def H₅.decreasing
     . bv_decide
     . bv_decide
 
+def H₇.decreasing
+    (h₇ : H₇ arr aux low mid high ptr₁ ptr₂ i)
+    : arr.size - i.succ.toNat < arr.size - i.toNat := by
+  rw [h₇.size_eq]
+  refine Nat.sub_lt_sub_left h₇.i_lt_aux_size ?_
+  refine USize.lt_iff_toNat_lt.mp ?_
+  . cases System.Platform.numBits_eq
+    . bv_decide
+    . bv_decide
+
 @[specialize, inline]
 def mergeAdjacentChunksIntoAux
     [Ord α]
@@ -412,6 +422,8 @@ def mergeAdjacentChunksIntoAux
               loopRight aux' ptr₂.succ i.succ h₇.next
             else
               aux
+          termination_by arr.size - i.toNat
+          decreasing_by all_goals exact h₇.decreasing
           loopRight aux ptr₂ i (h₄.make_H₆ ptr₁_lt_mid)
       termination_by arr.size - i.toNat
       decreasing_by all_goals exact h₅.decreasing
