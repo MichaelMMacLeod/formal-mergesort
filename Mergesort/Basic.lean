@@ -42,6 +42,7 @@ structure H₂ (arr aux : Array α) (low mid high ptr₁ ptr₂ i : USize) : Pro
   i_def : i = ptr₁ + ptr₂ - mid
 
 /--
+arr_size_lt_usize_size
 low_le_mid
 mid_le_size
 mid_le_high
@@ -105,6 +106,25 @@ def H₃.ptr₁_lt_size
     . bv_decide
   exact (USize.lt_ofNat_iff h₃.arr_size_lt_usize_size).mp ptr₁_lt_size
 
+def H₃.ptr₂_lt_size
+    (h₃ : H₃ arr aux low mid high ptr₁ ptr₂ i)
+    : ptr₂.toNat < arr.size := by
+  have ptr₂_lt_size : ptr₂ < arr.usize := by
+    cases System.Platform.numBits_eq
+    . bv_decide
+    . bv_decide
+  exact (USize.lt_ofNat_iff h₃.arr_size_lt_usize_size).mp ptr₂_lt_size
+
+def H₃.i_lt_aux_size
+    (h₃ : H₃ arr aux low mid high ptr₁ ptr₂ i)
+    : i.toNat < aux.size := by
+  have i_lt_size : i < arr.usize := by
+    cases System.Platform.numBits_eq
+    . bv_decide
+    . bv_decide
+  rw [← h₃.size_eq]
+  exact (USize.lt_ofNat_iff h₃.arr_size_lt_usize_size).mp i_lt_size
+
 @[specialize, inline]
 def mergeAdjacentChunksIntoAux
     [Ord α]
@@ -119,13 +139,14 @@ def mergeAdjacentChunksIntoAux
       : Array α :=
     if ptr₁_ptr₂_in_range : ptr₁ < mid ∧ ptr₂ < high then
       have h₃ := h₂.make_H₃ ptr₁_ptr₂_in_range
-      have v := h₃.ptr₁_lt_size
-      match Ord.compare arr[ptr₁] (arr[ptr₂]'sorry) with
+      have := h₃.ptr₁_lt_size
+      have := h₃.ptr₂_lt_size
+      match Ord.compare arr[ptr₁] arr[ptr₂] with
       | .lt | .eq =>
-        let aux' := aux.uset i (arr[ptr₁]'sorry) sorry
+        let aux' := aux.uset i arr[ptr₁] h₃.i_lt_aux_size
         loop aux' ptr₁.succ ptr₂ i.succ sorry
       | .gt =>
-        let aux' := aux.uset i (arr[ptr₂]'sorry) sorry
+        let aux' := aux.uset i arr[ptr₂] h₃.i_lt_aux_size
         loop aux' ptr₁ ptr₂.succ i.succ sorry
     else
       let rec @[specialize] loopLeft
