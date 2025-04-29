@@ -281,6 +281,16 @@ def H₄.make_H₆
       . bv_decide
   }
 
+structure H₇ (arr aux : Array α) (low mid high ptr₁ ptr₂ i : USize) : Prop
+    extends H₆ arr aux low mid high ptr₁ ptr₂ i where
+  ptr₂_lt_high : ptr₂ < high
+
+def H₆.make_H₇
+    (h₆ : H₆ arr aux low mid high ptr₁ ptr₂ i)
+    (ptr₂_lt_high : ptr₂ < high)
+    : H₇ arr aux low mid high ptr₁ ptr₂ i :=
+  { h₆ with ptr₂_lt_high }
+
 @[specialize, inline]
 def mergeAdjacentChunksIntoAux
     [Ord α]
@@ -321,7 +331,8 @@ def mergeAdjacentChunksIntoAux
               (ptr₂ i : USize)
               (h₆ : H₆ arr aux low mid high ptr₁ ptr₂ i)
               : Array α :=
-            if ptr₂ < high then
+            if ptr₂_lt_high : ptr₂ < high then
+              have h₇ := h₆.make_H₇ ptr₂_lt_high
               let aux' := aux.uset i (arr[ptr₂]'sorry) sorry
               loopRight aux' ptr₂.succ i.succ sorry
             else
