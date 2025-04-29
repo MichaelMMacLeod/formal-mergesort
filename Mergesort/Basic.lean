@@ -212,6 +212,15 @@ def H₄.make_H₅
     : H₅ arr aux low mid high ptr₁ ptr₂ i :=
   { h₄ with ptr₁_lt_mid }
 
+def H₅.ptr₁_lt_arr_size
+    (h₅ : H₅ arr aux low mid high ptr₁ ptr₂ i)
+    : ptr₁.toNat < arr.size := by
+  have ptr₁_lt_size : ptr₁ < arr.usize := by
+    cases System.Platform.numBits_eq
+    . bv_decide
+    . bv_decide
+  exact (USize.lt_ofNat_iff h₅.arr_size_lt_usize_size).mp ptr₁_lt_size
+
 @[specialize, inline]
 def mergeAdjacentChunksIntoAux
     [Ord α]
@@ -243,7 +252,8 @@ def mergeAdjacentChunksIntoAux
           : Array α :=
         if ptr₁_lt_mid : ptr₁ < mid then
           have h₅ := h₄.make_H₅ ptr₁_lt_mid
-          let aux' := aux.uset i (arr[ptr₁]'sorry) sorry
+          have := h₅.ptr₁_lt_arr_size
+          let aux' := aux.uset i arr[ptr₁] sorry
           loopLeft aux' ptr₁.succ i.succ sorry
         else
           let rec @[specialize] loopRight
