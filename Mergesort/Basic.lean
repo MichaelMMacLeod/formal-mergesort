@@ -192,15 +192,25 @@ structure H₄ (arr aux : Array α) (low mid high ptr₁ ptr₂ i : USize) : Pro
   not_ptr₁_ptr₂_in_range : ptr₁ = mid ∨ ptr₂ = high
 
 def H₂.make_H₄
-  (h₂ : H₂ arr aux low mid high ptr₁ ptr₂ i)
-  (not_ptr₁_ptr₂_in_range : ¬(ptr₁ < mid ∧ ptr₂ < high))
-  : H₄ arr aux low mid high ptr₁ ptr₂ i :=
+    (h₂ : H₂ arr aux low mid high ptr₁ ptr₂ i)
+    (not_ptr₁_ptr₂_in_range : ¬(ptr₁ < mid ∧ ptr₂ < high))
+    : H₄ arr aux low mid high ptr₁ ptr₂ i :=
   { h₂ with
     not_ptr₁_ptr₂_in_range := by
       cases System.Platform.numBits_eq
       . bv_decide
       . bv_decide
   }
+
+structure H₅ (arr aux : Array α) (low mid high ptr₁ ptr₂ i : USize) : Prop
+    extends H₄ arr aux low mid high ptr₁ ptr₂ i where
+  ptr₁_lt_mid : ptr₁ < mid
+
+def H₄.make_H₅
+    (h₄ : H₄ arr aux low mid high ptr₁ ptr₂ i)
+    (ptr₁_lt_mid : ptr₁ < mid)
+    : H₅ arr aux low mid high ptr₁ ptr₂ i :=
+  { h₄ with ptr₁_lt_mid }
 
 @[specialize, inline]
 def mergeAdjacentChunksIntoAux
@@ -231,7 +241,8 @@ def mergeAdjacentChunksIntoAux
           (ptr₁ i : USize)
           (h₄ : H₄ arr aux low mid high ptr₁ ptr₂ i)
           : Array α :=
-        if ptr₁ < mid then
+        if ptr₁_lt_mid : ptr₁ < mid then
+          have h₅ := h₄.make_H₅ ptr₁_lt_mid
           let aux' := aux.uset i (arr[ptr₁]'sorry) sorry
           loopLeft aux' ptr₁.succ i.succ sorry
         else
