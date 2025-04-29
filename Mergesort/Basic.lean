@@ -97,7 +97,7 @@ def H₂.make_H₃
       . bv_decide
   }
 
-def H₃.ptr₁_lt_size
+def H₃.ptr₁_lt_arr_size
     (h₃ : H₃ arr aux low mid high ptr₁ ptr₂ i)
     : ptr₁.toNat < arr.size := by
   have ptr₁_lt_size : ptr₁ < arr.usize := by
@@ -106,7 +106,7 @@ def H₃.ptr₁_lt_size
     . bv_decide
   exact (USize.lt_ofNat_iff h₃.arr_size_lt_usize_size).mp ptr₁_lt_size
 
-def H₃.ptr₂_lt_size
+def H₃.ptr₂_lt_arr_size
     (h₃ : H₃ arr aux low mid high ptr₁ ptr₂ i)
     : ptr₂.toNat < arr.size := by
   have ptr₂_lt_size : ptr₂ < arr.usize := by
@@ -125,6 +125,37 @@ def H₃.i_lt_aux_size
   rw [← h₃.size_eq]
   exact (USize.lt_ofNat_iff h₃.arr_size_lt_usize_size).mp i_lt_size
 
+def H₃.next₁
+    (h₃ : H₃ arr aux low mid high ptr₁ ptr₂ i)
+    : have ptr₁_lt_arr_size := h₃.ptr₁_lt_arr_size
+      let aux' := aux.uset i arr[ptr₁] h₃.i_lt_aux_size
+      H₂ arr aux' low mid high ptr₁.succ ptr₂ i.succ :=
+  { h₃ with
+    size_eq := by
+      simp only [Array.uset, Array.ugetElem_eq_getElem, Array.size_set]
+      exact h₃.size_eq
+    ptr₁_ge_low := by
+      cases System.Platform.numBits_eq
+      . bv_decide
+      . bv_decide
+    ptr₁_le_mid := by
+      cases System.Platform.numBits_eq
+      . bv_decide
+      . bv_decide
+    i_ge_low := by
+      cases System.Platform.numBits_eq
+      . bv_decide
+      . bv_decide
+    i_le_high := by
+      cases System.Platform.numBits_eq
+      . bv_decide
+      . bv_decide
+    i_def := by
+      cases System.Platform.numBits_eq
+      . bv_decide
+      . bv_decide
+  }
+
 @[specialize, inline]
 def mergeAdjacentChunksIntoAux
     [Ord α]
@@ -139,12 +170,12 @@ def mergeAdjacentChunksIntoAux
       : Array α :=
     if ptr₁_ptr₂_in_range : ptr₁ < mid ∧ ptr₂ < high then
       have h₃ := h₂.make_H₃ ptr₁_ptr₂_in_range
-      have := h₃.ptr₁_lt_size
-      have := h₃.ptr₂_lt_size
+      have := h₃.ptr₁_lt_arr_size
+      have := h₃.ptr₂_lt_arr_size
       match Ord.compare arr[ptr₁] arr[ptr₂] with
       | .lt | .eq =>
         let aux' := aux.uset i arr[ptr₁] h₃.i_lt_aux_size
-        loop aux' ptr₁.succ ptr₂ i.succ sorry
+        loop aux' ptr₁.succ ptr₂ i.succ h₃.next₁
       | .gt =>
         let aux' := aux.uset i arr[ptr₂] h₃.i_lt_aux_size
         loop aux' ptr₁ ptr₂.succ i.succ sorry
