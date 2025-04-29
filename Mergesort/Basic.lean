@@ -266,6 +266,21 @@ def H₅.next
       . bv_decide
   }
 
+structure H₆ (arr aux : Array α) (low mid high ptr₁ ptr₂ i : USize) : Prop
+    extends H₄ arr aux low mid high ptr₁ ptr₂ i where
+  ptr₁_eq_mid : ptr₁ = mid
+
+def H₄.make_H₆
+    (h₄ : H₄ arr aux low mid high ptr₁ ptr₂ i)
+    (not_ptr₁_lt_mid : ¬ptr₁ < mid)
+    : H₆ arr aux low mid high ptr₁ ptr₂ i :=
+  { h₄ with
+    ptr₁_eq_mid := by
+      cases System.Platform.numBits_eq
+      . bv_decide
+      . bv_decide
+  }
+
 @[specialize, inline]
 def mergeAdjacentChunksIntoAux
     [Ord α]
@@ -304,13 +319,14 @@ def mergeAdjacentChunksIntoAux
           let rec @[specialize] loopRight
               (aux : Array α)
               (ptr₂ i : USize)
+              (h₆ : H₆ arr aux low mid high ptr₁ ptr₂ i)
               : Array α :=
             if ptr₂ < high then
               let aux' := aux.uset i (arr[ptr₂]'sorry) sorry
-              loopRight aux' ptr₂.succ i.succ
+              loopRight aux' ptr₂.succ i.succ sorry
             else
               aux
-          loopRight aux ptr₂ i
+          loopRight aux ptr₂ i (h₄.make_H₆ ptr₁_lt_mid)
       loopLeft aux ptr₁ i (h₂.make_H₄ ptr₁_ptr₂_in_range)
   loop aux (ptr₁ := low) (ptr₂ := mid) (i := low) (h₁.make_H₂ rfl rfl rfl)
 
