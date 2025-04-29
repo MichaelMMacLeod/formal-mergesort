@@ -156,6 +156,37 @@ def H₃.next₁
       . bv_decide
   }
 
+def H₃.next₂
+    (h₃ : H₃ arr aux low mid high ptr₁ ptr₂ i)
+    : have ptr₂_lt_arr_size := h₃.ptr₂_lt_arr_size
+      let aux' := aux.uset i arr[ptr₂] h₃.i_lt_aux_size
+      H₂ arr aux' low mid high ptr₁ ptr₂.succ i.succ :=
+  { h₃ with
+    size_eq := by
+      simp only [Array.uset, Array.ugetElem_eq_getElem, Array.size_set]
+      exact h₃.size_eq
+    ptr₂_ge_mid := by
+      cases System.Platform.numBits_eq
+      . bv_decide
+      . bv_decide
+    ptr₂_le_high := by
+      cases System.Platform.numBits_eq
+      . bv_decide
+      . bv_decide
+    i_ge_low := by
+      cases System.Platform.numBits_eq
+      . bv_decide
+      . bv_decide
+    i_le_high := by
+      cases System.Platform.numBits_eq
+      . bv_decide
+      . bv_decide
+    i_def := by
+      cases System.Platform.numBits_eq
+      . bv_decide
+      . bv_decide
+  }
+
 @[specialize, inline]
 def mergeAdjacentChunksIntoAux
     [Ord α]
@@ -178,7 +209,7 @@ def mergeAdjacentChunksIntoAux
         loop aux' ptr₁.succ ptr₂ i.succ h₃.next₁
       | .gt =>
         let aux' := aux.uset i arr[ptr₂] h₃.i_lt_aux_size
-        loop aux' ptr₁ ptr₂.succ i.succ sorry
+        loop aux' ptr₁ ptr₂.succ i.succ h₃.next₂
     else
       let rec @[specialize] loopLeft
           (aux : Array α)
