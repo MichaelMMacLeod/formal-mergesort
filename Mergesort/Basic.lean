@@ -300,6 +300,16 @@ def H₇.ptr₂_lt_arr_size
     . bv_decide
   exact (USize.lt_ofNat_iff h₇.arr_size_lt_usize_size).mp ptr₂_lt_size
 
+def H₇.i_lt_aux_size
+    (h₇ : H₇ arr aux low mid high ptr₁ ptr₂ i)
+    : i.toNat < aux.size := by
+  have i_lt_size : i < arr.usize := by
+    cases System.Platform.numBits_eq
+    . bv_decide
+    . bv_decide
+  rw [← h₇.size_eq]
+  exact (USize.lt_ofNat_iff h₇.arr_size_lt_usize_size).mp i_lt_size
+
 @[specialize, inline]
 def mergeAdjacentChunksIntoAux
     [Ord α]
@@ -343,7 +353,7 @@ def mergeAdjacentChunksIntoAux
             if ptr₂_lt_high : ptr₂ < high then
               have h₇ := h₆.make_H₇ ptr₂_lt_high
               have := h₇.ptr₂_lt_arr_size
-              let aux' := aux.uset i arr[ptr₂] sorry
+              let aux' := aux.uset i arr[ptr₂] h₇.i_lt_aux_size
               loopRight aux' ptr₂.succ i.succ sorry
             else
               aux
