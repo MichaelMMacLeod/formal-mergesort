@@ -10,7 +10,7 @@ import Lean.Elab.Tactic
 variable
   {α : Type}
   {arr aux : Array α}
-  {low mid high ptr₁ ptr₂ i : USize}
+  {low mid high ptr₁ ptr₂ i chunkSize : USize}
 
 def Array.toMultiset (a : Array α) : Multiset α := Multiset.ofList a.toList
 
@@ -432,26 +432,84 @@ def mergeAdjacentChunksIntoAux
   decreasing_by all_goals exact h₃.decreasing
   loop aux (ptr₁ := low) (ptr₂ := mid) (i := low) (h₁.make_H₂ rfl rfl rfl)
 
+structure H₈ (arr aux : Array α) (chunkSize : USize) : Prop where
+  arr_size_lt_usize_size : arr.size < USize.size
+  size_eq : arr.size = aux.size
+  chunkSize_gt_zero : chunkSize > 0
+  chunkSize_lt_arr_size : chunkSize < arr.usize
+
+theorem Fin.add_val_eq_val_add_of_nonoverflowing
+    {n : Nat}
+    {a b : Fin n}
+    (h : a.val + b.val < n)
+    : (a + b).val = a.val + b.val :=
+  Nat.mod_eq_of_lt h
+
+theorem Fin.self_le_add_of_nonoverflowing
+    {n}
+    {a b : Fin n}
+    (h : a.val + b.val < n)
+    : a ≤ a + b := by
+  suffices hp : a.val ≤ (a + b).val by exact hp
+  simp only [Fin.add_val_eq_val_add_of_nonoverflowing h, Nat.le_add_right]
+
+theorem USize.self_le_add_of_nonoverflowing
+    {a b : USize}
+    (h : a.toNat + b.toNat < USize.size)
+    : a ≤ a + b := by
+  suffices hp : a.toFin ≤ a.toFin + b.toFin by exact hp
+  exact Fin.self_le_add_of_nonoverflowing h
+
+def H₈.make_H₁
+    (h₈ : H₈ arr aux chunkSize)
+    (low_plus_chunkSize_lt_USize_size : low.toNat + chunkSize.toNat < USize.size)
+    (low_plus_chunkSize_lt_arr_size : low + chunkSize < arr.usize)
+    : let mid := low + chunkSize
+      let high := min (mid + chunkSize) arr.usize
+      H₁ arr aux low mid high := by
+  intro mid high
+  have mid_def : mid = low + chunkSize := rfl
+  have high_def : high = min (mid + chunkSize) arr.usize := rfl
+  exact {
+    arr_size_lt_usize_size := h₈.arr_size_lt_usize_size
+    low_le_mid := USize.self_le_add_of_nonoverflowing low_plus_chunkSize_lt_USize_size
+    mid_le_size := USize.le_of_lt low_plus_chunkSize_lt_arr_size
+    mid_le_high := by
+      sorry
+    high_le_size := sorry
+    size_eq := sorry
+  }
+
+-- [--------------|--------]        |
+--                mid               high
+
+
 @[specialize, inline]
 def mergeChunksIntoAux
     [Ord α]
     (arr aux : Array α)
-    (size : USize) :=
-  let rec @[specialize] loop (aux : Array α) (start₁: USize)
+    (chunkSize : USize)
+    (h₈ : H₈ arr aux chunkSize) :=
+  let rec @[specialize] loop
+      (aux : Array α)
+      (low : USize)
+      (h₈ : H₈ arr aux chunkSize)
       : Array α :=
-    if start₁ + size < arr.usize then
-      let start₂ := start₁ + size
-      let end₂ := min (start₂ + size) arr.usize
-      let aux' := mergeAdjacentChunksIntoAux arr aux start₁ start₂ end₂ sorry
-      loop aux' (start₁ + 2 * size)
+    if low_plus_chunkSize_lt_arr_size : low + chunkSize < arr.usize then
+      let mid := low + chunkSize
+      let high := mid + min (arr.usize - mid) chunkSize
+      -- let high := min (mid + chunkSize) arr.usize
+      have h₁ := h₈.make_H₁ low_plus_chunkSize_lt_arr_size
+      let aux' := mergeAdjacentChunksIntoAux arr aux low mid high h₁
+      loop aux' high sorry
     else
-      let rec @[specialize] loopFinal (aux : Array α) (start₁ : USize) : Array α :=
-        if start₁ < aux.usize then
-          let aux' := aux.uset start₁ (arr[start₁]'sorry) sorry
-          loopFinal aux' start₁.succ
+      let rec @[specialize] loop (aux : Array α) (low : USize) : Array α :=
+        if low < aux.usize then
+          let aux' := aux.uset low (arr[low]'sorry) sorry
+          loop aux' low.succ
         else
           aux
-      loopFinal aux start₁
+      loop aux low
   loop aux 0
 
 @[specialize, inline]
