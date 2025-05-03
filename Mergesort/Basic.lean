@@ -606,15 +606,13 @@ def H₉.next
     refine USize.le_of_lt ?_
     exact USize.add_lt_of_sub h₉.low_le_arr_size h₉.size_minus_low_gt_chunkSize
   exact {
-    arr_size_lt_usize_size := h₉.arr_size_lt_usize_size,
+    h₉ with
     size_eq := by
       simp only [h₉.size_eq, aux']
       exact mergeAdjacentChunksIntoAux.size_eq h₉.make_H₁
     low_le_arr_size := by
       rw [high_def]
       exact USize.high_le_size mid_le_size h₉.chunkSize_gt_zero
-    chunkSize_gt_zero := ?_
-    chunkSize_lt_arr_size := ?_
   }
 
 @[specialize, inline]
