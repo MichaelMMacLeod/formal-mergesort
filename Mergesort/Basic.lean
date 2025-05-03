@@ -435,7 +435,7 @@ def mergeAdjacentChunksIntoAux
 structure H₈ (arr aux : Array α) (low chunkSize : USize) : Prop where
   arr_size_lt_usize_size : arr.size < USize.size
   size_eq : arr.size = aux.size
-  low_lt_arr_size : low < arr.usize
+  low_le_arr_size : low ≤ arr.usize
   chunkSize_gt_zero : chunkSize > 0
   chunkSize_lt_arr_size : chunkSize < arr.usize
 
@@ -473,7 +473,7 @@ theorem USize.self_le_add_of_nonoverflowing
 
 theorem USize.le_add_of_sub_gt
     {a b c : USize}
-    (h : b < a)
+    (h : b ≤ a)
     : a - b > c → b ≤ b + c := by
   . cases System.Platform.numBits_eq
     . bv_decide
@@ -481,7 +481,7 @@ theorem USize.le_add_of_sub_gt
 
 theorem USize.add_lt_of_sub
     {a b c : USize}
-    (h : b < a)
+    (h : b ≤ a)
     : a - b > c → b + c < a := by
   . cases System.Platform.numBits_eq
     . bv_decide
@@ -493,22 +493,6 @@ theorem USize.mid_le_high
     (chunkSize_gt_zero : chunkSize > 0)
     : mid ≤ mid + (size - mid) ⊓ chunkSize := by
   if h : size - mid ≤ chunkSize then
-    simp only [instMinUSize, minOfLe, min, h, ↓reduceIte]
-    . cases System.Platform.numBits_eq
-      . bv_decide
-      . bv_decide
-  else
-    simp only [instMinUSize, minOfLe, min, h, ↓reduceIte]
-    . cases System.Platform.numBits_eq
-      . bv_decide
-      . bv_decide
-
-theorem USize.high_lt_size
-    {mid size chunkSize : USize}
-    (mid_le_size : mid ≤ size)
-    (chunkSize_gt_zero : chunkSize > 0)
-    : mid + (size - mid) ⊓ chunkSize < size := by
-  if h : size - mid < chunkSize then
     simp only [instMinUSize, minOfLe, min, h, ↓reduceIte]
     . cases System.Platform.numBits_eq
       . bv_decide
@@ -544,11 +528,11 @@ def H₉.make_H₁
   have mid_def : mid = low + chunkSize := rfl
   have high_def : high = mid + min (arr.usize - mid) chunkSize := rfl
   have low_le_mid : low ≤ mid :=
-    USize.le_add_of_sub_gt h₉.low_lt_arr_size h₉.size_minus_low_gt_chunkSize
+    USize.le_add_of_sub_gt h₉.low_le_arr_size h₉.size_minus_low_gt_chunkSize
   have mid_le_size : mid ≤ arr.usize := by
     rw [mid_def]
     refine USize.le_of_lt ?_
-    exact USize.add_lt_of_sub h₉.low_lt_arr_size h₉.size_minus_low_gt_chunkSize
+    exact USize.add_lt_of_sub h₉.low_le_arr_size h₉.size_minus_low_gt_chunkSize
   exact {
     arr_size_lt_usize_size := h₉.arr_size_lt_usize_size
     low_le_mid
@@ -620,15 +604,14 @@ def H₉.next
   have mid_le_size : mid ≤ arr.usize := by
     rw [mid_def]
     refine USize.le_of_lt ?_
-    exact USize.add_lt_of_sub h₉.low_lt_arr_size h₉.size_minus_low_gt_chunkSize
+    exact USize.add_lt_of_sub h₉.low_le_arr_size h₉.size_minus_low_gt_chunkSize
   exact {
     arr_size_lt_usize_size := h₉.arr_size_lt_usize_size,
     size_eq := by
       simp only [h₉.size_eq, aux']
       exact mergeAdjacentChunksIntoAux.size_eq h₉.make_H₁
-    low_lt_arr_size := by
+    low_le_arr_size := by
       rw [high_def]
-      -- apply?
       exact USize.high_le_size mid_le_size h₉.chunkSize_gt_zero
     chunkSize_gt_zero := ?_
     chunkSize_lt_arr_size := ?_
