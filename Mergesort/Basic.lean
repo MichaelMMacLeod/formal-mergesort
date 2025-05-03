@@ -503,6 +503,22 @@ theorem USize.mid_le_high
       . bv_decide
       . bv_decide
 
+theorem USize.high_lt_size
+    {mid size chunkSize : USize}
+    (mid_le_size : mid ≤ size)
+    (chunkSize_gt_zero : chunkSize > 0)
+    : mid + (size - mid) ⊓ chunkSize < size := by
+  if h : size - mid < chunkSize then
+    simp only [instMinUSize, minOfLe, min, h, ↓reduceIte]
+    . cases System.Platform.numBits_eq
+      . bv_decide
+      . bv_decide
+  else
+    simp only [instMinUSize, minOfLe, min, h, ↓reduceIte]
+    . cases System.Platform.numBits_eq
+      . bv_decide
+      . bv_decide
+
 theorem USize.high_le_size
     {mid size chunkSize : USize}
     (mid_le_size : mid ≤ size)
@@ -542,19 +558,54 @@ def H₉.make_H₁
     size_eq := h₉.size_eq
   }
 
+theorem mergeAdjacentChunksIntoAux.loop.loopLeft.loopRight.size_eq
+    [Ord α]
+    {aux : Array α}
+    {ptr₂ i : USize}
+    {h₆ : H₆ arr aux low mid high ptr₁ ptr₂ i}
+    : aux.size = (mergeAdjacentChunksIntoAux.loop.loopLeft.loopRight arr low mid high ptr₁ aux ptr₂ i h₆).size := by
+  unfold loopRight
+  if ptr₂_lt_high : ptr₂ < high then
+    simp [ptr₂_lt_high, ← size_eq (i := i.succ)]
+  else
+    simp [ptr₂_lt_high]
+termination_by arr.size - i.toNat
+decreasing_by exact h₆.make_H₇ ptr₂_lt_high |>.decreasing
+
+theorem mergeAdjacentChunksIntoAux.loop.loopLeft.size_eq
+    [Ord α]
+    {aux : Array α}
+    {ptr₁ i : USize}
+    {h₄ : H₄ arr aux low mid high ptr₁ ptr₂ i}
+    : aux.size = (mergeAdjacentChunksIntoAux.loop.loopLeft arr low mid high ptr₂ aux ptr₁ i h₄).size := by
+  unfold loopLeft
+  if ptr₁_lt_mid : ptr₁ < mid then
+    simp [ptr₁_lt_mid, Array.uset, Array.ugetElem_eq_getElem, ← size_eq (i := i.succ)]
+  else
+    simp [ptr₁_lt_mid, ← loopRight.size_eq]
+termination_by arr.size - i.toNat
+decreasing_by exact h₄.make_H₅ ptr₁_lt_mid |>.decreasing
+
 theorem mergeAdjacentChunksIntoAux.loop.size_eq
     [Ord α]
-    (ptr₁ ptr₂ i : USize)
-    (h₂ : H₂ arr aux low mid high ptr₁ ptr₂ i)
-    : (mergeAdjacentChunksIntoAux.loop arr low mid high aux ptr₁ ptr₂ i h₂).size = aux.size := by
-  unfold mergeAdjacentChunksIntoAux.loop
-  sorry
+    {aux : Array α}
+    {ptr₁ ptr₂ i : USize}
+    {h₂ : H₂ arr aux low mid high ptr₁ ptr₂ i}
+    : aux.size = (loop arr low mid high aux ptr₁ ptr₂ i h₂).size := by
+  unfold loop
+  if ptr₁_ptr₂_in_range : ptr₁ < mid ∧ ptr₂ < high then
+    simp only [ptr₁_ptr₂_in_range, and_self, ↓reduceDIte, Array.ugetElem_eq_getElem, Array.uset]
+    split <;> rw [← size_eq, Array.size_set]
+  else
+    simp only [ptr₁_ptr₂_in_range, ↓reduceDIte, ← loopLeft.size_eq]
+termination_by arr.size - i.toNat
+decreasing_by all_goals exact h₂.make_H₃ ptr₁_ptr₂_in_range |>.decreasing
 
 theorem mergeAdjacentChunksIntoAux.size_eq
     [Ord α]
     (h₁ : H₁ arr aux low mid high)
-    : (mergeAdjacentChunksIntoAux arr aux low mid high h₁).size = aux.size := by
-  exact mergeAdjacentChunksIntoAux.loop.size_eq low mid low (h₁.make_H₂ rfl rfl rfl)
+    : aux.size = (mergeAdjacentChunksIntoAux arr aux low mid high h₁).size :=
+  mergeAdjacentChunksIntoAux.loop.size_eq
 
 def H₉.next
     [Ord α]
@@ -564,11 +615,22 @@ def H₉.next
       have aux' := mergeAdjacentChunksIntoAux arr aux low mid high h₉.make_H₁
       H₈ arr aux' high chunkSize := by
   intro mid high aux'
+  have mid_def : mid = low + chunkSize := rfl
+  have high_def : high = mid + min (arr.usize - mid) chunkSize := rfl
+  have mid_le_size : mid ≤ arr.usize := by
+    rw [mid_def]
+    refine USize.le_of_lt ?_
+    exact USize.add_lt_of_sub h₉.low_lt_arr_size h₉.size_minus_low_gt_chunkSize
   exact {
     arr_size_lt_usize_size := h₉.arr_size_lt_usize_size,
-    size_eq := ?_,
-    low_lt_arr_size := ?_,
-    chunkSize_gt_zero := ?_,
+    size_eq := by
+      simp only [h₉.size_eq, aux']
+      exact mergeAdjacentChunksIntoAux.size_eq h₉.make_H₁
+    low_lt_arr_size := by
+      rw [high_def]
+      -- apply?
+      exact USize.high_le_size mid_le_size h₉.chunkSize_gt_zero
+    chunkSize_gt_zero := ?_
     chunkSize_lt_arr_size := ?_
   }
 
