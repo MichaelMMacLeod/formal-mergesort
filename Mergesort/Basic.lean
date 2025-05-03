@@ -432,11 +432,22 @@ def mergeAdjacentChunksIntoAux
   decreasing_by all_goals exact h₃.decreasing
   loop aux (ptr₁ := low) (ptr₂ := mid) (i := low) (h₁.make_H₂ rfl rfl rfl)
 
-structure H₈ (arr aux : Array α) (chunkSize : USize) : Prop where
+structure H₈ (arr aux : Array α) (low chunkSize : USize) : Prop where
   arr_size_lt_usize_size : arr.size < USize.size
   size_eq : arr.size = aux.size
+  low_lt_arr_size : low < arr.usize
   chunkSize_gt_zero : chunkSize > 0
   chunkSize_lt_arr_size : chunkSize < arr.usize
+
+structure H₉ (arr aux : Array α) (low chunkSize : USize) : Prop
+    extends H₈ arr aux low chunkSize where
+  size_minus_low_gt_chunkSize : arr.usize - low > chunkSize
+
+def H₈.make_H₉
+    (h₈ : H₈ arr aux low chunkSize)
+    (size_minus_low_gt_chunkSize : arr.usize - low > chunkSize)
+    : H₉ arr aux low chunkSize :=
+  { h₈ with size_minus_low_gt_chunkSize }
 
 theorem Fin.add_val_eq_val_add_of_nonoverflowing
     {n : Nat}
@@ -460,48 +471,124 @@ theorem USize.self_le_add_of_nonoverflowing
   suffices hp : a.toFin ≤ a.toFin + b.toFin by exact hp
   exact Fin.self_le_add_of_nonoverflowing h
 
-def H₈.make_H₁
-    (h₈ : H₈ arr aux chunkSize)
-    (low_plus_chunkSize_lt_USize_size : low.toNat + chunkSize.toNat < USize.size)
-    (low_plus_chunkSize_lt_arr_size : low + chunkSize < arr.usize)
+theorem USize.le_add_of_sub_gt
+    {a b c : USize}
+    (h : b < a)
+    : a - b > c → b ≤ b + c := by
+  . cases System.Platform.numBits_eq
+    . bv_decide
+    . bv_decide
+
+theorem USize.add_lt_of_sub
+    {a b c : USize}
+    (h : b < a)
+    : a - b > c → b + c < a := by
+  . cases System.Platform.numBits_eq
+    . bv_decide
+    . bv_decide
+
+theorem USize.mid_le_high
+    {mid size chunkSize : USize}
+    (mid_le_size : mid ≤ size)
+    (chunkSize_gt_zero : chunkSize > 0)
+    : mid ≤ mid + (size - mid) ⊓ chunkSize := by
+  if h : size - mid ≤ chunkSize then
+    simp only [instMinUSize, minOfLe, min, h, ↓reduceIte]
+    . cases System.Platform.numBits_eq
+      . bv_decide
+      . bv_decide
+  else
+    simp only [instMinUSize, minOfLe, min, h, ↓reduceIte]
+    . cases System.Platform.numBits_eq
+      . bv_decide
+      . bv_decide
+
+theorem USize.high_le_size
+    {mid size chunkSize : USize}
+    (mid_le_size : mid ≤ size)
+    (chunkSize_gt_zero : chunkSize > 0)
+    : mid + (size - mid) ⊓ chunkSize ≤ size := by
+  if h : size - mid ≤ chunkSize then
+    simp only [instMinUSize, minOfLe, min, h, ↓reduceIte]
+    . cases System.Platform.numBits_eq
+      . bv_decide
+      . bv_decide
+  else
+    simp only [instMinUSize, minOfLe, min, h, ↓reduceIte]
+    . cases System.Platform.numBits_eq
+      . bv_decide
+      . bv_decide
+
+def H₉.make_H₁
+    (h₉ : H₉ arr aux low chunkSize)
     : let mid := low + chunkSize
-      let high := min (mid + chunkSize) arr.usize
+      let high := mid + min (arr.usize - mid) chunkSize
       H₁ arr aux low mid high := by
   intro mid high
   have mid_def : mid = low + chunkSize := rfl
-  have high_def : high = min (mid + chunkSize) arr.usize := rfl
+  have high_def : high = mid + min (arr.usize - mid) chunkSize := rfl
+  have low_le_mid : low ≤ mid :=
+    USize.le_add_of_sub_gt h₉.low_lt_arr_size h₉.size_minus_low_gt_chunkSize
+  have mid_le_size : mid ≤ arr.usize := by
+    rw [mid_def]
+    refine USize.le_of_lt ?_
+    exact USize.add_lt_of_sub h₉.low_lt_arr_size h₉.size_minus_low_gt_chunkSize
   exact {
-    arr_size_lt_usize_size := h₈.arr_size_lt_usize_size
-    low_le_mid := USize.self_le_add_of_nonoverflowing low_plus_chunkSize_lt_USize_size
-    mid_le_size := USize.le_of_lt low_plus_chunkSize_lt_arr_size
-    mid_le_high := by
-      sorry
-    high_le_size := sorry
-    size_eq := sorry
+    arr_size_lt_usize_size := h₉.arr_size_lt_usize_size
+    low_le_mid
+    mid_le_size
+    mid_le_high := USize.mid_le_high mid_le_size h₉.chunkSize_gt_zero
+    high_le_size := USize.high_le_size mid_le_size h₉.chunkSize_gt_zero
+    size_eq := h₉.size_eq
   }
 
--- [--------------|--------]        |
---                mid               high
+theorem mergeAdjacentChunksIntoAux.loop.size_eq
+    [Ord α]
+    (ptr₁ ptr₂ i : USize)
+    (h₂ : H₂ arr aux low mid high ptr₁ ptr₂ i)
+    : (mergeAdjacentChunksIntoAux.loop arr low mid high aux ptr₁ ptr₂ i h₂).size = aux.size := by
+  unfold mergeAdjacentChunksIntoAux.loop
+  sorry
 
+theorem mergeAdjacentChunksIntoAux.size_eq
+    [Ord α]
+    (h₁ : H₁ arr aux low mid high)
+    : (mergeAdjacentChunksIntoAux arr aux low mid high h₁).size = aux.size := by
+  exact mergeAdjacentChunksIntoAux.loop.size_eq low mid low (h₁.make_H₂ rfl rfl rfl)
+
+def H₉.next
+    [Ord α]
+    (h₉ : H₉ arr aux low chunkSize)
+    : let mid := low + chunkSize
+      let high := mid + min (arr.usize - mid) chunkSize
+      have aux' := mergeAdjacentChunksIntoAux arr aux low mid high h₉.make_H₁
+      H₈ arr aux' high chunkSize := by
+  intro mid high aux'
+  exact {
+    arr_size_lt_usize_size := h₉.arr_size_lt_usize_size,
+    size_eq := ?_,
+    low_lt_arr_size := ?_,
+    chunkSize_gt_zero := ?_,
+    chunkSize_lt_arr_size := ?_
+  }
 
 @[specialize, inline]
 def mergeChunksIntoAux
     [Ord α]
     (arr aux : Array α)
     (chunkSize : USize)
-    (h₈ : H₈ arr aux chunkSize) :=
+    (h₈ : H₈ arr aux low chunkSize) :=
   let rec @[specialize] loop
       (aux : Array α)
       (low : USize)
-      (h₈ : H₈ arr aux chunkSize)
+      (h₈ : H₈ arr aux low chunkSize)
       : Array α :=
-    if low_plus_chunkSize_lt_arr_size : low + chunkSize < arr.usize then
+    if size_minus_low_gt_chunkSize : arr.usize - low > chunkSize then
+      have h₉ := h₈.make_H₉ size_minus_low_gt_chunkSize
       let mid := low + chunkSize
       let high := mid + min (arr.usize - mid) chunkSize
-      -- let high := min (mid + chunkSize) arr.usize
-      have h₁ := h₈.make_H₁ low_plus_chunkSize_lt_arr_size
-      let aux' := mergeAdjacentChunksIntoAux arr aux low mid high h₁
-      loop aux' high sorry
+      let aux' := mergeAdjacentChunksIntoAux arr aux low mid high h₉.make_H₁
+      loop aux' high h₉.next
     else
       let rec @[specialize] loop (aux : Array α) (low : USize) : Array α :=
         if low < aux.usize then
