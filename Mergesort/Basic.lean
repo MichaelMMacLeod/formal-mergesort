@@ -823,6 +823,11 @@ def H₁₃.next
     size_eq := by
       rw [aux'_def, h₁₃.size_eq]
       exact Eq.symm (mergeChunksIntoAux.size_eq h₁₃)
+    chunkSize_gt_zero := by
+      
+      cases System.Platform.numBits_eq
+      . bv_decide
+      . bv_decide
   }
 
 @[specialize, inline]

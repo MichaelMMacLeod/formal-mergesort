@@ -89,7 +89,7 @@ partial def Array.mergeSortWithAuxiliary
       : Array α :=
     if chunkSize < arr.usize then
       let aux' := mergeChunksIntoAux arr aux chunkSize
-      loop aux' arr (chunkSize * 2)
+      loop aux' arr (chunkSize + min (arr.usize - chunkSize) chunkSize)
     else
       arr
   loop arr aux 1
