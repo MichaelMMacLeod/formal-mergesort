@@ -727,7 +727,7 @@ def mergeChunksIntoAux
       (low : USize)
       (h₈ : H₈ arr aux low chunkSize)
       : Array α :=
-    if size_minus_low_gt_chunkSize : arr.usize - low > chunkSize then
+    if size_minus_low_gt_chunkSize : chunkSize < arr.usize - low then
       have h₉ := h₈.make_H₉ size_minus_low_gt_chunkSize
       let mid := low + chunkSize
       let high := mid + min (arr.usize - mid) chunkSize
@@ -773,12 +773,53 @@ def H₁₃.make_H₈
     : H₈ arr aux 0 chunkSize :=
   { h₁₃ with low_le_arr_usize := USize.zero_le }
 
+theorem mergeChunksIntoAux.loop.loopFinal.size_eq
+    [Ord α]
+    {arr aux : Array α}
+    {low chunkSize : USize}
+    {h₁₀ : H₁₀ arr aux low chunkSize}
+    : aux.size = (loopFinal arr chunkSize aux low h₁₀).size := by
+  unfold loopFinal
+  if low_lt_aux_usize : low < aux.usize then
+    simp only [low_lt_aux_usize, ↓reduceDIte, Array.uset, Array.ugetElem_eq_getElem]
+    rw [← size_eq, Array.size_set]
+  else
+    simp only [low_lt_aux_usize, ↓reduceDIte]
+
+theorem mergeChunksIntoAux.loop.size_eq
+    [Ord α]
+    {arr aux : Array α}
+    {low chunkSize : USize}
+    {h₈ : H₈ arr aux low chunkSize}
+    : aux.size = (loop arr chunkSize aux low h₈).size := by
+  unfold loop
+  if size_minus_low_gt_chunkSize : chunkSize < arr.usize - low then
+    simp only [size_minus_low_gt_chunkSize]
+    simp only [↓reduceDIte, Array.usize, Nat.toUSize_eq]
+    rw [← size_eq, ← mergeAdjacentChunksIntoAux.size_eq]
+  else
+    simp only [size_minus_low_gt_chunkSize]
+    exact loopFinal.size_eq
+
+theorem mergeChunksIntoAux.size_eq
+    [Ord α]
+    (h₁₃ : H₁₃ arr aux chunkSize)
+    : aux.size = (mergeChunksIntoAux arr aux chunkSize h₁₃.make_H₈).size := by
+  exact loop.size_eq
+
 def H₁₃.next
     [Ord α]
     (h₁₃ : H₁₃ arr aux chunkSize)
     : let aux' := mergeChunksIntoAux arr aux chunkSize h₁₃.make_H₈
       H₁₂ aux' arr (chunkSize * 2) := by
-  sorry
+  intro aux'
+  have aux'_def : aux' = mergeChunksIntoAux arr aux chunkSize h₁₃.make_H₈ := rfl
+  exact {
+    h₁₃ with
+    size_eq := by
+      rw [aux'_def, h₁₃.size_eq]
+      exact Eq.symm (mergeChunksIntoAux.size_eq h₁₃)
+  }
 
 @[specialize, inline]
 def Array.mergeSortWithAuxiliary
