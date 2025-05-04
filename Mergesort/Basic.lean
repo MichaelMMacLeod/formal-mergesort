@@ -733,7 +733,7 @@ def mergeChunksIntoAux
       let aux' := mergeAdjacentChunksIntoAux arr aux low mid high h₉.make_H₁
       loop aux' high h₉.next
     else
-      let rec @[specialize] loop
+      let rec @[specialize] loopFinal
           (aux : Array α)
           (low : USize)
           (h₁₀ : H₁₀ arr aux low chunkSize)
@@ -742,12 +742,12 @@ def mergeChunksIntoAux
           have h₁₁ := h₁₀.make_H₁₁ low_lt_aux_usize
           have := h₁₁.low_lt_arr_size
           let aux' := aux.uset low arr[low] h₁₁.low_toNat_lt_aux_size
-          loop aux' low.succ h₁₁.next
+          loopFinal aux' low.succ h₁₁.next
         else
           aux
       termination_by arr.size - low.toNat
       decreasing_by exact h₁₁.decreasing
-      loop aux low (h₈.make_H₁₀ size_minus_low_gt_chunkSize)
+      loopFinal aux low (h₈.make_H₁₀ size_minus_low_gt_chunkSize)
   termination_by arr.size - low.toNat
   decreasing_by exact h₉.decreasing
   loop aux 0
