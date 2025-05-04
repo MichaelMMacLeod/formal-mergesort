@@ -438,7 +438,7 @@ structure H₈ (arr aux : Array α) (low chunkSize : USize) : Prop where
   size_eq : arr.size = aux.size
   low_le_arr_usize : low ≤ arr.usize
   chunkSize_gt_zero : chunkSize > 0
-  chunkSize_lt_arr_size : chunkSize < arr.usize
+  chunkSize_lt_arr_usize : chunkSize < arr.usize
 
 structure H₉ (arr aux : Array α) (low chunkSize : USize) : Prop
     extends H₈ arr aux low chunkSize where
@@ -754,7 +754,9 @@ def mergeChunksIntoAux
   loop aux 0 h₈
 
 structure H₁₂ (arr aux : Array α) (chunkSize : USize) : Prop where
+  size_eq : arr.size = aux.size
   chunkSize_gt_zero : chunkSize > 0
+  arr_size_lt_usize_size : arr.size < USize.size
 
 structure H₁₃ (arr aux : Array α) (chunkSize : USize) : Prop
     extends H₁₂ arr aux chunkSize where
@@ -768,8 +770,8 @@ def H₁₂.make_H₁₃
 
 def H₁₃.make_H₈
     (h₁₃ : H₁₃ arr aux chunkSize)
-    : H₈ arr aux 0 chunkSize := by
-  sorry
+    : H₈ arr aux 0 chunkSize :=
+  { h₁₃ with low_le_arr_usize := USize.zero_le }
 
 def H₁₃.next
     [Ord α]
