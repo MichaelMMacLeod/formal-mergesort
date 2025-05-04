@@ -1,32 +1,32 @@
-# Fast Formal Mergesort (work in progress)
+# Fast Formal Merge Sort (work in progress)
 
-The goal of this project is to write a reasonably fast, formally verified mergesort implementation in the Lean programming language. More specifically:
+The goal of this project is to write a reasonably fast, formally verified merge sort implementation in the Lean programming language. More specifically:
 
 - To be considered a stable sorting algorithm, it should provably:
 
-    - Terminate without crashing
+    - [x] Terminate without crashing (there are no infinite loops, and all array access instructions are in-bounds)
 
-    - Return data in increasing order
+    - [ ] Return data in increasing order
 
-    - Return a permutation of the input (i.e., the data is simply rearranged; no new data is added, and no existing data is removed)
+    - [ ] Return a permutation of the input (i.e., the data is simply rearranged; no new data is added, and no existing data is removed)
 
-    - Preserve the order of equal elements (stability)
+    - [ ] Preserve the order of equal elements (stability)
 
 - To be reasonably fast, it should:
 
-    - Receive and return values of type `Array` (instead of `List`, the type of singly linked lists)
+    - [x] Receive and return values of type `Array` (instead of `List`, the type of singly linked lists)
 
-    - Mutate `Array` values in-place (instead of making expensive functional copies)
+    - [x] Mutate `Array` values in-place (instead of making expensive functional copies)
 
-    - Require only one auxiliary `Array` allocation
+    - [x] Require only one auxiliary `Array` allocation
 
-    - Index into `Array` using `USize` (unboxed machine integers[^1], instead of `Nat` or `Fin`, boxed arbitrary precision integers)
+    - [x] Index into `Array` using `USize` (unboxed machine integers[^1], instead of `Nat` or `Fin`, boxed arbitrary precision integers)
 
-    - Contain proofs that all indexing operations (both read and write) are in-bounds at compile time, so no superfluous runtime checks are required
+    - [x] Contain proofs that all indexing operations (both read and write) are in-bounds at compile time, so no superfluous runtime checks are required
 
-    - Contain no extra non-`Prop` proof-related data, so that all proof work has no runtime performance impact.
+    - [x] Contain no extra non-`Prop` proof-related data, so that all proof work has no runtime performance impact.
 
-- I chose an algorithm that was complex enough to allow for only one auxiliary `Array` allocation, while simple enough to be amenable to formal verification by a Lean beginner (me!). There are much more efficient mergesort implementations (such as Multiway Powersort), but these are also much more complex. The algorithm I chose to pursue here goes, roughly, as follows:
+- I chose an algorithm that was complex enough to allow for only one auxiliary `Array` allocation, while simple enough to be amenable to formal verification by a Lean beginner (me!). There are much more efficient merge sort implementations (such as Multiway Powersort), but these are also much more complex. The algorithm I chose to pursue here goes, roughly, as follows:
 
     a. Allocate an auxiliary array with the same length as the input array.
 
