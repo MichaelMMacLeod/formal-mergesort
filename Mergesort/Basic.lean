@@ -2,6 +2,7 @@ import Mathlib.Data.Multiset.Basic
 import Init.Data.Array.Basic
 import Init.Data.UInt.Lemmas
 import Lean.Elab.Tactic
+import Std.Tactic.BVDecide
 
 #check List.mergeSort
 #check List.sorted_mergeSort
@@ -519,23 +520,24 @@ theorem USize.high_le_size
       . bv_decide
       . bv_decide
 
+def H₉.mid_le_size
+    (h₉ : H₉ arr aux low chunkSize)
+    (mid_def : mid = low + chunkSize)
+    : mid ≤ arr.usize := by
+  rw [mid_def]
+  refine USize.le_of_lt ?_
+  exact USize.add_lt_of_sub h₉.low_le_arr_usize h₉.size_minus_low_gt_chunkSize
+
 def H₉.make_H₁
     (h₉ : H₉ arr aux low chunkSize)
     : let mid := low + chunkSize
       let high := mid + min (arr.usize - mid) chunkSize
       H₁ arr aux low mid high := by
   intro mid high
-  have mid_def : mid = low + chunkSize := rfl
-  have high_def : high = mid + min (arr.usize - mid) chunkSize := rfl
-  have low_le_mid : low ≤ mid :=
-    USize.le_add_of_sub_gt h₉.low_le_arr_usize h₉.size_minus_low_gt_chunkSize
-  have mid_le_size : mid ≤ arr.usize := by
-    rw [mid_def]
-    refine USize.le_of_lt ?_
-    exact USize.add_lt_of_sub h₉.low_le_arr_usize h₉.size_minus_low_gt_chunkSize
+  have mid_le_size := h₉.mid_le_size rfl
   exact {
     arr_size_lt_usize_size := h₉.arr_size_lt_usize_size
-    low_le_mid
+    low_le_mid := USize.le_add_of_sub_gt h₉.low_le_arr_usize h₉.size_minus_low_gt_chunkSize
     mid_le_size
     mid_le_high := USize.mid_le_high mid_le_size h₉.chunkSize_gt_zero
     high_le_size := USize.high_le_size mid_le_size h₉.chunkSize_gt_zero
@@ -674,6 +676,36 @@ def H₁₁.next
       . bv_decide
   }
 
+theorem USize.lt_of_sub_gt_zero_of_le {m n : USize} (h : n ≤ m) : m - n > 0 → n < m := by
+  cases System.Platform.numBits_eq
+  . bv_decide
+  . bv_decide
+
+def H₉.decreasing
+    [Ord α]
+    (h₉ : H₉ arr aux low chunkSize)
+    : let mid := low + chunkSize
+      let high := mid + min (arr.usize - mid) chunkSize
+      arr.size - high.toNat < arr.size - low.toNat := by
+  intro mid high
+  have mid_def : mid = low + chunkSize := rfl
+  refine Nat.sub_lt_sub_left ?_ ?_
+  . have arr_usize_minus_low_gt_zero : arr.usize - low > 0 :=
+      USize.lt_trans h₉.chunkSize_gt_zero h₉.size_minus_low_gt_chunkSize
+    have low_lt_arr_usize : low < arr.usize :=
+      USize.lt_of_sub_gt_zero_of_le h₉.low_le_arr_usize arr_usize_minus_low_gt_zero
+    exact (USize.lt_ofNat_iff h₉.arr_size_lt_usize_size).mp low_lt_arr_usize
+  . have low_lt_mid : low < mid := by
+      have := h₉.size_minus_low_gt_chunkSize
+      have := h₉.low_le_arr_usize
+      have := h₉.chunkSize_gt_zero
+      cases System.Platform.numBits_eq
+      . bv_decide
+      . bv_decide
+    have mid_le_high :=
+      USize.mid_le_high (h₉.mid_le_size rfl) (h₉.chunkSize_gt_zero)
+    exact Nat.lt_of_lt_of_le low_lt_mid mid_le_high
+
 @[specialize, inline]
 def mergeChunksIntoAux
     [Ord α]
@@ -705,6 +737,8 @@ def mergeChunksIntoAux
         else
           aux
       loop aux low (h₈.make_H₁₀ size_minus_low_gt_chunkSize)
+  termination_by arr.size - low.toNat
+  decreasing_by exact h₉.decreasing
   loop aux 0
 
 @[specialize, inline]
@@ -746,3 +780,13 @@ def Array.mergeSort [Inhabited α] [Ord α] (arr : Array α) : Array α :=
 --   permutation :
 --     ∀ arr : Array α,
 --       arr.toMultiset = (algo arr).toMultiset
+
+
+/-
+size_minus_low_gt_chunkSize
+arr_size_lt_usize_size
+size_eq
+low_le_arr_usize
+chunkSize_gt_zero
+chunkSize_lt_arr_size
+-/
