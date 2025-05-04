@@ -478,17 +478,17 @@ theorem USize.le_add_of_sub_gt
     {a b c : USize}
     (h : b ≤ a)
     : a - b > c → b ≤ b + c := by
-  . cases System.Platform.numBits_eq
-    . bv_decide
-    . bv_decide
+  cases System.Platform.numBits_eq
+  . bv_decide
+  . bv_decide
 
 theorem USize.add_lt_of_sub
     {a b c : USize}
     (h : b ≤ a)
     : a - b > c → b + c < a := by
-  . cases System.Platform.numBits_eq
-    . bv_decide
-    . bv_decide
+  cases System.Platform.numBits_eq
+  . bv_decide
+  . bv_decide
 
 theorem USize.mid_le_high
     {mid size chunkSize : USize}
@@ -497,14 +497,14 @@ theorem USize.mid_le_high
     : mid ≤ mid + (size - mid) ⊓ chunkSize := by
   if h : size - mid ≤ chunkSize then
     simp only [instMinUSize, minOfLe, min, h, ↓reduceIte]
-    . cases System.Platform.numBits_eq
-      . bv_decide
-      . bv_decide
+    cases System.Platform.numBits_eq
+    . bv_decide
+    . bv_decide
   else
     simp only [instMinUSize, minOfLe, min, h, ↓reduceIte]
-    . cases System.Platform.numBits_eq
-      . bv_decide
-      . bv_decide
+    cases System.Platform.numBits_eq
+    . bv_decide
+    . bv_decide
 
 theorem USize.high_le_size
     {mid size chunkSize : USize}
@@ -513,14 +513,14 @@ theorem USize.high_le_size
     : mid + (size - mid) ⊓ chunkSize ≤ size := by
   if h : size - mid ≤ chunkSize then
     simp only [instMinUSize, minOfLe, min, h, ↓reduceIte]
-    . cases System.Platform.numBits_eq
-      . bv_decide
-      . bv_decide
+    cases System.Platform.numBits_eq
+    . bv_decide
+    . bv_decide
   else
     simp only [instMinUSize, minOfLe, min, h, ↓reduceIte]
-    . cases System.Platform.numBits_eq
-      . bv_decide
-      . bv_decide
+    cases System.Platform.numBits_eq
+    . bv_decide
+    . bv_decide
 
 def H₉.mid_le_size
     (h₉ : H₉ arr aux low chunkSize)
@@ -551,7 +551,7 @@ theorem mergeAdjacentChunksIntoAux.loop.loopLeft.loopRight.size_eq
     {aux : Array α}
     {ptr₂ i : USize}
     {h₆ : H₆ arr aux low mid high ptr₁ ptr₂ i}
-    : aux.size = (mergeAdjacentChunksIntoAux.loop.loopLeft.loopRight arr low mid high ptr₁ aux ptr₂ i h₆).size := by
+    : aux.size = (loopRight arr low mid high ptr₁ aux ptr₂ i h₆).size := by
   unfold loopRight
   if ptr₂_lt_high : ptr₂ < high then
     simp [ptr₂_lt_high, ← size_eq (i := i.succ)]
@@ -565,7 +565,7 @@ theorem mergeAdjacentChunksIntoAux.loop.loopLeft.size_eq
     {aux : Array α}
     {ptr₁ i : USize}
     {h₄ : H₄ arr aux low mid high ptr₁ ptr₂ i}
-    : aux.size = (mergeAdjacentChunksIntoAux.loop.loopLeft arr low mid high ptr₂ aux ptr₁ i h₄).size := by
+    : aux.size = (loopLeft arr low mid high ptr₂ aux ptr₁ i h₄).size := by
   unfold loopLeft
   if ptr₁_lt_mid : ptr₁ < mid then
     simp [ptr₁_lt_mid, Array.uset, Array.ugetElem_eq_getElem, ← size_eq (i := i.succ)]
@@ -885,7 +885,7 @@ def Array.mergeSortWithAuxiliary
     (arr aux : Array α)
     (size_eq : arr.size = aux.size)
     (arr_size_lt_usize_size : arr.size < USize.size)
-  : Array α :=
+    : Array α :=
   let rec @[specialize] loop
       (arr aux : Array α)
       (chunkSize : USize)
