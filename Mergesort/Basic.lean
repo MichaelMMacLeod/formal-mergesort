@@ -843,12 +843,19 @@ def H₁₃.next
       exact h₁₃.arr_size_lt_usize_size
   }
 
+def H₁₂.make
+    (size_eq : arr.size = aux.size)
+    (arr_size_lt_usize_size : arr.size < USize.size)
+    : H₁₂ arr aux 1 :=
+  { size_eq, arr_size_lt_usize_size, chunkSize_gt_zero := USize.zero_lt_one }
+
 @[specialize, inline]
 def Array.mergeSortWithAuxiliary
     [Inhabited α]
     [Ord α]
     (arr aux : Array α)
-    (_size_eq : aux.size = arr.size)
+    (size_eq : arr.size = aux.size)
+    (arr_size_lt_usize_size : arr.size < USize.size)
   : Array α :=
   let rec @[specialize] loop
       (arr aux : Array α)
@@ -861,7 +868,7 @@ def Array.mergeSortWithAuxiliary
       loop aux' arr (chunkSize + min (arr.usize - chunkSize) chunkSize) h₁₃.next
     else
       arr
-  loop arr aux 1
+  loop arr aux 1 (H₁₂.make size_eq arr_size_lt_usize_size)
 
 @[specialize, inline]
 def Array.mergeSort [Inhabited α] [Ord α] (arr : Array α) : Array α :=
