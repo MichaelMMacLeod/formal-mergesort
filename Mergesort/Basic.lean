@@ -435,7 +435,7 @@ def mergeAdjacentChunksIntoAux
 structure H₈ (arr aux : Array α) (low chunkSize : USize) : Prop where
   arr_size_lt_usize_size : arr.size < USize.size
   size_eq : arr.size = aux.size
-  low_le_arr_size : low ≤ arr.usize
+  low_le_arr_usize : low ≤ arr.usize
   chunkSize_gt_zero : chunkSize > 0
   chunkSize_lt_arr_size : chunkSize < arr.usize
 
@@ -528,11 +528,11 @@ def H₉.make_H₁
   have mid_def : mid = low + chunkSize := rfl
   have high_def : high = mid + min (arr.usize - mid) chunkSize := rfl
   have low_le_mid : low ≤ mid :=
-    USize.le_add_of_sub_gt h₉.low_le_arr_size h₉.size_minus_low_gt_chunkSize
+    USize.le_add_of_sub_gt h₉.low_le_arr_usize h₉.size_minus_low_gt_chunkSize
   have mid_le_size : mid ≤ arr.usize := by
     rw [mid_def]
     refine USize.le_of_lt ?_
-    exact USize.add_lt_of_sub h₉.low_le_arr_size h₉.size_minus_low_gt_chunkSize
+    exact USize.add_lt_of_sub h₉.low_le_arr_usize h₉.size_minus_low_gt_chunkSize
   exact {
     arr_size_lt_usize_size := h₉.arr_size_lt_usize_size
     low_le_mid
@@ -604,15 +604,74 @@ def H₉.next
   have mid_le_size : mid ≤ arr.usize := by
     rw [mid_def]
     refine USize.le_of_lt ?_
-    exact USize.add_lt_of_sub h₉.low_le_arr_size h₉.size_minus_low_gt_chunkSize
+    exact USize.add_lt_of_sub h₉.low_le_arr_usize h₉.size_minus_low_gt_chunkSize
   exact {
     h₉ with
     size_eq := by
       simp only [h₉.size_eq, aux']
       exact mergeAdjacentChunksIntoAux.size_eq h₉.make_H₁
-    low_le_arr_size := by
+    low_le_arr_usize := by
       rw [high_def]
       exact USize.high_le_size mid_le_size h₉.chunkSize_gt_zero
+  }
+
+structure H₁₀ (arr aux : Array α) (low chunkSize : USize) : Prop
+    extends H₈ arr aux low chunkSize where
+  -- not_size_minus_low_gt_chunkSize : ¬arr.usize - low > chunkSize
+
+def H₈.make_H₁₀
+    (h₈ : H₈ arr aux low chunkSize)
+    (not_size_minus_low_gt_chunkSize : ¬arr.usize - low > chunkSize)
+    : H₁₀ arr aux low chunkSize :=
+  { h₈ with /-not_size_minus_low_gt_chunkSize-/ }
+
+structure H₁₁ (arr aux : Array α) (low chunkSize : USize) : Prop
+    extends H₁₀ arr aux low chunkSize where
+  low_lt_aux_usize : low < aux.usize
+
+def H₁₀.make_H₁₁
+    (h₁₀ : H₁₀ arr aux low chunkSize)
+    (low_lt_aux_usize : low < aux.usize)
+    : H₁₁ arr aux low chunkSize :=
+  { h₁₀ with low_lt_aux_usize }
+
+def H₁₁.low_lt_arr_size
+    (h₁₁ : H₁₁ arr aux low chunkSize)
+    : low.toNat < arr.size := by
+  rw [h₁₁.size_eq]
+  have aux_size_lt_usize_size : aux.size < USize.size := by
+    rw [← h₁₁.size_eq]
+    exact h₁₁.arr_size_lt_usize_size
+  refine (USize.lt_ofNat_iff aux_size_lt_usize_size).mp h₁₁.low_lt_aux_usize
+
+def H₁₁.low_toNat_lt_aux_size
+    (h₁₁ : H₁₁ arr aux low chunkSize)
+    : low.toNat < aux.size := by
+  rw [← h₁₁.size_eq]
+  exact h₁₁.low_lt_arr_size
+
+def H₁₁.next
+    (h₁₁ : H₁₁ arr aux low chunkSize)
+    : have := h₁₁.low_lt_arr_size
+      let aux' := aux.uset low arr[low] h₁₁.low_toNat_lt_aux_size
+      H₁₀ arr aux' low.succ chunkSize := by
+  intro low_lt_arr_size aux'
+  have aux'_def : aux' = aux.uset low arr[low] h₁₁.low_toNat_lt_aux_size := rfl
+  exact {
+    h₁₁ with
+    size_eq := by
+      simp only [h₁₁.size_eq, aux'_def, Array.uset, Array.ugetElem_eq_getElem, Array.size_set]
+    low_le_arr_usize := by
+      have usize_eq : arr.usize = aux.usize := by
+        simp only [Array.usize, h₁₁.size_eq, Nat.toUSize_eq]
+      suffices hp : low.succ ≤ aux.usize by
+        cases System.Platform.numBits_eq
+        . bv_decide
+        . bv_decide
+      have := h₁₁.low_lt_aux_usize
+      cases System.Platform.numBits_eq
+      . bv_decide
+      . bv_decide
   }
 
 @[specialize, inline]
@@ -633,13 +692,19 @@ def mergeChunksIntoAux
       let aux' := mergeAdjacentChunksIntoAux arr aux low mid high h₉.make_H₁
       loop aux' high h₉.next
     else
-      let rec @[specialize] loop (aux : Array α) (low : USize) : Array α :=
-        if low < aux.usize then
-          let aux' := aux.uset low (arr[low]'sorry) sorry
-          loop aux' low.succ
+      let rec @[specialize] loop
+          (aux : Array α)
+          (low : USize)
+          (h₁₀ : H₁₀ arr aux low chunkSize)
+          : Array α :=
+        if low_lt_aux_usize : low < aux.usize then
+          have h₁₁ := h₁₀.make_H₁₁ low_lt_aux_usize
+          have := h₁₁.low_lt_arr_size
+          let aux' := aux.uset low arr[low] h₁₁.low_toNat_lt_aux_size
+          loop aux' low.succ h₁₁.next
         else
           aux
-      loop aux low
+      loop aux low (h₈.make_H₁₀ size_minus_low_gt_chunkSize)
   loop aux 0
 
 @[specialize, inline]
