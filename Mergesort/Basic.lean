@@ -849,6 +849,37 @@ def H₁₂.make
     : H₁₂ arr aux 1 :=
   { size_eq, arr_size_lt_usize_size, chunkSize_gt_zero := USize.zero_lt_one }
 
+def H₁₃.decreasing
+    [Ord α]
+    (h₁₃ : H₁₃ arr aux chunkSize)
+    : let aux' := mergeChunksIntoAux arr aux chunkSize h₁₃.make_H₈
+      let chunkSize' := chunkSize + min (arr.usize - chunkSize) chunkSize
+      aux'.size - chunkSize'.toNat < arr.size - chunkSize.toNat := by
+  intro aux' chunkSize'
+  have chunkSize'_def : chunkSize' = chunkSize + min (arr.usize - chunkSize) chunkSize := rfl
+  rw [← mergeChunksIntoAux.size_eq h₁₃, h₁₃.size_eq]
+  refine Nat.sub_lt_sub_left ?_ ?_
+  . refine (USize.lt_ofNat_iff ?_).mp ?_
+    . rw [← h₁₃.size_eq]
+      exact h₁₃.arr_size_lt_usize_size
+    . rw [← h₁₃.size_eq]
+      exact h₁₃.chunkSize_lt_arr_usize
+  . rw [chunkSize'_def]
+    refine USize.lt_iff_toNat_lt.mp ?_
+    if h : arr.usize - chunkSize ≤ chunkSize then
+      simp only [instMinUSize, minOfLe, min, h, ↓reduceIte]
+      have := h₁₃.chunkSize_lt_arr_usize
+      cases System.Platform.numBits_eq
+      . bv_decide
+      . bv_decide
+    else
+      simp only [instMinUSize, minOfLe, min, h, ↓reduceIte]
+      have := h₁₃.chunkSize_lt_arr_usize
+      have := h₁₃.chunkSize_gt_zero
+      cases System.Platform.numBits_eq
+      . bv_decide
+      . bv_decide
+
 @[specialize, inline]
 def Array.mergeSortWithAuxiliary
     [Inhabited α]
@@ -865,9 +896,12 @@ def Array.mergeSortWithAuxiliary
     if chunkSize_lt_arr_usize : chunkSize < arr.usize then
       have h₁₃ := h₁₂.make_H₁₃ chunkSize_lt_arr_usize
       let aux' := mergeChunksIntoAux arr aux chunkSize h₁₃.make_H₈
-      loop aux' arr (chunkSize + min (arr.usize - chunkSize) chunkSize) h₁₃.next
+      let chunkSize' := chunkSize + min (arr.usize - chunkSize) chunkSize
+      loop aux' arr chunkSize' h₁₃.next
     else
       arr
+  termination_by arr.size - chunkSize.toNat
+  decreasing_by exact h₁₂.make_H₁₃ chunkSize_lt_arr_usize |>.decreasing
   loop arr aux 1 (H₁₂.make size_eq arr_size_lt_usize_size)
 
 @[specialize, inline]
