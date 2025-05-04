@@ -785,6 +785,8 @@ theorem mergeChunksIntoAux.loop.loopFinal.size_eq
     rw [← size_eq, Array.size_set]
   else
     simp only [low_lt_aux_usize, ↓reduceDIte]
+termination_by arr.size - low.toNat
+decreasing_by exact h₁₀.make_H₁₁ low_lt_aux_usize |>.decreasing
 
 theorem mergeChunksIntoAux.loop.size_eq
     [Ord α]
@@ -800,6 +802,8 @@ theorem mergeChunksIntoAux.loop.size_eq
   else
     simp only [size_minus_low_gt_chunkSize]
     exact loopFinal.size_eq
+termination_by arr.size - low.toNat
+decreasing_by exact h₈.make_H₉ size_minus_low_gt_chunkSize |>.decreasing
 
 theorem mergeChunksIntoAux.size_eq
     [Ord α]
