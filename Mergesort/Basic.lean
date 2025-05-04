@@ -882,7 +882,6 @@ def H₁₃.decreasing
 
 @[specialize, inline]
 def Array.mergeSortWithAuxiliary
-    [Inhabited α]
     [Ord α]
     (arr aux : Array α)
     (size_eq : arr.size = aux.size)
