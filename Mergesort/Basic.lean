@@ -815,19 +815,32 @@ def H₁₃.next
     [Ord α]
     (h₁₃ : H₁₃ arr aux chunkSize)
     : let aux' := mergeChunksIntoAux arr aux chunkSize h₁₃.make_H₈
-      H₁₂ aux' arr (chunkSize * 2) := by
+      H₁₂ aux' arr (chunkSize + min (arr.usize - chunkSize) chunkSize) := by
   intro aux'
   have aux'_def : aux' = mergeChunksIntoAux arr aux chunkSize h₁₃.make_H₈ := rfl
+  have size_eq : aux'.size = arr.size := by
+    rw [aux'_def, h₁₃.size_eq]
+    exact Eq.symm (mergeChunksIntoAux.size_eq h₁₃)
   exact {
     h₁₃ with
-    size_eq := by
-      rw [aux'_def, h₁₃.size_eq]
-      exact Eq.symm (mergeChunksIntoAux.size_eq h₁₃)
+    size_eq
     chunkSize_gt_zero := by
-      
-      cases System.Platform.numBits_eq
-      . bv_decide
-      . bv_decide
+      if h : arr.usize - chunkSize ≤ chunkSize then
+        simp only [instMinUSize, minOfLe, min, h, ↓reduceIte, gt_iff_lt]
+        have := h₁₃.chunkSize_lt_arr_usize
+        cases System.Platform.numBits_eq
+        . bv_decide
+        . bv_decide
+      else
+        simp only [instMinUSize, minOfLe, min, h, ↓reduceIte, gt_iff_lt]
+        have := h₁₃.chunkSize_lt_arr_usize
+        have := h₁₃.chunkSize_gt_zero
+        cases System.Platform.numBits_eq
+        . bv_decide
+        . bv_decide
+    arr_size_lt_usize_size := by
+      rw [size_eq]
+      exact h₁₃.arr_size_lt_usize_size
   }
 
 @[specialize, inline]
@@ -845,7 +858,7 @@ def Array.mergeSortWithAuxiliary
     if chunkSize_lt_arr_usize : chunkSize < arr.usize then
       have h₁₃ := h₁₂.make_H₁₃ chunkSize_lt_arr_usize
       let aux' := mergeChunksIntoAux arr aux chunkSize h₁₃.make_H₈
-      loop aux' arr (chunkSize * 2) h₁₃.next
+      loop aux' arr (chunkSize + min (arr.usize - chunkSize) chunkSize) h₁₃.next
     else
       arr
   loop arr aux 1
