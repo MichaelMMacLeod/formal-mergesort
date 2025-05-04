@@ -720,7 +720,8 @@ def mergeChunksIntoAux
     [Ord α]
     (arr aux : Array α)
     (chunkSize : USize)
-    (h₈ : H₈ arr aux low chunkSize) :=
+    (h₈ : H₈ arr aux 0 chunkSize)
+    : Array α :=
   let rec @[specialize] loop
       (aux : Array α)
       (low : USize)
@@ -750,7 +751,32 @@ def mergeChunksIntoAux
       loopFinal aux low (h₈.make_H₁₀ size_minus_low_gt_chunkSize)
   termination_by arr.size - low.toNat
   decreasing_by exact h₉.decreasing
-  loop aux 0
+  loop aux 0 h₈
+
+structure H₁₂ (arr aux : Array α) (chunkSize : USize) : Prop where
+  chunkSize_gt_zero : chunkSize > 0
+
+structure H₁₃ (arr aux : Array α) (chunkSize : USize) : Prop
+    extends H₁₂ arr aux chunkSize where
+  chunkSize_lt_arr_usize : chunkSize < arr.usize
+
+def H₁₂.make_H₁₃
+    (h₁₂ : H₁₂ arr aux chunkSize)
+    (chunkSize_lt_arr_usize : chunkSize < arr.usize)
+    : H₁₃ arr aux chunkSize :=
+  { h₁₂ with chunkSize_lt_arr_usize }
+
+def H₁₃.make_H₈
+    (h₁₃ : H₁₃ arr aux chunkSize)
+    : H₈ arr aux 0 chunkSize := by
+  sorry
+
+def H₁₃.next
+    [Ord α]
+    (h₁₃ : H₁₃ arr aux chunkSize)
+    : let aux' := mergeChunksIntoAux arr aux chunkSize h₁₃.make_H₈
+      H₁₂ aux' arr (chunkSize * 2) := by
+  sorry
 
 @[specialize, inline]
 def Array.mergeSortWithAuxiliary
@@ -762,10 +788,12 @@ def Array.mergeSortWithAuxiliary
   let rec @[specialize] loop
       (arr aux : Array α)
       (chunkSize : USize)
+      (h₁₂ : H₁₂ arr aux chunkSize)
       : Array α :=
-    if chunkSize < arr.usize then
-      let aux' := mergeChunksIntoAux arr aux chunkSize
-      loop aux' arr (chunkSize * 2)
+    if chunkSize_lt_arr_usize : chunkSize < arr.usize then
+      have h₁₃ := h₁₂.make_H₁₃ chunkSize_lt_arr_usize
+      let aux' := mergeChunksIntoAux arr aux chunkSize h₁₃.make_H₈
+      loop aux' arr (chunkSize * 2) h₁₃.next
     else
       arr
   loop arr aux 1
