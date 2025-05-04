@@ -706,6 +706,15 @@ def H₉.decreasing
       USize.mid_le_high (h₉.mid_le_size rfl) (h₉.chunkSize_gt_zero)
     exact Nat.lt_of_lt_of_le low_lt_mid mid_le_high
 
+def H₁₁.decreasing
+    (h₁₁ : H₁₁ arr aux low chunkSize)
+    : arr.size - low.succ.toNat < arr.size - low.toNat := by
+  refine Nat.sub_lt_sub_left h₁₁.low_lt_arr_size ?_
+  refine USize.lt_iff_toNat_lt.mp ?_
+  cases System.Platform.numBits_eq
+  . bv_decide
+  . bv_decide
+
 @[specialize, inline]
 def mergeChunksIntoAux
     [Ord α]
@@ -736,6 +745,8 @@ def mergeChunksIntoAux
           loop aux' low.succ h₁₁.next
         else
           aux
+      termination_by arr.size - low.toNat
+      decreasing_by exact h₁₁.decreasing
       loop aux low (h₈.make_H₁₀ size_minus_low_gt_chunkSize)
   termination_by arr.size - low.toNat
   decreasing_by exact h₉.decreasing
