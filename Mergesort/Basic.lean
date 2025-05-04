@@ -861,11 +861,8 @@ def H₁₃.decreasing
   have chunkSize'_def : chunkSize' = chunkSize + min (arr.usize - chunkSize) chunkSize := rfl
   rw [← mergeChunksIntoAux.size_eq h₁₃, h₁₃.size_eq]
   refine Nat.sub_lt_sub_left ?_ ?_
-  . refine (USize.lt_ofNat_iff ?_).mp ?_
-    . rw [← h₁₃.size_eq]
-      exact h₁₃.arr_size_lt_usize_size
-    . rw [← h₁₃.size_eq]
-      exact h₁₃.chunkSize_lt_arr_usize
+  . rw [← h₁₃.size_eq]
+    exact (USize.lt_ofNat_iff h₁₃.arr_size_lt_usize_size).mp h₁₃.chunkSize_lt_arr_usize
   . rw [chunkSize'_def]
     refine USize.lt_iff_toNat_lt.mp ?_
     if h : arr.usize - chunkSize ≤ chunkSize then
@@ -915,6 +912,9 @@ def Array.mergeSort
   let aux := .replicate arr.size default
   have size_eq := Eq.symm size_replicate
   mergeSortWithAuxiliary arr aux size_eq arr_size_lt_usize_size
+
+-- #eval #[10, 9, 8, 7, 8, 9, 10, 1, 2, 3, 5, 4, 3, 2, 1, 0].mergeSort
+--   (by cases System.Platform.numBits_eq <;> simp [USize.size, *])
 
 -- def USize.maxValue : USize := 2 ^ 64 |>.toUSize
 
