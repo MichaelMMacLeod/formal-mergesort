@@ -4,25 +4,10 @@ import Init.Data.UInt.Lemmas
 import Lean.Elab.Tactic
 import Std.Tactic.BVDecide
 
-#check List.mergeSort
-#check List.sorted_mergeSort
--- #check USize.le_of_eq
-
-#check List.mergeSort
-
 variable
   {α : Type}
   {arr aux : Array α}
   {low mid high ptr₁ ptr₂ i chunkSize : USize}
-
-def Array.toMultiset (a : Array α) : Multiset α := Multiset.ofList a.toList
-
-def Array.sorted_by (arr : Array α) (le : α → α → Prop) : Prop :=
-  ∀ l r : Fin arr.size,
-    l.val.succ = r →
-      le arr[l] arr[r]
-
-#check Array.sorted_by (α := USize) #[1, 2, 3] (· ≤ ·)
 
 abbrev USize.succ (n : USize) := n + 1
 
@@ -43,22 +28,6 @@ structure H₂ (arr aux : Array α) (low mid high ptr₁ ptr₂ i : USize) : Pro
   i_ge_low : i ≥ low
   i_le_high : i ≤ high
   i_def : i = ptr₁ + ptr₂ - mid
-
-/--
-arr_size_lt_usize_size
-low_le_mid
-mid_le_size
-mid_le_high
-high_le_size
-size_eq
-ptr₁_ge_low
-ptr₁_le_mid
-ptr₂_ge_mid
-ptr₂_le_high
-i_ge_low
-i_le_high
-i_def
---/
 
 def USize.ge_of_eq {a b : USize} (h : a = b) : a ≥ b := USize.le_of_eq (Eq.symm h)
 
@@ -912,34 +881,3 @@ def Array.mergeSort
   let aux := .replicate arr.size default
   have size_eq := Eq.symm size_replicate
   mergeSortWithAuxiliary arr aux size_eq arr_size_lt_usize_size
-
--- #eval #[10, 9, 8, 7, 8, 9, 10, 1, 2, 3, 5, 4, 3, 2, 1, 0].mergeSort
---   (by cases System.Platform.numBits_eq <;> simp [USize.size, *])
-
--- def USize.maxValue : USize := 2 ^ 64 |>.toUSize
-
--- class ArraySortingAlgorithm
---   (cmp : α → α → Bool)
---   (algo : Array α → Array α)
---     -- (trans : ∀ a b c : α, cmp a b → cmp b c → cmp a c)
---     -- (total : ∀ a b : α, cmp a b ∨ cmp b a)
---     -- (algo : Cmp → Array α → Array α)
---   where
---   sorted :
---     ∀ arr : Array α,
---       ∀ l r : Fin (algo arr).size,
---         l.val.succ = r →
---           cmp (algo arr)[l] (algo arr)[r]
---   permutation :
---     ∀ arr : Array α,
---       arr.toMultiset = (algo arr).toMultiset
-
-
-/-
-size_minus_low_gt_chunkSize
-arr_size_lt_usize_size
-size_eq
-low_le_arr_usize
-chunkSize_gt_zero
-chunkSize_lt_arr_size
--/
