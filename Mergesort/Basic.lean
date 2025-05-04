@@ -8,6 +8,8 @@ import Std.Tactic.BVDecide
 #check List.sorted_mergeSort
 -- #check USize.le_of_eq
 
+#check List.mergeSort
+
 variable
   {α : Type}
   {arr aux : Array α}
@@ -904,8 +906,15 @@ def Array.mergeSortWithAuxiliary
   loop arr aux 1 (H₁₂.make size_eq arr_size_lt_usize_size)
 
 @[specialize, inline]
-def Array.mergeSort [Inhabited α] [Ord α] (arr : Array α) : Array α :=
-  mergeSortWithAuxiliary arr (aux := .replicate arr.size default) size_replicate
+def Array.mergeSort
+    [Inhabited α]
+    [Ord α]
+    (arr : Array α)
+    (arr_size_lt_usize_size : arr.size < USize.size)
+    : Array α :=
+  let aux := .replicate arr.size default
+  have size_eq := Eq.symm size_replicate
+  mergeSortWithAuxiliary arr aux size_eq arr_size_lt_usize_size
 
 -- def USize.maxValue : USize := 2 ^ 64 |>.toUSize
 
