@@ -11,9 +11,11 @@ name = "MergeSort"
 srcDir = "src"
 precompileModules = true
 
-[[lean_lib]]
+[[lean_exe]]
 name = "SortingBenchmark"
 srcDir = "bench"
+root = "SortingBenchmark"
+exeName = "bench"
 precompileModules = true
 
 [[require]]

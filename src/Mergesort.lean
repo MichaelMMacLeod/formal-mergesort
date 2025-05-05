@@ -1,2 +1,2 @@
-import MergeSort.Prototype
+-- import MergeSort.Prototype
 import MergeSort.Implementation
