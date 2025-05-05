@@ -1,5 +1,5 @@
-import MergeSort
-import SortingBenchmark.ArrayGenerators
+import MergeSort.Implementation
+import MergeSort.ArrayGenerators
 
 structure Config where
   size := Nat
@@ -64,7 +64,7 @@ def runOnAllArrayGenerators
     : IO Unit := do
   let printResult (fnName : String) (fn : Unit → Array Nat) : IO Unit := do
     let (time, opv) ← go fn
-    println! s!"→ {fnName} {time.nsToMs.msToS}s = {time.nsToMs}ms = {time}ns (opv := {opv})"
+    println! s!"{opv} → {time.nsToMs.msToS}s\t\t{time.nsToMs}ms\t\t{time}ns\t\t{fnName}"
   println! s!"Testing {algoName} using (size := {size}) (seed := {seed})"
   printResult "mostlyAscending" fun () => Array.mostlyAscending size seed
   printResult "randomWithDuplicates" fun () => Array.randomWithDuplicates size seed

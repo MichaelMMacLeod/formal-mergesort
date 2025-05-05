@@ -1,4 +1,4 @@
--- import SortingBenchmark
+-- -- import MergeSort
 
 -- variable
 --   {α : Type}

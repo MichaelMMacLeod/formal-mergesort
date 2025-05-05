@@ -8,15 +8,10 @@ autoImplicit = false
 
 [[lean_lib]]
 name = "MergeSort"
-srcDir = "src"
-precompileModules = true
 
 [[lean_exe]]
-name = "SortingBenchmark"
-srcDir = "bench"
-root = "SortingBenchmark"
-exeName = "bench"
-precompileModules = true
+name = "bench"
+root = "RunBenchmarks"
 
 [[require]]
 name = "mathlib"

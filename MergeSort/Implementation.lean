@@ -636,9 +636,8 @@ def H₁₁.next
       have usize_eq : arr.usize = aux.usize := by
         simp only [Array.usize, h₁₁.size_eq, Nat.toUSize_eq]
       suffices hp : low.succ ≤ aux.usize by
-        cases System.Platform.numBits_eq
-        . bv_decide
-        . bv_decide
+        rw [usize_eq]
+        exact hp
       have := h₁₁.low_lt_aux_usize
       cases System.Platform.numBits_eq
       . bv_decide
