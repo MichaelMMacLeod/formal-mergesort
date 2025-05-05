@@ -1,8 +1,6 @@
-import Mathlib.Data.Multiset.Basic
 import Init.Data.Array.Basic
 import Init.Data.UInt.Lemmas
 import Lean.Elab.Tactic
-import Std.Tactic.BVDecide
 
 variable
   {α : Type}
@@ -463,7 +461,7 @@ theorem USize.mid_le_high
     {mid size chunkSize : USize}
     (mid_le_size : mid ≤ size)
     (chunkSize_gt_zero : chunkSize > 0)
-    : mid ≤ mid + (size - mid) ⊓ chunkSize := by
+    : mid ≤ mid + min (size - mid) chunkSize := by
   if h : size - mid ≤ chunkSize then
     simp only [instMinUSize, minOfLe, min, h, ↓reduceIte]
     cases System.Platform.numBits_eq
@@ -479,7 +477,7 @@ theorem USize.high_le_size
     {mid size chunkSize : USize}
     (mid_le_size : mid ≤ size)
     (chunkSize_gt_zero : chunkSize > 0)
-    : mid + (size - mid) ⊓ chunkSize ≤ size := by
+    : mid + min (size - mid) chunkSize ≤ size := by
   if h : size - mid ≤ chunkSize then
     simp only [instMinUSize, minOfLe, min, h, ↓reduceIte]
     cases System.Platform.numBits_eq
@@ -594,7 +592,7 @@ structure H₁₀ (arr aux : Array α) (low chunkSize : USize) : Prop
 
 def H₈.make_H₁₀
     (h₈ : H₈ arr aux low chunkSize)
-    (not_size_minus_low_gt_chunkSize : ¬arr.usize - low > chunkSize)
+    (_not_size_minus_low_gt_chunkSize : ¬arr.usize - low > chunkSize)
     : H₁₀ arr aux low chunkSize :=
   { h₈ with /-not_size_minus_low_gt_chunkSize-/ }
 

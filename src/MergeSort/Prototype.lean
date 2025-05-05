@@ -1,7 +1,4 @@
-import Mathlib.Data.Multiset.Basic
-import Init.Data.Array.Basic
-import Init.Data.UInt.Lemmas
-import Lean.Elab.Tactic
+import SortingBenchmark
 
 variable
   {α : Type}
@@ -116,28 +113,12 @@ def Array.mergeSort [Inhabited α] [Ord α] (arr : Array α) : Array α :=
 #eval #[10, 9, 8, 7, 6, 5, 4, 3, 2, 1].mergeSort = #[1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 #eval #[10, 0, 100, 1, 200, 2].mergeSort = #[0, 1, 2, 10, 100, 200]
 
-def Array.random (seed : ℕ) (size : ℕ) : Array ℕ :=
-  let rec loop (arr : Array ℕ) (i : ℕ) (gen : StdGen) : Array ℕ :=
-    if i_lt_arr_size : i < arr.size then
-      let (n, gen) := stdNext gen
-      let idx : Fin arr.size := ⟨i, i_lt_arr_size⟩
-      loop
-        (arr.set idx n)
-        i.succ
-        gen
-    else
-      arr
-  loop
-    (Array.replicate size default)
-    0
-    (mkStdGen seed)
-
 @[simp]
 def Array.is_non_decreasing [Ord α] (arr : Array α) : Bool :=
   if h1 : arr.size = 0 then
     true
   else
-    let rec @[simp] loop (last_x : α) (i : ℕ) : Bool :=
+    let rec @[simp] loop (last_x : α) (i : Nat) : Bool :=
       if h2 : i < arr.size then
         let x := arr[i]
         match Ord.compare last_x x with
@@ -150,7 +131,7 @@ def Array.is_non_decreasing [Ord α] (arr : Array α) : Bool :=
     loop arr[0] 0
 
 -- Testing is_non_decreasing; should be true
-#eval #[].is_non_decreasing (α := ℕ)
+#eval #[].is_non_decreasing (α := Nat)
 #eval #[0].is_non_decreasing
 #eval #[0, 0].is_non_decreasing
 #eval #[0, 1].is_non_decreasing
@@ -160,24 +141,26 @@ def Array.is_non_decreasing [Ord α] (arr : Array α) : Bool :=
 #eval #[1, 0].is_non_decreasing
 #eval #[0, 1, 10, 5].is_non_decreasing
 
-#eval (Array.random (seed := 0) (size := 10)).mergeSort.is_non_decreasing
-#eval (Array.random (seed := 1) (size := 10)).mergeSort.is_non_decreasing
-#eval (Array.random (seed := 2) (size := 10)).mergeSort.is_non_decreasing
-#eval (Array.random (seed := 3) (size := 10)).mergeSort.is_non_decreasing
-#eval (Array.random (seed := 4) (size := 10)).mergeSort.is_non_decreasing
-#eval (Array.random (seed := 5) (size := 10)).mergeSort.is_non_decreasing
-#eval (Array.random (seed := 6) (size := 10)).mergeSort.is_non_decreasing
-#eval (Array.random (seed := 7) (size := 10)).mergeSort.is_non_decreasing
-#eval (Array.random (seed := 8) (size := 10)).mergeSort.is_non_decreasing
-#eval (Array.random (seed := 9) (size := 10)).mergeSort.is_non_decreasing
+#eval (Array.randomWithStdGen (seed := 0) (size := 10)).mergeSort.is_non_decreasing
+#eval (Array.randomWithStdGen (seed := 1) (size := 10)).mergeSort.is_non_decreasing
+#eval (Array.randomWithStdGen (seed := 2) (size := 10)).mergeSort.is_non_decreasing
+#eval (Array.randomWithStdGen (seed := 3) (size := 10)).mergeSort.is_non_decreasing
+#eval (Array.randomWithStdGen (seed := 4) (size := 10)).mergeSort.is_non_decreasing
+#eval (Array.randomWithStdGen (seed := 5) (size := 10)).mergeSort.is_non_decreasing
+#eval (Array.randomWithStdGen (seed := 6) (size := 10)).mergeSort.is_non_decreasing
+#eval (Array.randomWithStdGen (seed := 7) (size := 10)).mergeSort.is_non_decreasing
+#eval (Array.randomWithStdGen (seed := 8) (size := 10)).mergeSort.is_non_decreasing
+#eval (Array.randomWithStdGen (seed := 9) (size := 10)).mergeSort.is_non_decreasing
 
-#eval (Array.random (seed := 10) (size := 0)).mergeSort.is_non_decreasing
-#eval (Array.random (seed := 11) (size := 1)).mergeSort.is_non_decreasing
-#eval (Array.random (seed := 12) (size := 2)).mergeSort.is_non_decreasing
-#eval (Array.random (seed := 13) (size := 3)).mergeSort.is_non_decreasing
-#eval (Array.random (seed := 14) (size := 4)).mergeSort.is_non_decreasing
-#eval (Array.random (seed := 15) (size := 5)).mergeSort.is_non_decreasing
-#eval (Array.random (seed := 16) (size := 6)).mergeSort.is_non_decreasing
-#eval (Array.random (seed := 17) (size := 7)).mergeSort.is_non_decreasing
-#eval (Array.random (seed := 18) (size := 8)).mergeSort.is_non_decreasing
-#eval (Array.random (seed := 19) (size := 9)).mergeSort.is_non_decreasing
+#eval (Array.randomWithStdGen (seed := 10) (size := 0)).mergeSort.is_non_decreasing
+#eval (Array.randomWithStdGen (seed := 11) (size := 1)).mergeSort.is_non_decreasing
+#eval (Array.randomWithStdGen (seed := 12) (size := 2)).mergeSort.is_non_decreasing
+#eval (Array.randomWithStdGen (seed := 13) (size := 3)).mergeSort.is_non_decreasing
+#eval (Array.randomWithStdGen (seed := 14) (size := 4)).mergeSort.is_non_decreasing
+#eval (Array.randomWithStdGen (seed := 15) (size := 5)).mergeSort.is_non_decreasing
+#eval (Array.randomWithStdGen (seed := 16) (size := 6)).mergeSort.is_non_decreasing
+#eval (Array.randomWithStdGen (seed := 17) (size := 7)).mergeSort.is_non_decreasing
+#eval (Array.randomWithStdGen (seed := 18) (size := 8)).mergeSort.is_non_decreasing
+#eval (Array.randomWithStdGen (seed := 19) (size := 9)).mergeSort.is_non_decreasing
+
+#eval Array.randomWithStdGen (seed := 0) (size := 100)

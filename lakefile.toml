@@ -1,11 +1,20 @@
-name = "mergesort"
+name = "MergeSort"
 version = "0.1.0"
 keywords = ["math"]
-defaultTargets = ["Mergesort"]
 
 [leanOptions]
 pp.unicode.fun = true # pretty-prints `fun a ↦ b`
 autoImplicit = false
+
+[[lean_lib]]
+name = "MergeSort"
+srcDir = "src"
+precompileModules = true
+
+[[lean_lib]]
+name = "SortingBenchmark"
+srcDir = "bench"
+precompileModules = true
 
 [[require]]
 name = "mathlib"
@@ -14,6 +23,3 @@ scope = "leanprover-community"
 [[require]]
 name = "aesop"
 scope = "leanprover-community"
-
-[[lean_lib]]
-name = "Mergesort"
