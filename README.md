@@ -58,7 +58,7 @@ All tests were performed on `Array Nat` values of size `10^6`, except for `List.
 
 #### Results
 
-| test name               | `Array.mergeSort` | `List.mergeSort` | `Array.qsortOrd` |
+|                         | `Array.mergeSort` | `List.mergeSort` | `Array.qsortOrd` |
 | ----------------------- | ----------------- | ---------------- | ---------------- |
 | mostlyAscending         | 43ms              | 130ms            | 26104ms (26s)    |
 | randomWithDuplicates    | 57ms              | 389ms            | 138469ms (138s)  |
