@@ -36,4 +36,43 @@ The goal of this project is to write a reasonably fast, formally verified merge 
 
     d. Continue merging between the two arrays (doubling the number of elements merged each time) until one is sorted. Return the sorted array.
 
+### Performance Testing
+
+#### Test Description
+
+All tests were performed on `Array Nat` values of size `10^6`, except for `List.mergeSort`, which was performed on `List Nat`. The time spent allocating the `Array` or `List` values is not included in the elapsed time. The time spent allocating the auxiliary `Array` value for `Array.mergeSort` in each test *is* included in the elapsed time (unless the compiler is doing some smart optimizations that I'm not aware of). 
+
+- mostlyAscending: An `Array` where most of the elements are already in ascending order. Specifically, it's an ascending `Array`, except that `size/2` two-element swaps were performed randomly, where the distance between the swapped elements is never more than `log2(size)`.
+
+- randomWithDuplicates: An `Array` containing many duplicate values. Specifically, it contains `1 + log2(size)` distinct values.
+
+- random: A randomly shuffled `Array` containing no duplicate values.
+
+- ascending: An `Array` which is already sorted.
+
+- descending: An `Array` which is sorted in reverse order.
+
+- ascendingWithRandomTail: An Array where all but the last `10%` of values are sorted.
+
+#### Results
+
+| test name               | `Array.mergeSort` | `List.mergeSort` | `Array.qsortOrd` |
+| ----------------------- | ----------------- | ---------------- | ---------------- |
+| mostlyAscending         | 43ms              | 130ms            | 26104ms (26s)    |
+| randomWithDuplicates    | 57ms              | 389ms            | 138469ms (138s)  |
+| random                  | 80ms              | 380ms            | 221ms            |
+| ascending               | 33ms              | 101ms            | 161ms            |
+| descending              | 29ms              | 106ms            | 231ms            |
+| ascendingWithRandomTail | 37ms              | 111ms            | 159ms            |
+
+#### Analysis
+
+Warning: these results are based on "eyeball statistics" (i.e., bad statistics). I will try and do something more subtantial in the future.
+
+`Array.mergeSort` is faster than `List.mergeSort` at sorting `10^6` `Nat` values, by a factor of `3-7x`.
+
+`Array.mergeSort` is faster than `Array.qsortOrd` at sorting `10^6` `Nat` values, by a factor of `3-2429x`. Clearly, `Array.qsortOrd` experiences asymptotically worse performance on tests "mostlyAscending" and "randomWithDuplicates" than both `Array.mergeSort` and `List.mergeSort`.
+
+It seems like `List.mergeSort`, despite being defined on linked lists, is faster at sorting `10^6` `Nat` values than `Array.qsortOrd`, especially when processing almost-sorted data, or data containing many duplicate values.
+
 [^1]: I don't think Lean gives any guarantees that `USize` is unboxed. In fact, according to the reference, sometimes it will be boxed. My hope is that the implementation of `mergeSort` is simple enough to allow for unboxing. Inspecting the generated code (which I have yet to do) could prove/disprove this.
