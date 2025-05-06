@@ -2,7 +2,7 @@ import MergeSort.Benchmark
 import MergeSort.ArrayGenerators
 
 def main (args :  List String) : IO Unit := do
-  let size := 10 ^ 9
+  let size := 10 ^ 8
   let seed := 0
   match args with
   | ["mergeSort"] =>
