@@ -1,14 +1,14 @@
 import Init.Data.Array.Basic
 import Init.Data.UInt.Lemmas
 import Lean.Elab.Tactic
+import MergeSort.USize.Extras
 
 variable
   {α : Type}
   {arr aux : Array α}
   {low mid high ptr₁ ptr₂ i chunkSize : USize}
 
-abbrev USize.succ (n : USize) := n + 1
-
+@[unbox]
 structure H₁ (arr aux : Array α) (low mid high : USize) : Prop where
   arr_size_lt_usize_size : arr.size < USize.size
   low_le_mid : low ≤ mid
@@ -17,6 +17,7 @@ structure H₁ (arr aux : Array α) (low mid high : USize) : Prop where
   high_le_size : high ≤ arr.usize
   size_eq : arr.size = aux.size
 
+@[unbox]
 structure H₂ (arr aux : Array α) (low mid high ptr₁ ptr₂ i : USize) : Prop
     extends H₁ arr aux low mid high where
   ptr₁_ge_low : ptr₁ ≥ low
@@ -47,6 +48,7 @@ def H₁.make_H₂
     i_def := by simp only [ptr₁_def, ptr₂_def, USize.add_sub_cancel, i_eq_low]
   }
 
+@[unbox]
 structure H₃ (arr aux : Array α) (low mid high ptr₁ ptr₂ i : USize) : Prop
     extends H₂ arr aux low mid high ptr₁ ptr₂ i where
   ptr₁_lt_mid : ptr₁ < mid
@@ -157,6 +159,7 @@ def H₃.next₂
       . bv_decide
   }
 
+@[unbox]
 structure H₄ (arr aux : Array α) (low mid high ptr₁ ptr₂ i : USize) : Prop
     extends H₂ arr aux low mid high ptr₁ ptr₂ i where
   not_ptr₁_ptr₂_in_range : ptr₁ = mid ∨ ptr₂ = high
@@ -172,6 +175,7 @@ def H₂.make_H₄
       . bv_decide
   }
 
+@[unbox]
 structure H₅ (arr aux : Array α) (low mid high ptr₁ ptr₂ i : USize) : Prop
     extends H₄ arr aux low mid high ptr₁ ptr₂ i where
   ptr₁_lt_mid : ptr₁ < mid
@@ -236,6 +240,7 @@ def H₅.next
       . bv_decide
   }
 
+@[unbox]
 structure H₆ (arr aux : Array α) (low mid high ptr₁ ptr₂ i : USize) : Prop
     extends H₄ arr aux low mid high ptr₁ ptr₂ i where
   ptr₁_eq_mid : ptr₁ = mid
@@ -251,6 +256,7 @@ def H₄.make_H₆
       . bv_decide
   }
 
+@[unbox]
 structure H₇ (arr aux : Array α) (low mid high ptr₁ ptr₂ i : USize) : Prop
     extends H₆ arr aux low mid high ptr₁ ptr₂ i where
   ptr₂_lt_high : ptr₂ < high
@@ -402,6 +408,7 @@ def mergeAdjacentChunksIntoAux
   decreasing_by all_goals exact h₃.decreasing
   loop aux (ptr₁ := low) (ptr₂ := mid) (i := low) (h₁.make_H₂ rfl rfl rfl)
 
+@[unbox]
 structure H₈ (arr aux : Array α) (low chunkSize : USize) : Prop where
   arr_size_lt_usize_size : arr.size < USize.size
   size_eq : arr.size = aux.size
@@ -409,6 +416,7 @@ structure H₈ (arr aux : Array α) (low chunkSize : USize) : Prop where
   chunkSize_gt_zero : chunkSize > 0
   chunkSize_lt_arr_usize : chunkSize < arr.usize
 
+@[unbox]
 structure H₉ (arr aux : Array α) (low chunkSize : USize) : Prop
     extends H₈ arr aux low chunkSize where
   size_minus_low_gt_chunkSize : arr.usize - low > chunkSize
@@ -586,6 +594,7 @@ def H₉.next
       exact USize.high_le_size mid_le_size h₉.chunkSize_gt_zero
   }
 
+@[unbox]
 structure H₁₀ (arr aux : Array α) (low chunkSize : USize) : Prop
     extends H₈ arr aux low chunkSize where
   -- not_size_minus_low_gt_chunkSize : ¬arr.usize - low > chunkSize
@@ -596,6 +605,7 @@ def H₈.make_H₁₀
     : H₁₀ arr aux low chunkSize :=
   { h₈ with /-not_size_minus_low_gt_chunkSize-/ }
 
+@[unbox]
 structure H₁₁ (arr aux : Array α) (low chunkSize : USize) : Prop
     extends H₁₀ arr aux low chunkSize where
   low_lt_aux_usize : low < aux.usize
@@ -721,11 +731,13 @@ def mergeChunksIntoAux
   decreasing_by exact h₉.decreasing
   loop aux 0 h₈
 
+@[unbox]
 structure H₁₂ (arr aux : Array α) (chunkSize : USize) : Prop where
   size_eq : arr.size = aux.size
   chunkSize_gt_zero : chunkSize > 0
   arr_size_lt_usize_size : arr.size < USize.size
 
+@[unbox]
 structure H₁₃ (arr aux : Array α) (chunkSize : USize) : Prop
     extends H₁₂ arr aux chunkSize where
   chunkSize_lt_arr_usize : chunkSize < arr.usize

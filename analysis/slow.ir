@@ -1,0 +1,128 @@
+def mergeAdjacentChunksIntoAux.loop._at.Benchmark.Array.mergeSort._spec_4 (x_1 : @& obj) (x_2 : usize) (x_3 : usize) (x_4 : usize) (x_5 : obj) (x_6 : usize) (x_7 : usize) (x_8 : usize) (x_9 : ◾) : obj :=
+  let x_10 : u8 := USize.decLt x_6 x_3;
+  case x_10 : u8 of
+  Bool.false →
+    let x_11 : obj := mergeAdjacentChunksIntoAux.loop.loopLeft._rarg x_1 x_2 x_3 x_4 x_7 x_5 x_6 x_8 ◾;
+    ret x_11
+  Bool.true →
+    let x_12 : u8 := USize.decLt x_7 x_4;
+    case x_12 : u8 of
+    Bool.false →
+      let x_13 : obj := mergeAdjacentChunksIntoAux.loop.loopLeft._rarg x_1 x_2 x_3 x_4 x_7 x_5 x_6 x_8 ◾;
+      ret x_13
+    Bool.true →
+      let x_14 : obj := Array.uget ◾ x_1 x_6 ◾;
+      let x_15 : obj := Array.uget ◾ x_1 x_7 ◾;
+      let x_16 : u8 := Nat.decLt x_14 x_15;
+      case x_16 : u8 of
+      Bool.false →
+        let x_17 : u8 := Nat.decEq x_14 x_15;
+        case x_17 : u8 of
+        Bool.false →
+          dec x_14;
+          let x_18 : obj := Array.uset ◾ x_5 x_8 x_15 ◾;
+          let x_19 : usize := 1;
+          let x_20 : usize := USize.add x_7 x_19;
+          let x_21 : usize := USize.add x_8 x_19;
+          let x_22 : obj := mergeAdjacentChunksIntoAux.loop._at.Benchmark.Array.mergeSort._spec_4 x_1 x_2 x_3 x_4 x_18 x_6 x_20 x_21 ◾;
+          ret x_22
+        Bool.true →
+          dec x_15;
+          let x_23 : obj := Array.uset ◾ x_5 x_8 x_14 ◾;
+          let x_24 : usize := 1;
+          let x_25 : usize := USize.add x_6 x_24;
+          let x_26 : usize := USize.add x_8 x_24;
+          let x_27 : obj := mergeAdjacentChunksIntoAux.loop._at.Benchmark.Array.mergeSort._spec_4 x_1 x_2 x_3 x_4 x_23 x_25 x_7 x_26 ◾;
+          ret x_27
+      Bool.true →
+        dec x_15;
+        let x_28 : obj := Array.uset ◾ x_5 x_8 x_14 ◾;
+        let x_29 : usize := 1;
+        let x_30 : usize := USize.add x_6 x_29;
+        let x_31 : usize := USize.add x_8 x_29;
+        let x_32 : obj := mergeAdjacentChunksIntoAux.loop._at.Benchmark.Array.mergeSort._spec_4 x_1 x_2 x_3 x_4 x_28 x_30 x_7 x_31 ◾;
+        ret x_32
+def mergeChunksIntoAux.loop._at.Benchmark.Array.mergeSort._spec_3 (x_1 : @& obj) (x_2 : usize) (x_3 : obj) (x_4 : usize) (x_5 : ◾) : obj :=
+  let x_6 : usize := Array.usize ◾ x_1;
+  let x_7 : usize := USize.sub x_6 x_4;
+  let x_8 : u8 := USize.decLt x_2 x_7;
+  case x_8 : u8 of
+  Bool.false →
+    let x_9 : obj := mergeChunksIntoAux.loop.loopFinal._rarg x_1 x_2 x_3 x_4 ◾;
+    ret x_9
+  Bool.true →
+    let x_10 : usize := USize.add x_4 x_2;
+    let x_11 : usize := USize.sub x_6 x_10;
+    let x_12 : u8 := USize.decLe x_11 x_2;
+    case x_12 : u8 of
+    Bool.false →
+      let x_13 : usize := USize.add x_10 x_2;
+      let x_14 : obj := mergeAdjacentChunksIntoAux.loop._at.Benchmark.Array.mergeSort._spec_4 x_1 x_4 x_10 x_13 x_3 x_4 x_10 x_4 ◾;
+      let x_15 : obj := mergeChunksIntoAux.loop._at.Benchmark.Array.mergeSort._spec_3 x_1 x_2 x_14 x_13 ◾;
+      ret x_15
+    Bool.true →
+      let x_16 : usize := USize.add x_10 x_11;
+      let x_17 : obj := mergeAdjacentChunksIntoAux.loop._at.Benchmark.Array.mergeSort._spec_4 x_1 x_4 x_10 x_16 x_3 x_4 x_10 x_4 ◾;
+      let x_18 : obj := mergeChunksIntoAux.loop._at.Benchmark.Array.mergeSort._spec_3 x_1 x_2 x_17 x_16 ◾;
+      ret x_18
+def Array.mergeSortWithAuxiliary.loop._at.Benchmark.Array.mergeSort._spec_2 (x_1 : obj) (x_2 : obj) (x_3 : usize) (x_4 : ◾) : obj :=
+  let x_5 : usize := Array.usize ◾ x_1;
+  let x_6 : u8 := USize.decLt x_3 x_5;
+  case x_6 : u8 of
+  Bool.false →
+    dec x_2;
+    ret x_1
+  Bool.true →
+    let x_7 : usize := 0;
+    let x_8 : obj := mergeChunksIntoAux.loop._at.Benchmark.Array.mergeSort._spec_3 x_1 x_3 x_2 x_7 ◾;
+    let x_9 : usize := USize.sub x_5 x_3;
+    let x_10 : u8 := USize.decLe x_9 x_3;
+    case x_10 : u8 of
+    Bool.false →
+      let x_11 : usize := USize.add x_3 x_3;
+      let x_12 : obj := Array.mergeSortWithAuxiliary.loop._at.Benchmark.Array.mergeSort._spec_2 x_8 x_1 x_11 ◾;
+      ret x_12
+    Bool.true →
+      let x_13 : usize := USize.add x_3 x_9;
+      let x_14 : obj := Array.mergeSortWithAuxiliary.loop._at.Benchmark.Array.mergeSort._spec_2 x_8 x_1 x_13 ◾;
+      ret x_14
+def Array.mergeSort._at.Benchmark.Array.mergeSort._spec_1 (x_1 : obj) (x_2 : obj) (x_3 : ◾) : obj :=
+  let x_4 : obj := Array.size ◾ x_2;
+  let x_5 : obj := Array.replicate ◾ x_4 x_1;
+  let x_6 : usize := 1;
+  let x_7 : obj := Array.mergeSortWithAuxiliary.loop._at.Benchmark.Array.mergeSort._spec_2 x_2 x_5 x_6 ◾;
+  ret x_7
+def Benchmark.Array.mergeSort (x_1 : obj) (x_2 : obj) : obj :=
+  let x_3 : obj := instInhabitedNat;
+  let x_4 : obj := pap Array.mergeSort._at.Benchmark.Array.mergeSort._spec_1 x_3;
+  let x_5 : obj := Benchmark.Array.mergeSortGeneric x_4 x_1 x_2;
+  ret x_5
+def mergeAdjacentChunksIntoAux.loop._at.Benchmark.Array.mergeSort._spec_4._boxed (x_1 : obj) (x_2 : obj) (x_3 : obj) (x_4 : obj) (x_5 : obj) (x_6 : obj) (x_7 : obj) (x_8 : obj) (x_9 : obj) : obj :=
+  let x_10 : usize := unbox x_2;
+  dec x_2;
+  let x_11 : usize := unbox x_3;
+  dec x_3;
+  let x_12 : usize := unbox x_4;
+  dec x_4;
+  let x_13 : usize := unbox x_6;
+  dec x_6;
+  let x_14 : usize := unbox x_7;
+  dec x_7;
+  let x_15 : usize := unbox x_8;
+  dec x_8;
+  let x_16 : obj := mergeAdjacentChunksIntoAux.loop._at.Benchmark.Array.mergeSort._spec_4 x_1 x_10 x_11 x_12 x_5 x_13 x_14 x_15 x_9;
+  dec x_1;
+  ret x_16
+def mergeChunksIntoAux.loop._at.Benchmark.Array.mergeSort._spec_3._boxed (x_1 : obj) (x_2 : obj) (x_3 : obj) (x_4 : obj) (x_5 : obj) : obj :=
+  let x_6 : usize := unbox x_2;
+  dec x_2;
+  let x_7 : usize := unbox x_4;
+  dec x_4;
+  let x_8 : obj := mergeChunksIntoAux.loop._at.Benchmark.Array.mergeSort._spec_3 x_1 x_6 x_3 x_7 x_5;
+  dec x_1;
+  ret x_8
+def Array.mergeSortWithAuxiliary.loop._at.Benchmark.Array.mergeSort._spec_2._boxed (x_1 : obj) (x_2 : obj) (x_3 : obj) (x_4 : obj) : obj :=
+  let x_5 : usize := unbox x_3;
+  dec x_3;
+  let x_6 : obj := Array.mergeSortWithAuxiliary.loop._at.Benchmark.Array.mergeSort._spec_2 x_1 x_2 x_5 x_4;
+  ret x_6

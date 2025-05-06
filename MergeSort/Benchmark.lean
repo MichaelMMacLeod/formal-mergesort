@@ -1,9 +1,8 @@
 import MergeSort.Implementation
 import MergeSort.ArrayGenerators
+import MergeSort.PrototypeA
 
-structure Config where
-  size := Nat
-  seed := Nat
+set_option trace.compiler.ir.result true
 
 def benchmark
     {data₁ data₂}
@@ -19,12 +18,15 @@ def benchmark
   let optimizationPreventionValue := finish result
   pure (elapsed, optimizationPreventionValue)
 
-def Benchmark.Array.mergeSort (makeArray : Unit → Array Nat) : IO (Nat × Nat) :=
+def Benchmark.Array.mergeSortGeneric
+    (algo : (arr : Array Nat) → arr.size < USize.size → Array Nat)
+    (makeArray : Unit → Array Nat)
+    : IO (Nat × Nat) :=
   benchmark makeArray prepare go finish
 where
   prepare (arr : Array Nat) : Unit → Array Nat :=
     if h : arr.size < USize.size then
-        fun () => arr.mergeSort h
+        fun () => algo arr h
       else
         panic! "arr ≥ USize.size"
   go := (· ())
@@ -32,6 +34,12 @@ where
     match arr[0]? with
     | .none => 0
     | .some v => v
+
+def Benchmark.Array.mergeSort (makeArray : Unit → Array Nat) : IO (Nat × Nat) :=
+  Benchmark.Array.mergeSortGeneric _root_.Array.mergeSort makeArray
+
+def Benchmark.Array.mergeSortA (makeArray : Unit → Array Nat) : IO (Nat × Nat) :=
+  Benchmark.Array.mergeSortGeneric _root_.PrototypeA.Array.mergeSort makeArray
 
 def Benchmark.Array.qsortOrd (makeArray : Unit → Array Nat) : IO (Nat × Nat) :=
   benchmark makeArray prepare go finish
@@ -66,9 +74,11 @@ def runOnAllArrayGenerators
     let (time, opv) ← go fn
     println! s!"{opv} → {time.nsToMs.msToS}s\t\t{time.nsToMs}ms\t\t{time}ns\t\t{fnName}"
   println! s!"Testing {algoName} using (size := {size}) (seed := {seed})"
-  printResult "mostlyAscending" fun () => Array.mostlyAscending size seed
-  printResult "randomWithDuplicates" fun () => Array.randomWithDuplicates size seed
-  printResult "random" fun () => Array.random size seed
+  -- printResult "mostlyAscending" fun () => Array.mostlyAscending size seed
+  -- printResult "randomWithDuplicates" fun () => Array.randomWithDuplicates size seed
+  -- printResult "random" fun () => Array.random size seed
   printResult "ascending" fun () => Array.ascending size
-  printResult "descending" fun () => Array.descending size
-  printResult "ascendingWithRandomTail" fun () => Array.ascendingWithRandomTail size seed
+  -- printResult "descending" fun () => Array.descending size
+  -- printResult "ascendingWithRandomTail" fun () => Array.ascendingWithRandomTail size seed
+
+#check Array.uget
