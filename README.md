@@ -38,6 +38,8 @@ The goal of this project is to write a reasonably fast, formally verified merge 
 
 ### Performance Testing
 
+Warning: these results are based on "eyeball statistics" (i.e., bad statistics). I will try and do something more substantial in the future.
+
 #### Test Description
 
 All tests were performed on `Array Nat` values of size `10^6`, except for `List.mergeSort`, which was performed on `List Nat`. The time spent allocating the `Array` or `List` values is not included in the elapsed time. The time spent allocating the auxiliary `Array` value for `Array.mergeSort` in each test *is* included in the elapsed time (unless the compiler is doing some smart optimizations that I'm not aware of). 
@@ -66,8 +68,6 @@ All tests were performed on `Array Nat` values of size `10^6`, except for `List.
 | ascendingWithRandomTail | 37ms              | 111ms            | 159ms            |
 
 #### Analysis
-
-Warning: these results are based on "eyeball statistics" (i.e., bad statistics). I will try and do something more subtantial in the future.
 
 `Array.mergeSort` is faster than `List.mergeSort` at sorting `10^6` `Nat` values, by a factor of `3-7x`.
 
