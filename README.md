@@ -52,7 +52,7 @@ All tests were performed on `Array Nat` values of size `10^6`, except for `List.
 
 - descending: An `Array` which is sorted in reverse order.
 
-- ascendingWithRandomTail: An Array where all but the last `10%` of values are sorted.
+- ascendingWithRandomTail: An `Array` where all but the last `10%` of values are sorted.
 
 #### Results
 
