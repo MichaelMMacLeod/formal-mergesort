@@ -280,14 +280,15 @@ def H₇.i_lt_aux_size
   exact (USize.lt_ofNat_iff h₇.arr_size_lt_usize_size).mp i_lt_size
 
 def H₇.next
-    (h₇ : H₇ arr aux low mid high ptr₁ ptr₂ i)
-    : have ptr₂_lt_arr_size := h₇.ptr₂_lt_arr_size
-      let aux' := aux.uset i arr[ptr₂] h₇.i_lt_aux_size
-      H₆ arr aux' low mid high ptr₁ ptr₂.succ i.succ :=
-  { h₇ with
+    (h₇ : Subtype (H₇ arr aux low mid high ptr₁ ptr₂))
+    : have ptr₂_lt_arr_size := h₇.property.ptr₂_lt_arr_size
+      let aux' := aux.uset h₇.val arr[ptr₂] h₇.property.i_lt_aux_size
+      Subtype (H₆ arr aux' low mid high ptr₁ ptr₂.succ) :=
+  have := h₇.property
+  Subtype.mk h₇.val.succ { h₇.property with
     size_eq := by
       simp only [Array.uset, Array.ugetElem_eq_getElem, Array.size_set]
-      exact h₇.size_eq
+      exact h₇.property.size_eq
     ptr₂_ge_mid := by
       cases System.Platform.numBits_eq
       . bv_decide
@@ -381,14 +382,15 @@ def mergeAdjacentChunksIntoAux
         else
           let rec @[specialize] loopRight
               (aux : Array α)
-              (ptr₂ i : USize)
-              (h₆ : H₆ arr aux low mid high ptr₁ ptr₂ i)
+              (ptr₂ : USize)
+              (i : Subtype (H₆ arr aux low mid high ptr₁ ptr₂))
               : Array α :=
+            have h₆ := i.property
             if ptr₂_lt_high : ptr₂ < high then
               have h₇ := h₆.make_H₇ ptr₂_lt_high
               have := h₇.ptr₂_lt_arr_size
               let aux' := aux.uset i arr[ptr₂] h₇.i_lt_aux_size
-              loopRight aux' ptr₂.succ i.succ h₇.next
+              loopRight aux' ptr₂.succ (H₇.next h₇)
             else
               aux
           termination_by arr.size - i.toNat
