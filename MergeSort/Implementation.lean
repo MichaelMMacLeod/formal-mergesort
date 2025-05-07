@@ -298,6 +298,64 @@ def H₇.i_lt_aux_size
   rw [← h₇.size_eq]
   exact (USize.lt_ofNat_iff h₇.arr_size_lt_usize_size).mp i_lt_size
 
+def ptr₂_add_one_ge_mid
+    (ptr₂_ge_mid : ptr₂ ≥ mid)
+    (ptr₂_lt_high : ptr₂ < high)
+    : ptr₂ + 1 ≥ mid := by
+  cases System.Platform.numBits_eq
+  . bv_decide
+  . bv_decide
+
+def ptr₂_add_one_le_high
+    (ptr₂_lt_high : ptr₂ < high)
+    : ptr₂ + 1 ≤ high := by
+  cases System.Platform.numBits_eq
+  . bv_decide
+  . bv_decide
+
+def i_add_one_ge_low
+    (i_ge_low : i ≥ low)
+    (i_def : i = ptr₁ + ptr₂ - mid)
+    (ptr₁_eq_mid : ptr₁ = mid)
+    (ptr₂_lt_high : ptr₂ < high)
+    : i + 1 ≥ low := by
+  cases System.Platform.numBits_eq
+  . bv_decide
+  . bv_decide
+
+def USize.add_sub_add_one_le_of_lt
+    {a b c : USize}
+    (h : b < c)
+    : a + b - a + 1 ≤ c := by
+  rw [USize.add_one_sub_right_comm, USize.add_sub_self_eq]
+  exact ptr₂_add_one_le_high h
+
+def i_add_one_le_high
+    (i_def : i = ptr₁ + ptr₂ - mid)
+    (ptr₁_eq_mid : ptr₁ = mid)
+    (ptr₂_lt_high : ptr₂ < high)
+    : i + 1 ≤ high := by
+  rw [i_def, ptr₁_eq_mid]
+  exact USize.add_sub_add_one_le_of_lt ptr₂_lt_high
+
+
+  -- sorry
+  -- cases System.Platform.numBits_eq
+  -- . bv_decide
+  -- . bv_decide
+
+def i_add_one_def₂
+    (i_def : i = ptr₁ + ptr₂ - mid)
+    : i + 1 = ptr₁ + (ptr₂ + 1) - mid := by
+  rw [i_def]
+  exact USize.add_one_sub_right_comm
+
+def not_ptr₁_ptr₂_in_range₂
+    (ptr₁_eq_mid : ptr₁ = mid)
+    : ptr₁ = mid ∨ ptr₂.succ = high := by
+  apply Or.intro_left
+  exact ptr₁_eq_mid
+
 def H₇.next
     (h₇ : H₇ arr aux low mid high ptr₁ ptr₂ i)
     : have ptr₂_lt_arr_size := h₇.ptr₂_lt_arr_size
@@ -307,30 +365,12 @@ def H₇.next
     size_eq := by
       simp only [Array.uset, Array.ugetElem_eq_getElem, Array.size_set]
       exact h₇.size_eq
-    ptr₂_ge_mid := by
-      cases System.Platform.numBits_eq
-      . bv_decide
-      . bv_decide
-    ptr₂_le_high := by
-      cases System.Platform.numBits_eq
-      . bv_decide
-      . bv_decide
-    i_ge_low := by
-      cases System.Platform.numBits_eq
-      . bv_decide
-      . bv_decide
-    i_le_high := by
-      cases System.Platform.numBits_eq
-      . bv_decide
-      . bv_decide
-    i_def := by
-      cases System.Platform.numBits_eq
-      . bv_decide
-      . bv_decide
-    not_ptr₁_ptr₂_in_range := by
-      cases System.Platform.numBits_eq
-      . bv_decide
-      . bv_decide
+    ptr₂_ge_mid := ptr₂_add_one_ge_mid h₇.ptr₂_ge_mid h₇.ptr₂_lt_high
+    ptr₂_le_high := ptr₂_add_one_le_high h₇.ptr₂_lt_high
+    i_ge_low := i_add_one_ge_low h₇.i_ge_low h₇.i_def h₇.ptr₁_eq_mid h₇.ptr₂_lt_high
+    i_le_high := i_add_one_le_high h₇.i_def h₇.ptr₁_eq_mid h₇.ptr₂_lt_high
+    i_def := i_add_one_def₂ h₇.i_def
+    not_ptr₁_ptr₂_in_range := not_ptr₁_ptr₂_in_range₂ h₇.ptr₁_eq_mid
   }
 
 def H₃.decreasing
