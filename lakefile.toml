@@ -9,11 +9,15 @@ autoImplicit = false
 [[lean_lib]]
 name = "MergeSort"
 buildType = "relWithDebInfo"
+# moreLeancArgs = [ "-g", "-gdwarf-2" ]
+# moreLinkArgs = [ "-gdwarf-2", "-ldl" ]
 
 [[lean_exe]]
 name = "bench"
 root = "RunBenchmarks"
 buildType = "relWithDebInfo"
+# moreLeancArgs = [ "-g", "-gdwarf-2" ]
+# moreLinkArgs = [ "-gdwarf-2", "-ldl"  ]
 
 [[require]]
 name = "mathlib"
