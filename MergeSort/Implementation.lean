@@ -28,6 +28,25 @@ structure H₂ (arr aux : Array α) (low mid high ptr₁ ptr₂ i : USize) : Pro
 
 def USize.ge_of_eq {a b : USize} (h : a = b) : a ≥ b := USize.le_of_eq (Eq.symm h)
 
+
+def H₁.make_H₂'
+    (high : Subtype (H₁ arr aux low mid))
+    (ptr₁_def : ptr₁ = low)
+    (ptr₂_def : ptr₂ = mid)
+    (i_def : i = ptr₁)
+    : Subtype (H₂ arr aux low mid high ptr₁ ptr₂) :=
+  have i_eq_low := ptr₁_def ▸ i_def
+  Subtype.mk i {
+    high.property with
+    ptr₁_ge_low := USize.ge_of_eq ptr₁_def
+    ptr₁_le_mid := USize.le_trans (USize.le_of_eq ptr₁_def) high.property.low_le_mid
+    ptr₂_ge_mid := USize.ge_of_eq ptr₂_def
+    ptr₂_le_high := USize.le_trans (USize.le_of_eq ptr₂_def) high.property.mid_le_high
+    i_ge_low := USize.ge_of_eq i_eq_low
+    i_le_high := USize.le_trans (USize.le_of_eq i_eq_low) (USize.le_trans high.property.low_le_mid high.property.mid_le_high)
+    i_def := by simp only [ptr₁_def, ptr₂_def, USize.add_sub_cancel, i_eq_low]
+  }
+
 def H₁.make_H₂
     (h₁ : H₁ arr aux low mid high)
     (ptr₁_def : ptr₁ = low)
@@ -280,15 +299,14 @@ def H₇.i_lt_aux_size
   exact (USize.lt_ofNat_iff h₇.arr_size_lt_usize_size).mp i_lt_size
 
 def H₇.next
-    (h₇ : Subtype (H₇ arr aux low mid high ptr₁ ptr₂))
-    : have ptr₂_lt_arr_size := h₇.property.ptr₂_lt_arr_size
-      let aux' := aux.uset h₇.val arr[ptr₂] h₇.property.i_lt_aux_size
-      Subtype (H₆ arr aux' low mid high ptr₁ ptr₂.succ) :=
-  have := h₇.property
-  Subtype.mk h₇.val.succ { h₇.property with
+    (h₇ : H₇ arr aux low mid high ptr₁ ptr₂ i)
+    : have ptr₂_lt_arr_size := h₇.ptr₂_lt_arr_size
+      let aux' := aux.uset i arr[ptr₂] h₇.i_lt_aux_size
+      H₆ arr aux' low mid high ptr₁ ptr₂.succ i.succ :=
+  { h₇ with
     size_eq := by
       simp only [Array.uset, Array.ugetElem_eq_getElem, Array.size_set]
-      exact h₇.property.size_eq
+      exact h₇.size_eq
     ptr₂_ge_mid := by
       cases System.Platform.numBits_eq
       . bv_decide
@@ -348,60 +366,56 @@ def H₇.decreasing
 @[specialize, inline]
 def mergeAdjacentChunksIntoAux
     [Ord α]
-    (arr aux : Array α)
+    (arr : Array α)
     (low mid high : USize)
-    (h₁ : H₁ arr aux low mid high)
+    (aux : Subtype (H₁ arr · low mid high))
     : Array α :=
   let rec @[specialize] loop
-      (aux : Array α)
       (ptr₁ ptr₂ i : USize)
-      (h₂ : H₂ arr aux low mid high ptr₁ ptr₂ i)
+      (aux : Subtype (H₂ arr · low mid high ptr₁ ptr₂ i))
       : Array α :=
     if ptr₁_ptr₂_in_range : ptr₁ < mid ∧ ptr₂ < high then
-      have h₃ := h₂.make_H₃ ptr₁_ptr₂_in_range
+      have h₃ := aux.property.make_H₃ ptr₁_ptr₂_in_range
       have := h₃.ptr₁_lt_arr_size
       have := h₃.ptr₂_lt_arr_size
       match Ord.compare arr[ptr₁] arr[ptr₂] with
       | .lt | .eq =>
-        let aux' := aux.uset i arr[ptr₁] h₃.i_lt_aux_size
-        loop aux' ptr₁.succ ptr₂ i.succ h₃.next₁
+        let aux' := aux.val.uset i arr[ptr₁] h₃.i_lt_aux_size
+        loop ptr₁.succ ptr₂ i.succ ⟨aux', h₃.next₁⟩
       | .gt =>
-        let aux' := aux.uset i arr[ptr₂] h₃.i_lt_aux_size
-        loop aux' ptr₁ ptr₂.succ i.succ h₃.next₂
+        let aux' := aux.val.uset i arr[ptr₂] h₃.i_lt_aux_size
+        loop ptr₁ ptr₂.succ i.succ ⟨aux', h₃.next₂⟩
     else
       let rec @[specialize] loopLeft
-          (aux : Array α)
           (ptr₁ i : USize)
-          (h₄ : H₄ arr aux low mid high ptr₁ ptr₂ i)
+          (aux : Subtype (H₄ arr · low mid high ptr₁ ptr₂ i))
           : Array α :=
         if ptr₁_lt_mid : ptr₁ < mid then
-          have h₅ := h₄.make_H₅ ptr₁_lt_mid
+          have h₅ := aux.property.make_H₅ ptr₁_lt_mid
           have := h₅.ptr₁_lt_arr_size
-          let aux' := aux.uset i arr[ptr₁] h₅.i_lt_aux_size
-          loopLeft aux' ptr₁.succ i.succ h₅.next
+          let aux' := aux.val.uset i arr[ptr₁] h₅.i_lt_aux_size
+          loopLeft ptr₁.succ i.succ ⟨aux', h₅.next⟩
         else
           let rec @[specialize] loopRight
-              (aux : Array α)
-              (ptr₂ : USize)
-              (i : Subtype (H₆ arr aux low mid high ptr₁ ptr₂))
+              (ptr₂ i : USize)
+              (aux : Subtype (H₆ arr · low mid high ptr₁ ptr₂ i))
               : Array α :=
-            have h₆ := i.property
             if ptr₂_lt_high : ptr₂ < high then
-              have h₇ := h₆.make_H₇ ptr₂_lt_high
+              have h₇ := aux.property.make_H₇ ptr₂_lt_high
               have := h₇.ptr₂_lt_arr_size
-              let aux' := aux.uset i arr[ptr₂] h₇.i_lt_aux_size
-              loopRight aux' ptr₂.succ (H₇.next h₇)
+              let aux' := aux.val.uset i arr[ptr₂] h₇.i_lt_aux_size
+              loopRight ptr₂.succ i.succ ⟨aux', h₇.next⟩
             else
               aux
           termination_by arr.size - i.toNat
           decreasing_by all_goals exact h₇.decreasing
-          loopRight aux ptr₂ i (h₄.make_H₆ ptr₁_lt_mid)
+          loopRight ptr₂ i ⟨aux, aux.property.make_H₆ ptr₁_lt_mid⟩
       termination_by arr.size - i.toNat
       decreasing_by all_goals exact h₅.decreasing
-      loopLeft aux ptr₁ i (h₂.make_H₄ ptr₁_ptr₂_in_range)
+      loopLeft ptr₁ i ⟨aux, aux.property.make_H₄ ptr₁_ptr₂_in_range⟩
   termination_by arr.size - i.toNat
   decreasing_by all_goals exact h₃.decreasing
-  loop aux (ptr₁ := low) (ptr₂ := mid) (i := low) (h₁.make_H₂ rfl rfl rfl)
+  loop (ptr₁ := low) (ptr₂ := mid) (i := low) ⟨aux, aux.property.make_H₂ rfl rfl rfl⟩
 
 structure H₈ (arr aux : Array α) (low chunkSize : USize) : Prop where
   arr_size_lt_usize_size : arr.size < USize.size
