@@ -71,14 +71,16 @@ def runOnAllArrayGenerators
     (go : (Unit → Array Nat) → IO (Nat × Nat))
     : IO Unit := do
   let printResult (fnName : String) (fn : Unit → Array Nat) : IO Unit := do
-    let (time, opv) ← go fn
+    let (time₁, opv₁) ← go fn
+    let (time₂, opv₂) ← go fn
+    let (time₃, opv₃) ← go fn
+    let time := (time₁ + time₂ + time₃) / 3
+    let opv := opv₁ + opv₂ + opv₃
     println! s!"{opv} → {time.nsToMs.msToS}s\t\t{time.nsToMs}ms\t\t{time}ns\t\t{fnName}"
-  println! s!"Testing {algoName} using (size := {size}) (seed := {seed})"
+  println! s!"Testing {algoName} using (size := {size}) (seed := {seed}) (average of 3 runs on each test)"
   printResult "mostlyAscending" fun () => Array.mostlyAscending size seed
   printResult "randomWithDuplicates" fun () => Array.randomWithDuplicates size seed
   printResult "random" fun () => Array.random size seed
   printResult "ascending" fun () => Array.ascending size
   printResult "descending" fun () => Array.descending size
   printResult "ascendingWithRandomTail" fun () => Array.ascendingWithRandomTail size seed
-
-#check Array.uget

@@ -8,12 +8,12 @@ autoImplicit = false
 
 [[lean_lib]]
 name = "MergeSort"
-buildType = "release"
+buildType = "relWithDebInfo"
 
 [[lean_exe]]
 name = "bench"
 root = "RunBenchmarks"
-buildType = "release"
+buildType = "relWithDebInfo"
 
 [[require]]
 name = "mathlib"
