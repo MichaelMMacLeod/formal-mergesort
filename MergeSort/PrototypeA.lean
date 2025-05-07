@@ -3,10 +3,7 @@ import Init.Data.UInt.Lemmas
 import Lean.Elab.Tactic
 import MergeSort.USize.Extras
 
-set_option trace.compiler.ir.result true
-
-def foo (u : USize) (_h : u < 100) : USize := u
-def bar (u : USize) : USize := u
+-- set_option trace.compiler.ir.result true
 
 namespace PrototypeA
 

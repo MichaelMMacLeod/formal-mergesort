@@ -530,38 +530,35 @@ def H₉.make_H₁
 
 theorem mergeAdjacentChunksIntoAux.loop.loopLeft.loopRight.size_eq
     [Ord α]
-    {aux : Array α}
     {ptr₂ i : USize}
-    {h₆ : H₆ arr aux low mid high ptr₁ ptr₂ i}
-    : aux.size = (loopRight arr low mid high ptr₁ aux ptr₂ i h₆).size := by
+    {aux : Subtype (H₆ arr · low mid high ptr₁ ptr₂ i)}
+    : aux.val.size = (loopRight arr low mid high ptr₁ ptr₂ i aux).size := by
   unfold loopRight
   if ptr₂_lt_high : ptr₂ < high then
     simp [ptr₂_lt_high, ← size_eq (i := i.succ)]
   else
     simp [ptr₂_lt_high]
 termination_by arr.size - i.toNat
-decreasing_by exact h₆.make_H₇ ptr₂_lt_high |>.decreasing
+decreasing_by exact aux.property.make_H₇ ptr₂_lt_high |>.decreasing
 
 theorem mergeAdjacentChunksIntoAux.loop.loopLeft.size_eq
     [Ord α]
-    {aux : Array α}
     {ptr₁ i : USize}
-    {h₄ : H₄ arr aux low mid high ptr₁ ptr₂ i}
-    : aux.size = (loopLeft arr low mid high ptr₂ aux ptr₁ i h₄).size := by
+    {aux : Subtype (H₄ arr · low mid high ptr₁ ptr₂ i)}
+    : aux.val.size = (loopLeft arr low mid high ptr₂ ptr₁ i aux).size := by
   unfold loopLeft
   if ptr₁_lt_mid : ptr₁ < mid then
     simp [ptr₁_lt_mid, Array.uset, Array.ugetElem_eq_getElem, ← size_eq (i := i.succ)]
   else
     simp [ptr₁_lt_mid, ← loopRight.size_eq]
 termination_by arr.size - i.toNat
-decreasing_by exact h₄.make_H₅ ptr₁_lt_mid |>.decreasing
+decreasing_by exact aux.property.make_H₅ ptr₁_lt_mid |>.decreasing
 
 theorem mergeAdjacentChunksIntoAux.loop.size_eq
     [Ord α]
-    {aux : Array α}
     {ptr₁ ptr₂ i : USize}
-    {h₂ : H₂ arr aux low mid high ptr₁ ptr₂ i}
-    : aux.size = (loop arr low mid high aux ptr₁ ptr₂ i h₂).size := by
+    {aux : Subtype (H₂ arr · low mid high ptr₁ ptr₂ i)}
+    : aux.val.size = (loop arr low mid high ptr₁ ptr₂ i aux).size := by
   unfold loop
   if ptr₁_ptr₂_in_range : ptr₁ < mid ∧ ptr₂ < high then
     simp only [ptr₁_ptr₂_in_range, and_self, ↓reduceDIte, Array.ugetElem_eq_getElem, Array.uset]
@@ -569,20 +566,20 @@ theorem mergeAdjacentChunksIntoAux.loop.size_eq
   else
     simp only [ptr₁_ptr₂_in_range, ↓reduceDIte, ← loopLeft.size_eq]
 termination_by arr.size - i.toNat
-decreasing_by all_goals exact h₂.make_H₃ ptr₁_ptr₂_in_range |>.decreasing
+decreasing_by all_goals exact aux.property.make_H₃ ptr₁_ptr₂_in_range |>.decreasing
 
 theorem mergeAdjacentChunksIntoAux.size_eq
     [Ord α]
-    (h₁ : H₁ arr aux low mid high)
-    : aux.size = (mergeAdjacentChunksIntoAux arr aux low mid high h₁).size :=
-  mergeAdjacentChunksIntoAux.loop.size_eq
+    (aux : Subtype (H₁ arr · low mid high))
+    : aux.val.size = (mergeAdjacentChunksIntoAux arr low mid high aux).size :=
+  mergeAdjacentChunksIntoAux.loop.size_eq (α := α) (aux := ⟨aux, aux.property.make_H₂ rfl rfl rfl⟩)
 
 def H₉.next
     [Ord α]
     (h₉ : H₉ arr aux low chunkSize)
     : let mid := low + chunkSize
       let high := mid + min (arr.usize - mid) chunkSize
-      have aux' := mergeAdjacentChunksIntoAux arr aux low mid high h₉.make_H₁
+      have aux' := mergeAdjacentChunksIntoAux arr low mid high ⟨aux, h₉.make_H₁⟩
       H₈ arr aux' high chunkSize := by
   intro mid high aux'
   have mid_def : mid = low + chunkSize := rfl
@@ -595,7 +592,7 @@ def H₉.next
     h₉ with
     size_eq := by
       simp only [h₉.size_eq, aux']
-      exact mergeAdjacentChunksIntoAux.size_eq h₉.make_H₁
+      exact mergeAdjacentChunksIntoAux.size_eq ⟨aux, h₉.make_H₁⟩
     low_le_arr_usize := by
       rw [high_def]
       exact USize.high_le_size mid_le_size h₉.chunkSize_gt_zero
@@ -701,40 +698,38 @@ def H₁₁.decreasing
 @[specialize, inline]
 def mergeChunksIntoAux
     [Ord α]
-    (arr aux : Array α)
+    (arr : Array α)
     (chunkSize : USize)
-    (h₈ : H₈ arr aux 0 chunkSize)
+    (aux : Subtype (H₈ arr · 0 chunkSize))
     : Array α :=
   let rec @[specialize] loop
-      (aux : Array α)
       (low : USize)
-      (h₈ : H₈ arr aux low chunkSize)
+      (aux : Subtype (H₈ arr · low chunkSize))
       : Array α :=
     if size_minus_low_gt_chunkSize : chunkSize < arr.usize - low then
-      have h₉ := h₈.make_H₉ size_minus_low_gt_chunkSize
+      have h₉ := aux.property.make_H₉ size_minus_low_gt_chunkSize
       let mid := low + chunkSize
       let high := mid + min (arr.usize - mid) chunkSize
-      let aux' := mergeAdjacentChunksIntoAux arr aux low mid high h₉.make_H₁
-      loop aux' high h₉.next
+      let aux' := mergeAdjacentChunksIntoAux arr low mid high ⟨aux, h₉.make_H₁⟩
+      loop high ⟨aux', h₉.next⟩
     else
       let rec @[specialize] loopFinal
-          (aux : Array α)
           (low : USize)
-          (h₁₀ : H₁₀ arr aux low chunkSize)
+          (aux : Subtype (H₁₀ arr · low chunkSize))
           : Array α :=
-        if low_lt_aux_usize : low < aux.usize then
-          have h₁₁ := h₁₀.make_H₁₁ low_lt_aux_usize
+        if low_lt_aux_usize : low < aux.val.usize then
+          have h₁₁ := aux.property.make_H₁₁ low_lt_aux_usize
           have := h₁₁.low_lt_arr_size
-          let aux' := aux.uset low arr[low] h₁₁.low_toNat_lt_aux_size
-          loopFinal aux' low.succ h₁₁.next
+          let aux' := aux.val.uset low arr[low] h₁₁.low_toNat_lt_aux_size
+          loopFinal low.succ ⟨aux', h₁₁.next⟩
         else
           aux
       termination_by arr.size - low.toNat
       decreasing_by exact h₁₁.decreasing
-      loopFinal aux low (h₈.make_H₁₀ size_minus_low_gt_chunkSize)
+      loopFinal low ⟨aux, aux.property.make_H₁₀ size_minus_low_gt_chunkSize⟩
   termination_by arr.size - low.toNat
   decreasing_by exact h₉.decreasing
-  loop aux 0 h₈
+  loop 0 aux
 
 structure H₁₂ (arr aux : Array α) (chunkSize : USize) : Prop where
   size_eq : arr.size = aux.size
@@ -758,25 +753,25 @@ def H₁₃.make_H₈
 
 theorem mergeChunksIntoAux.loop.loopFinal.size_eq
     [Ord α]
-    {arr aux : Array α}
+    {arr : Array α}
     {low chunkSize : USize}
-    {h₁₀ : H₁₀ arr aux low chunkSize}
-    : aux.size = (loopFinal arr chunkSize aux low h₁₀).size := by
+    {aux : Subtype (H₁₀ arr · low chunkSize)}
+    : aux.val.size = (loopFinal arr chunkSize low aux).size := by
   unfold loopFinal
-  if low_lt_aux_usize : low < aux.usize then
+  if low_lt_aux_usize : low < aux.val.usize then
     simp only [low_lt_aux_usize, ↓reduceDIte, Array.uset, Array.ugetElem_eq_getElem]
     rw [← size_eq, Array.size_set]
   else
     simp only [low_lt_aux_usize, ↓reduceDIte]
 termination_by arr.size - low.toNat
-decreasing_by exact h₁₀.make_H₁₁ low_lt_aux_usize |>.decreasing
+decreasing_by exact aux.property.make_H₁₁ low_lt_aux_usize |>.decreasing
 
 theorem mergeChunksIntoAux.loop.size_eq
     [Ord α]
-    {arr aux : Array α}
+    {arr : Array α}
     {low chunkSize : USize}
-    {h₈ : H₈ arr aux low chunkSize}
-    : aux.size = (loop arr chunkSize aux low h₈).size := by
+    {aux : Subtype (H₈ arr · low chunkSize)}
+    : aux.val.size = (loop arr chunkSize low aux).size := by
   unfold loop
   if size_minus_low_gt_chunkSize : chunkSize < arr.usize - low then
     simp only [size_minus_low_gt_chunkSize]
@@ -784,26 +779,26 @@ theorem mergeChunksIntoAux.loop.size_eq
     rw [← size_eq, ← mergeAdjacentChunksIntoAux.size_eq]
   else
     simp only [size_minus_low_gt_chunkSize]
-    exact loopFinal.size_eq
+    exact loopFinal.size_eq (α := α) (aux := ⟨aux, aux.property.make_H₁₀ size_minus_low_gt_chunkSize⟩)
 termination_by arr.size - low.toNat
-decreasing_by exact h₈.make_H₉ size_minus_low_gt_chunkSize |>.decreasing
+decreasing_by exact aux.property.make_H₉ size_minus_low_gt_chunkSize |>.decreasing
 
 theorem mergeChunksIntoAux.size_eq
     [Ord α]
-    (h₁₃ : H₁₃ arr aux chunkSize)
-    : aux.size = (mergeChunksIntoAux arr aux chunkSize h₁₃.make_H₈).size := by
-  exact loop.size_eq
+    (aux : Subtype (H₁₃ arr · chunkSize))
+    : aux.val.size = (mergeChunksIntoAux arr chunkSize ⟨aux, aux.property.make_H₈⟩).size := by
+  exact loop.size_eq (α := α) (aux := ⟨aux, aux.property.make_H₈⟩)
 
 def H₁₃.next
     [Ord α]
     (h₁₃ : H₁₃ arr aux chunkSize)
-    : let aux' := mergeChunksIntoAux arr aux chunkSize h₁₃.make_H₈
+    : let aux' := mergeChunksIntoAux arr chunkSize ⟨aux, h₁₃.make_H₈⟩
       H₁₂ aux' arr (chunkSize + min (arr.usize - chunkSize) chunkSize) := by
   intro aux'
-  have aux'_def : aux' = mergeChunksIntoAux arr aux chunkSize h₁₃.make_H₈ := rfl
+  have aux'_def : aux' = mergeChunksIntoAux arr chunkSize ⟨aux, h₁₃.make_H₈⟩ := rfl
   have size_eq : aux'.size = arr.size := by
     rw [aux'_def, h₁₃.size_eq]
-    exact Eq.symm (mergeChunksIntoAux.size_eq h₁₃)
+    exact Eq.symm (mergeChunksIntoAux.size_eq ⟨aux, h₁₃⟩)
   exact {
     h₁₃ with
     size_eq
@@ -835,12 +830,12 @@ def H₁₂.make
 def H₁₃.decreasing
     [Ord α]
     (h₁₃ : H₁₃ arr aux chunkSize)
-    : let aux' := mergeChunksIntoAux arr aux chunkSize h₁₃.make_H₈
+    : let aux' := mergeChunksIntoAux arr chunkSize ⟨aux, h₁₃.make_H₈⟩
       let chunkSize' := chunkSize + min (arr.usize - chunkSize) chunkSize
       aux'.size - chunkSize'.toNat < arr.size - chunkSize.toNat := by
   intro aux' chunkSize'
   have chunkSize'_def : chunkSize' = chunkSize + min (arr.usize - chunkSize) chunkSize := rfl
-  rw [← mergeChunksIntoAux.size_eq h₁₃, h₁₃.size_eq]
+  rw [← mergeChunksIntoAux.size_eq ⟨aux, h₁₃⟩, h₁₃.size_eq]
   refine Nat.sub_lt_sub_left ?_ ?_
   . rw [← h₁₃.size_eq]
     exact (USize.lt_ofNat_iff h₁₃.arr_size_lt_usize_size).mp h₁₃.chunkSize_lt_arr_usize
@@ -863,25 +858,24 @@ def H₁₃.decreasing
 @[specialize, inline]
 def Array.mergeSortWithAuxiliary
     [Ord α]
-    (arr aux : Array α)
-    (size_eq : arr.size = aux.size)
-    (arr_size_lt_usize_size : arr.size < USize.size)
+    (arr : Array α)
+    (aux : Subtype (H₁₂ arr · 1))
     : Array α :=
   let rec @[specialize] loop
-      (arr aux : Array α)
+      (arr : Array α)
       (chunkSize : USize)
-      (h₁₂ : H₁₂ arr aux chunkSize)
+      (aux : Subtype (H₁₂ arr · chunkSize))
       : Array α :=
     if chunkSize_lt_arr_usize : chunkSize < arr.usize then
-      have h₁₃ := h₁₂.make_H₁₃ chunkSize_lt_arr_usize
-      let aux' := mergeChunksIntoAux arr aux chunkSize h₁₃.make_H₈
+      have h₁₃ := aux.property.make_H₁₃ chunkSize_lt_arr_usize
+      let aux' := mergeChunksIntoAux arr chunkSize ⟨aux, h₁₃.make_H₈⟩
       let chunkSize' := chunkSize + min (arr.usize - chunkSize) chunkSize
-      loop aux' arr chunkSize' h₁₃.next
+      loop aux' chunkSize' ⟨arr, h₁₃.next⟩
     else
       arr
   termination_by arr.size - chunkSize.toNat
-  decreasing_by exact h₁₂.make_H₁₃ chunkSize_lt_arr_usize |>.decreasing
-  loop arr aux 1 (H₁₂.make size_eq arr_size_lt_usize_size)
+  decreasing_by exact aux.property.make_H₁₃ chunkSize_lt_arr_usize |>.decreasing
+  loop arr 1 aux
 
 @[specialize, inline]
 def Array.mergeSort
@@ -892,4 +886,6 @@ def Array.mergeSort
     : Array α :=
   let aux := .replicate arr.size default
   have size_eq := Eq.symm size_replicate
-  mergeSortWithAuxiliary arr aux size_eq arr_size_lt_usize_size
+  have h₁₂ := H₁₂.make size_eq arr_size_lt_usize_size
+  let aux := ⟨aux, h₁₂⟩
+  mergeSortWithAuxiliary arr aux

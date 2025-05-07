@@ -2,7 +2,7 @@ import MergeSort.Implementation
 import MergeSort.ArrayGenerators
 import MergeSort.PrototypeA
 
-set_option trace.compiler.ir.result true
+-- set_option trace.compiler.ir.result true
 
 def benchmark
     {data₁ data₂}
@@ -74,11 +74,11 @@ def runOnAllArrayGenerators
     let (time, opv) ← go fn
     println! s!"{opv} → {time.nsToMs.msToS}s\t\t{time.nsToMs}ms\t\t{time}ns\t\t{fnName}"
   println! s!"Testing {algoName} using (size := {size}) (seed := {seed})"
-  -- printResult "mostlyAscending" fun () => Array.mostlyAscending size seed
-  -- printResult "randomWithDuplicates" fun () => Array.randomWithDuplicates size seed
-  -- printResult "random" fun () => Array.random size seed
+  printResult "mostlyAscending" fun () => Array.mostlyAscending size seed
+  printResult "randomWithDuplicates" fun () => Array.randomWithDuplicates size seed
+  printResult "random" fun () => Array.random size seed
   printResult "ascending" fun () => Array.ascending size
-  -- printResult "descending" fun () => Array.descending size
-  -- printResult "ascendingWithRandomTail" fun () => Array.ascendingWithRandomTail size seed
+  printResult "descending" fun () => Array.descending size
+  printResult "ascendingWithRandomTail" fun () => Array.ascendingWithRandomTail size seed
 
 #check Array.uget
