@@ -302,16 +302,12 @@ def ptr₂_add_one_ge_mid
     (ptr₂_ge_mid : ptr₂ ≥ mid)
     (ptr₂_lt_high : ptr₂ < high)
     : ptr₂ + 1 ≥ mid := by
-  cases System.Platform.numBits_eq
-  . bv_decide
-  . bv_decide
+  exact USize.add_one_ge_of_lt_of_ge ptr₂_ge_mid ptr₂_lt_high
 
 def ptr₂_add_one_le_high
     (ptr₂_lt_high : ptr₂ < high)
     : ptr₂ + 1 ≤ high := by
-  cases System.Platform.numBits_eq
-  . bv_decide
-  . bv_decide
+  exact USize.add_one_le_of_lt ptr₂_lt_high
 
 def i_add_one_ge_low
     (i_ge_low : i ≥ low)
@@ -319,16 +315,10 @@ def i_add_one_ge_low
     (ptr₁_eq_mid : ptr₁ = mid)
     (ptr₂_lt_high : ptr₂ < high)
     : i + 1 ≥ low := by
-  cases System.Platform.numBits_eq
-  . bv_decide
-  . bv_decide
-
-def USize.add_sub_add_one_le_of_lt
-    {a b c : USize}
-    (h : b < c)
-    : a + b - a + 1 ≤ c := by
-  rw [USize.add_one_sub_right_comm, USize.add_sub_self_eq]
-  exact ptr₂_add_one_le_high h
+  rw [ptr₁_eq_mid] at i_def
+  rw [i_def]
+  rw [i_def] at i_ge_low
+  exact USize.add_one_sub_add_ge_of_mid_lt_of_ge i_ge_low ptr₂_lt_high
 
 def i_add_one_le_high
     (i_def : i = ptr₁ + ptr₂ - mid)
@@ -337,12 +327,6 @@ def i_add_one_le_high
     : i + 1 ≤ high := by
   rw [i_def, ptr₁_eq_mid]
   exact USize.add_sub_add_one_le_of_lt ptr₂_lt_high
-
-
-  -- sorry
-  -- cases System.Platform.numBits_eq
-  -- . bv_decide
-  -- . bv_decide
 
 def i_add_one_def₂
     (i_def : i = ptr₁ + ptr₂ - mid)
