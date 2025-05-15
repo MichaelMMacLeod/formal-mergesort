@@ -121,7 +121,7 @@ theorem List.ascendingSlice_all_of_ascendingSlice
       exact trans lst[i] lst[k] lst[k + 1] ih this
   termination_by j - k
   if j_eq_i_add_one : j = i + 1 then
-    simp [j_eq_i_add_one]
+    simp only [j_eq_i_add_one]
     exact h i (i + 1) rfl (by omega)
   else
     exact loop (i + 1) (by omega) (h i (i + 1) rfl (by omega))
@@ -219,7 +219,7 @@ theorem ascending_le_of_pairwise_le
   case cons a' b' ih =>
     rename_i a l
     by_cases i_eq_zero : i = 0
-    . simp [i_eq_zero]
+    . simp only [i_eq_zero, List.getElem_cons_zero]
       refine a' (a :: l)[j] ?_
       exact List.getElem_cons_mem a l j (by omega) (by omega)
     . have rhs_eq := List.getElem_cons_succ a l i (by omega)
@@ -251,7 +251,9 @@ theorem le_head_of_ascending_of_mem_tail
   have h_all := List.ascendingSlice_all_of_ascendingSlice (head :: tail) le trans 0 (head :: tail).length h
   unfold List.ascendingSlice_all at h_all
   have ⟨a_index, tail_get_eq_a⟩ := List.get_of_mem a_mem_tail
-  have h := h_all 0 (a_index + 1) (Nat.zero_lt_succ a_index) (by simp)
+  have h := h_all 0 (a_index + 1) (Nat.zero_lt_succ a_index) ?inbounds
+  case inbounds =>
+    simp only [Nat.le_refl, List.length_cons, Nat.add_lt_add_iff_right, Fin.is_lt, and_self]
   simp only [List.getElem_cons_zero, List.getElem_cons_succ] at h
   have getElem_eq_get : tail[(↑a_index : Nat)] = tail.get a_index := rfl
   rwa [getElem_eq_get, tail_get_eq_a] at h
@@ -272,11 +274,10 @@ theorem pairwise_le_of_ascending_le
     . refine ih ?_
       intro i j adjacent inbounds
       have i_plus_one_eq_j' : i + 1 + 1 = j + 1 := by omega
-      have inbounds' : 0 ≤ i + 1 ∧ j + 1 < (head :: tail).length ∧ (head :: tail).length ≤ (head :: tail).length := by
-        simp only [Nat.le_add_left, List.length_cons, Nat.add_lt_add_iff_right, Nat.le_refl,
-          and_true, true_and]
+      have : 0 ≤ i + 1 ∧ j + 1 < (head :: tail).length := by
+        simp only [Nat.le_add_left, List.length_cons, Nat.add_lt_add_iff_right, true_and]
         exact inbounds.right.left
-      have le_head_cons_tail := h (i + 1) (j + 1) i_plus_one_eq_j' inbounds'
+      have le_head_cons_tail := h (i + 1) (j + 1) i_plus_one_eq_j' (by omega)
       have left_eq := List.getElem_cons_succ head tail i (by omega)
       have right_eq := List.getElem_cons_succ head tail j (by omega)
       rw [left_eq, right_eq] at le_head_cons_tail
