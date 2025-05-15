@@ -251,8 +251,6 @@ theorem le_head_of_ascending_of_mem_tail
   have h_all := List.ascendingSlice_all_of_ascendingSlice (head :: tail) le trans 0 (head :: tail).length h
   unfold List.ascendingSlice_all at h_all
   have ⟨a_index, tail_get_eq_a⟩ := List.get_of_mem a_mem_tail
-  have : tail.length > 0 := by
-    simp [List.length_pos_iff_exists_mem.mpr ⟨a, a_mem_tail⟩]
   have h := h_all 0 (a_index + 1) (Nat.zero_lt_succ a_index) (by simp)
   simp only [List.getElem_cons_zero, List.getElem_cons_succ] at h
   have getElem_eq_get : tail[(↑a_index : Nat)] = tail.get a_index := rfl
