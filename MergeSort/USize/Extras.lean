@@ -2,7 +2,6 @@ import MergeSort.Fin.Extras
 import Std.Tactic.BVDecide
 import Init.Data.List.Basic
 
-
 abbrev USize.succ (n : USize) := n + 1
 
 theorem USize.ge_of_eq {a b : USize} (h : a = b) : a ≥ b := USize.le_of_eq (Eq.symm h)
@@ -80,10 +79,9 @@ def List.ascendingSlice
     (le : α → α → Bool)
     (low high : Nat)
     : Prop :=
-  ∀ i j : Nat,
-    (adjacent : i + 1 = j) →
-      (inbounds : low ≤ i ∧ j < high ∧ high ≤ lst.length) →
-        le lst[i] lst[j]
+  ∀ i : Nat,
+    (inbounds : low ≤ i ∧ i + 1 < high ∧ high ≤ lst.length) →
+      le lst[i] lst[i + 1]
 
 def List.ascendingSlice_all
     {α}
@@ -113,18 +111,18 @@ theorem List.ascendingSlice_all_of_ascendingSlice
       : le lst[i] lst[j] := by
     if adjacent : k + 1 = j then
       simp only [← adjacent]
-      have : le lst[k] lst[k + 1] := h k (k + 1) rfl (by omega)
+      have : le lst[k] lst[k + 1] := h k (by omega)
       exact trans lst[i] lst[k] lst[k + 1] ih this
     else
       refine loop (k + 1) (by omega) ?ih
-      have : le lst[k] lst[k + 1] := h k (k + 1) rfl (by omega)
+      have : le lst[k] lst[k + 1] := h k (by omega)
       exact trans lst[i] lst[k] lst[k + 1] ih this
   termination_by j - k
   if j_eq_i_add_one : j = i + 1 then
     simp only [j_eq_i_add_one]
-    exact h i (i + 1) rfl (by omega)
+    exact h i (by omega)
   else
-    exact loop (i + 1) (by omega) (h i (i + 1) rfl (by omega))
+    exact loop (i + 1) (by omega) (h i (by omega))
 
 def List.ascending
     {α}
@@ -139,10 +137,9 @@ def Array.ascendingSlice
     (le : α → α → Bool)
     (low high : Nat)
     : Prop :=
-  ∀ i j : Nat,
-    (adjacent : i + 1 = j) →
-      (inbounds : low ≤ i ∧ j < high ∧ high ≤ arr.size) →
-        le arr[i] arr[j]
+  ∀ i : Nat,
+    (inbounds : low ≤ i ∧ i + 1 < high ∧ high ≤ arr.size) →
+      le arr[i] arr[i + 1]
 
 def Array.ascending
     {α}
@@ -153,20 +150,17 @@ def Array.ascending
 
 theorem Array.ascending_of_empty {α} (le : α → α → Bool) : (#[] : Array α).ascending le := by
   unfold Array.ascending Array.ascendingSlice
-  intro i j adjacent inbounds
-  have : j < 0 := inbounds.right.left
+  intro i inbounds
+  have : i + 1 < 0 := inbounds.right.left
   contradiction
 
 theorem Array.ascending_of_singleton {α} (a : α) (le : α → α → Bool) : #[a].ascending le := by
   unfold Array.ascending Array.ascendingSlice
-  intro i j adjacent inbounds
-  have j_eq_zero : j = 0 := by
+  intro i inbounds
+  have : i + 1 = 0 := by
     simp only [Nat.zero_le, List.size_toArray, List.length_cons, List.length_nil, Nat.zero_add,
       Nat.lt_one_iff, Nat.le_refl, and_true, true_and] at inbounds
     exact inbounds
-  have : i + 1 = 0 := by
-    rw [j_eq_zero] at adjacent
-    exact adjacent
   contradiction
 
 namespace MergeSort.Internal
@@ -182,8 +176,8 @@ theorem List.toArray_ascending_of_ascending
     : l.toArray.ascending le := by
   unfold Array.ascending Array.ascendingSlice
   unfold List.ascending List.ascendingSlice at h
-  intro i j adjacent inbounds
-  exact h i j adjacent inbounds
+  intro i inbounds
+  exact h i inbounds
 
 theorem Array.toList_ascending_of_ascending
     (arr : Array α)
@@ -191,8 +185,8 @@ theorem Array.toList_ascending_of_ascending
     : arr.toList.ascending le := by
   unfold List.ascending List.ascendingSlice
   unfold Array.ascending Array.ascendingSlice at h
-  intro i j adjacent inbounds
-  exact h i j adjacent inbounds
+  intro i inbounds
+  exact h i inbounds
 
 theorem List.getElem_cons_mem
     {α}
@@ -211,28 +205,27 @@ theorem ascending_le_of_pairwise_le
     (h : lst.Pairwise le)
     : lst.ascending le := by
   unfold List.ascending List.ascendingSlice
-  intro i j adjacent inbounds
-  induction h generalizing i j
+  intro i inbounds
+  induction h generalizing i
   case nil =>
-    have : j < 0 := inbounds.right.left
+    have : i + 1 < 0 := inbounds.right.left
     contradiction
   case cons a' b' ih =>
     rename_i a l
     by_cases i_eq_zero : i = 0
     . simp only [i_eq_zero, List.getElem_cons_zero]
-      refine a' (a :: l)[j] ?_
-      exact List.getElem_cons_mem a l j (by omega) (by omega)
+      refine a' (a :: l)[1] ?_
+      exact List.getElem_cons_mem a l 1 (by omega) (by omega)
     . have rhs_eq := List.getElem_cons_succ a l i (by omega)
-      simp only [adjacent] at rhs_eq
       rw [rhs_eq]
       have lhs_eq := List.getElem_cons_succ a l (i - 1) (by omega)
       have i_pred_succ_eq_i : i - 1 + 1 = i := by omega
       simp only [i_pred_succ_eq_i] at lhs_eq
       rw [lhs_eq]
-      refine ih (i - 1) i i_pred_succ_eq_i ?_
-      have := inbounds.right.left
-      simp only [← adjacent, List.length_cons, Nat.add_lt_add_iff_right] at this
-      simp only [Nat.zero_le, this, Nat.le_refl, and_self]
+      have inbounds' : i < l.length := Nat.succ_lt_succ_iff.mp inbounds.right.left
+      have h := ih (i - 1) (by omega)
+      simp only [i_pred_succ_eq_i] at h
+      exact h
 
 theorem toArray_ascending_of_pairwise_le
     {lst : List α}
@@ -272,14 +265,13 @@ theorem pairwise_le_of_ascending_le
     . intro a' a'_mem_tail
       exact le_head_of_ascending_of_mem_tail trans head a' tail a'_mem_tail h
     . refine ih ?_
-      intro i j adjacent inbounds
-      have i_plus_one_eq_j' : i + 1 + 1 = j + 1 := by omega
-      have : 0 ≤ i + 1 ∧ j + 1 < (head :: tail).length := by
-        simp only [Nat.le_add_left, List.length_cons, Nat.add_lt_add_iff_right, true_and]
-        exact inbounds.right.left
-      have le_head_cons_tail := h (i + 1) (j + 1) i_plus_one_eq_j' (by omega)
+      intro i inbounds
+      have : i + 2 < (head :: tail).length := by
+        simp only [List.length_cons]
+        omega
+      have le_head_cons_tail := h (i + 1) (by omega)
       have left_eq := List.getElem_cons_succ head tail i (by omega)
-      have right_eq := List.getElem_cons_succ head tail j (by omega)
+      have right_eq := List.getElem_cons_succ head tail (i + 1) (by omega)
       rw [left_eq, right_eq] at le_head_cons_tail
       exact le_head_cons_tail
 

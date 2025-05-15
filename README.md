@@ -17,10 +17,9 @@ The goal of this project is to write a reasonably fast, formally verified merge 
                 (le : α → α → Bool)
                 (low high : Nat)
                 : Prop :=
-              ∀ i j : Nat,
-                (adjacent : i + 1 = j) →
-                  (inbounds : low ≤ i ∧ j < high ∧ high ≤ arr.size) →
-                    le arr[i] arr[j]
+              ∀ i : Nat,
+                (inbounds : low ≤ i ∧ i + 1 < high ∧ high ≤ arr.size) →
+                  le arr[i] arr[i + 1]
 
             def Array.ascending
                 {α}
