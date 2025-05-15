@@ -193,39 +193,21 @@ theorem ascending_le_of_pairwise_le
       simp only [← adjacent, List.length_cons, Nat.add_lt_add_iff_right] at this
       simp only [Nat.zero_le, this, Nat.le_refl, and_self]
 
+theorem toArray_ascending_of_pairwise_le
+    {lst : List α}
+    (h : lst.Pairwise le)
+    : lst.toArray.ascending le := by
+  refine List.toArray_ascending_of_ascending lst ?_
+  exact ascending_le_of_pairwise_le h
 
-theorem pairwise_iff_ascending_of_le
+theorem pairwise_le_iff_ascending_of_le
     {lst : List α}
     (trans : ∀ (a b c : α), le a b → le b c → le a c)
     (total : ∀ (a b : α), le a b || le b a)
     : lst.Pairwise le ↔ lst.toArray.ascending le := by
   apply Iff.intro
-  case mp =>
-    unfold Array.ascending Array.ascendingSlice
-    intro pairwise_le i j adjacent inbounds
-    induction pairwise_le
-    case nil =>
-      have : j < 0 := inbounds.right.left
-      contradiction
-    case cons a b ih =>
-      by_cases i_eq_zero : i = 0
-      . simp only [Bool.or_eq_true, Nat.zero_le, List.size_toArray, Nat.le_refl, and_true, true_and,
-          List.getElem_toArray] at *
-
-          -- have v1 := by
-                  --   refine List.getElem_cons_zero ?a ?b ?c
-
-        -- have v1 := by
-        --   refine List.getElem_cons_zero ?a ?b ?c
-
-      . have v1 := inbounds.right.left
-        have v2 : i < j := by omega
-        have v3 := Nat.lt_trans v2 v1
-        have v4 := Array.toArray_cons_ne_of_gt_zero i_eq_zero v3
-        rw []
-        sorry
-  case mpr =>
-    sorry
+  case mp => exact toArray_ascending_of_pairwise_le
+  case mpr => sorry
 
 end MergeSort.Internal
 
