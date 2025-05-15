@@ -83,11 +83,13 @@ def H₂.make_H₃
 def H₃.ptr₁_lt_arr_size
     (h₃ : H₃ arr aux low mid high ptr₁ ptr₂ i)
     : ptr₁.toNat < arr.size := by
-  have ptr₁_lt_size : ptr₁ < arr.usize := by
-    cases System.Platform.numBits_eq
-    . bv_decide
-    . bv_decide
-  exact (USize.lt_ofNat_iff h₃.arr_size_lt_usize_size).mp ptr₁_lt_size
+  exact USize.ptr₁_lt_arr_size
+    h₃.i_lt_high
+    h₃.ptr₁_le_mid
+    h₃.ptr₂_ge_mid
+    h₃.i_def
+    h₃.arr_size_lt_usize_size
+    h₃.high_le_size
 
 def H₃.ptr₂_lt_arr_size
     (h₃ : H₃ arr aux low mid high ptr₁ ptr₂ i)

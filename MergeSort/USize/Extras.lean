@@ -54,12 +54,10 @@ theorem USize.sub_add_lt_of_and_lt_lt
     : a + b - c < d := by
   exact Fin.sub_add_lt_of_and_lt_lt h1 h2
 
-variable
-  {α : Type}
-  {arr aux : Array α}
-  {low mid high ptr₁ ptr₂ i chunkSize : USize}
-
-theorem idk1
+theorem USize.ptr₁_lt_arr_size
+    {α : Type}
+    {arr : Array α}
+    {mid high ptr₁ ptr₂ i : USize}
     (i_lt_high : i < high)
     (ptr₁_le_mid : ptr₁ ≤ mid)
     (ptr₂_ge_mid : ptr₂ ≥ mid)
@@ -68,7 +66,16 @@ theorem idk1
     (high_le_size : high ≤ arr.usize)
     : ptr₁.toNat < arr.size := by
   have ptr₁_lt_size : ptr₁ < arr.usize := by
-    cases System.Platform.numBits_eq
-    . bv_decide
-    . bv_decide
+    exact Fin.ptr₁_lt_size
+      i_lt_high
+      ptr₁_le_mid
+      ptr₂_ge_mid
+      (congrArg BitVec.toFin (congrArg toBitVec i_def))
+      arr_size_lt_usize_size
+      high_le_size
   exact (USize.lt_ofNat_iff arr_size_lt_usize_size).mp ptr₁_lt_size
+
+-- variable
+--   {α : Type}
+--   {arr aux : Array α}
+--   {low mid high ptr₁ ptr₂ i chunkSize : USize}

@@ -1,4 +1,7 @@
-theorem Fin.add_one_le_of_lt {a b : Fin (2 ^ System.Platform.numBits)} (h : a < b) : a + 1 ≤ b := by
+theorem Fin.add_one_le_of_lt
+    {a b : Fin (2 ^ System.Platform.numBits)}
+    (h : a < b)
+    : a + 1 ≤ b := by
   cases System.Platform.numBits_eq
   case inl hs | inr hs =>
     revert a b h
@@ -8,50 +11,18 @@ theorem Fin.add_one_le_of_lt {a b : Fin (2 ^ System.Platform.numBits)} (h : a < 
     show a + 1 ≤ b
     omega
 
-theorem Fin.add_one_sub_add_ge_of_mid_lt_of_ge_32
-    {a b c d : Fin 4294967296}
-    (h1 : a + b - a ≥ c)
-    (h2 : b < d)
-    : a + b - a + 1 ≥ c := by
-  omega
-
-theorem Fin.add_one_sub_add_ge_of_mid_lt_of_ge_64
-    {a b c d : Fin 18446744073709551616}
-    (h1 : a + b - a ≥ c)
-    (h2 : b < d)
-    : a + b - a + 1 ≥ c := by
-  omega
-
 theorem Fin.add_one_sub_add_ge_of_mid_lt_of_ge
     {a b c d : Fin (2 ^ System.Platform.numBits)}
     (h1 : a + b - a ≥ c)
     (h2 : b < d)
     : a + b - a + 1 ≥ c := by
   cases System.Platform.numBits_eq
-  case inl h =>
+  case inl h | inr h =>
     revert a b c d h1 h2
     rw [h]
     intro a b c d h1 h2
-    exact add_one_sub_add_ge_of_mid_lt_of_ge_32 h1 h2
-  case inr h =>
-    revert a b c d h1 h2
-    rw [h]
-    intro a b c d h1 h2
-    exact add_one_sub_add_ge_of_mid_lt_of_ge_64 h1 h2
-
-theorem Fin.add_one_ge_of_lt_of_ge_32
-    {a b c : Fin 4294967296}
-    (h1 : a ≥ b)
-    (h2 : a < c)
-    : a + 1 ≥ b := by
-  omega
-
-theorem Fin.add_one_ge_of_lt_of_ge_64
-    {a b c : Fin 18446744073709551616}
-    (h1 : a ≥ b)
-    (h2 : a < c)
-    : a + 1 ≥ b := by
-  omega
+    simp only [Nat.reducePow] at *
+    omega
 
 theorem Fin.add_one_ge_of_lt_of_ge
     {a b c : Fin (2 ^ System.Platform.numBits)}
@@ -59,30 +30,12 @@ theorem Fin.add_one_ge_of_lt_of_ge
     (h2 : a < c)
     : a + 1 ≥ b := by
   cases System.Platform.numBits_eq
-  case inl h =>
+  case inl h | inr h =>
     revert a b c h1 h2
     rw [h]
     intro a b c h1 h2
-    exact add_one_ge_of_lt_of_ge_32 h1 h2
-  case inr h =>
-    revert a b c h1 h2
-    rw [h]
-    intro a b c h1 h2
-    exact add_one_ge_of_lt_of_ge_64 h1 h2
-
-theorem Fin.sub_add_lt_of_and_lt_lt_32
-    {a b c d : Fin 4294967296}
-    (h1 : b ≥ c)
-    (h2 : a < c ∧ b < d)
-    : a + b - c < d := by
-  omega
-
-theorem Fin.sub_add_lt_of_and_lt_lt_64
-    {a b c d : Fin 18446744073709551616}
-    (h1 : b ≥ c)
-    (h2 : a < c ∧ b < d)
-    : a + b - c < d := by
-  omega
+    simp only [Nat.reducePow] at *
+    omega
 
 theorem Fin.sub_add_lt_of_and_lt_lt
     {a b c d : Fin (2 ^ System.Platform.numBits)}
@@ -90,13 +43,30 @@ theorem Fin.sub_add_lt_of_and_lt_lt
     (h2 : a < c ∧ b < d)
     : a + b - c < d := by
   cases System.Platform.numBits_eq
-  case inl h =>
+  case inl h | inr h =>
     revert a b c d h1 h2
     rw [h]
     intro a b c d h1 h2
-    exact sub_add_lt_of_and_lt_lt_32 h1 h2
-  case inr h =>
-    revert a b c d h1 h2
+    simp only [Nat.reducePow] at *
+    omega
+
+theorem Fin.ptr₁_lt_size
+    {α : Type}
+    {arr : Array α}
+    {mid high ptr₁ ptr₂ i arrUsize : Fin (2 ^ System.Platform.numBits)}
+    (i_lt_high : i < high)
+    (ptr₁_le_mid : ptr₁ ≤ mid)
+    (ptr₂_ge_mid : ptr₂ ≥ mid)
+    (i_def : i = ptr₁ + ptr₂ - mid)
+    (arr_size_lt_usize_size : arr.size < USize.size)
+    (high_le_size : high ≤ arrUsize)
+    : ptr₁ < arrUsize := by
+  cases System.Platform.numBits_eq
+  case inl h | inr h =>
+    revert high_le_size arr_size_lt_usize_size i_def ptr₂_ge_mid ptr₁_le_mid
+      i_lt_high arrUsize i ptr₂ ptr₁ high mid
     rw [h]
-    intro a b c d h1 h2
-    exact sub_add_lt_of_and_lt_lt_64 h1 h2
+    intro mid high ptr₁ ptr₂ i arrUsize i_lt_high ptr₁_le_mid ptr₂_ge_mid
+      i_def arr_size_lt_usize_size high_le_size
+    simp only [Nat.reducePow] at *
+    omega
