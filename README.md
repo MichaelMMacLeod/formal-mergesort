@@ -6,7 +6,43 @@ The goal of this project is to write a reasonably fast, formally verified merge 
 
     - [x] Terminate without crashing (there are no infinite loops, and all array access instructions are in-bounds)
 
-    - [ ] Return data in increasing order
+    - [ ] Return data in ascending order
+
+        - [x] Define "array in ascending order":
+
+            ```lean
+            def Array.ascendingSlice
+                {α}
+                (arr : Array α)
+                (le : α → α → Bool)
+                (low high : Nat)
+                : Prop :=
+              ∀ i j : Nat,
+                (adjacent : i + 1 = j) →
+                  (inbounds : low ≤ i ∧ j < high ∧ high ≤ arr.size) →
+                    le arr[i] arr[j]
+
+            def Array.ascending
+                {α}
+                (arr : Array α)
+                (le : α → α → Bool)
+                : Prop :=
+              ascendingSlice arr le 0 arr.size
+            ```
+
+        - [x] Prove that "array in ascending order" is equivalent to the standard library definition of "list in ascending order" (full proof omitted for brevity):
+        
+            ```lean
+            theorem pairwise_le_iff_ascending_le_of_trans
+                {lst : List α}
+                (trans : ∀ (a b c : α), le a b → le b c → le a c)
+                : lst.Pairwise le ↔ lst.toArray.ascending le := by
+              apply Iff.intro
+              case mp => exact toArray_ascending_of_pairwise_le
+              case mpr => exact pairwise_le_of_toArray_ascending_le trans
+            ```
+
+        - [ ] Prove that `Array.mergeSort` returns data in ascending order, in the sense of `Array.ascending`.
 
     - [ ] Return a permutation of the input (i.e., the data is simply rearranged; no new data is added, and no existing data is removed)
 
@@ -73,6 +109,6 @@ All tests were performed on `Array Nat` values of size `10^6`, except for `List.
 
 `Array.mergeSort` is faster than `Array.qsortOrd` at sorting `10^6` `Nat` values, by a factor of `3-2429x`. Clearly, `Array.qsortOrd` experiences asymptotically worse performance on tests "mostlyAscending" and "randomWithDuplicates" than both `Array.mergeSort` and `List.mergeSort`.
 
-It seems like `List.mergeSort`, despite being defined on linked lists, is faster at sorting `10^6` `Nat` values than `Array.qsortOrd`, especially when processing almost-sorted data, or data containing many duplicate values.
+Interestingly, it seems like `List.mergeSort`, despite being defined on linked lists, is faster at sorting `10^6` `Nat` values than `Array.qsortOrd` on most benchmarks, especially when processing almost-sorted data, or data containing many duplicate values.
 
-[^1]: I don't think Lean gives any guarantees that `USize` is unboxed. In fact, according to the reference, sometimes it will be boxed. My hope is that the implementation of `mergeSort` is simple enough to allow for unboxing. Inspecting the generated code (which I have yet to do) could prove/disprove this.
+[^1]: According to the [Lean Reference](https://lean-lang.org/doc/reference/latest////Basic-Types/Fixed-Precision-Integers/#fixed-int-runtime) `USize` is normally boxed, but this boxing may be avoided after certain optimization passes in some code. I have confirmed by inspecting the IR of `Array.mergeSort` that it uses unboxed arithmetic.
