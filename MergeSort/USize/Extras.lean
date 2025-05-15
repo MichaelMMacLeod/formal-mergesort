@@ -78,9 +78,10 @@ def List.ascendingSlice
     (lst : List α)
     (le : α → α → Bool)
     (low high : Nat)
+    (high_le_lst_length : high ≤ lst.length)
     : Prop :=
   ∀ i : Nat,
-    (inbounds : low ≤ i ∧ i + 1 < high ∧ high ≤ lst.length) →
+    (inbounds : low ≤ i ∧ i + 1 < high) →
       le lst[i] lst[i + 1]
 
 def List.ascendingSlice_all
@@ -88,10 +89,11 @@ def List.ascendingSlice_all
     (lst : List α)
     (le : α → α → Bool)
     (low high : Nat)
+    (high_le_lst_length : high ≤ lst.length)
     : Prop :=
   ∀ i j : Nat,
     (i_lt_j : i < j) →
-      (inbounds : low ≤ i ∧ j < high ∧ high ≤ lst.length) →
+      (inbounds : low ≤ i ∧ j < high) →
         le lst[i] lst[j]
 
 theorem List.ascendingSlice_all_of_ascendingSlice
@@ -100,8 +102,9 @@ theorem List.ascendingSlice_all_of_ascendingSlice
     (le : α → α → Bool)
     (trans : ∀ (a b c : α), le a b → le b c → le a c)
     (low high : Nat)
-    (h : lst.ascendingSlice le low high)
-    : lst.ascendingSlice_all le low high := by
+    (high_le_lst_length : high ≤ lst.length)
+    (h : lst.ascendingSlice le low high high_le_lst_length)
+    : lst.ascendingSlice_all le low high high_le_lst_length := by
   unfold List.ascendingSlice_all
   intro i j i_lt_j inbounds
   let rec loop
@@ -129,16 +132,17 @@ def List.ascending
     (lst : List α)
     (le : α → α → Bool)
     : Prop :=
-  ascendingSlice lst le 0 lst.length
+  ascendingSlice lst le 0 lst.length (by exact Nat.le_refl lst.length)
 
 def Array.ascendingSlice
     {α}
     (arr : Array α)
     (le : α → α → Bool)
     (low high : Nat)
+    (high_le_arr_size : high ≤ arr.size)
     : Prop :=
   ∀ i : Nat,
-    (inbounds : low ≤ i ∧ i + 1 < high ∧ high ≤ arr.size) →
+    (inbounds : low ≤ i ∧ i + 1 < high) →
       le arr[i] arr[i + 1]
 
 def Array.ascending
@@ -146,12 +150,12 @@ def Array.ascending
     (arr : Array α)
     (le : α → α → Bool)
     : Prop :=
-  ascendingSlice arr le 0 arr.size
+  ascendingSlice arr le 0 arr.size (by exact Nat.le_refl arr.size)
 
 theorem Array.ascending_of_empty {α} (le : α → α → Bool) : (#[] : Array α).ascending le := by
   unfold Array.ascending Array.ascendingSlice
   intro i inbounds
-  have : i + 1 < 0 := inbounds.right.left
+  have : i + 1 < 0 := inbounds.right
   contradiction
 
 theorem Array.ascending_of_singleton {α} (a : α) (le : α → α → Bool) : #[a].ascending le := by
@@ -208,7 +212,7 @@ theorem ascending_le_of_pairwise_le
   intro i inbounds
   induction h generalizing i
   case nil =>
-    have : i + 1 < 0 := inbounds.right.left
+    have : i + 1 < 0 := inbounds.right
     contradiction
   case cons a' b' ih =>
     rename_i a l
@@ -222,7 +226,7 @@ theorem ascending_le_of_pairwise_le
       have i_pred_succ_eq_i : i - 1 + 1 = i := by omega
       simp only [i_pred_succ_eq_i] at lhs_eq
       rw [lhs_eq]
-      have inbounds' : i < l.length := Nat.succ_lt_succ_iff.mp inbounds.right.left
+      have inbounds' : i < l.length := Nat.succ_lt_succ_iff.mp inbounds.right
       have h := ih (i - 1) (by omega)
       simp only [i_pred_succ_eq_i] at h
       exact h
@@ -241,7 +245,9 @@ theorem le_head_of_ascending_of_mem_tail
     (a_mem_tail : a ∈ tail)
     (h : (head :: tail).ascending le)
     : le head a = true := by
-  have h_all := List.ascendingSlice_all_of_ascendingSlice (head :: tail) le trans 0 (head :: tail).length h
+  have h_all := List.ascendingSlice_all_of_ascendingSlice
+    (head :: tail) le trans 0 (head :: tail).length
+    (by exact Nat.le_refl (head :: tail).length) h
   unfold List.ascendingSlice_all at h_all
   have ⟨a_index, tail_get_eq_a⟩ := List.get_of_mem a_mem_tail
   have h := h_all 0 (a_index + 1) (Nat.zero_lt_succ a_index) ?inbounds

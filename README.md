@@ -16,9 +16,10 @@ The goal of this project is to write a reasonably fast, formally verified merge 
                 (arr : Array α)
                 (le : α → α → Bool)
                 (low high : Nat)
+                (high_le_arr_size : high ≤ arr.size)
                 : Prop :=
               ∀ i : Nat,
-                (inbounds : low ≤ i ∧ i + 1 < high ∧ high ≤ arr.size) →
+                (inbounds : low ≤ i ∧ i + 1 < high) →
                   le arr[i] arr[i + 1]
 
             def Array.ascending
@@ -26,7 +27,7 @@ The goal of this project is to write a reasonably fast, formally verified merge 
                 (arr : Array α)
                 (le : α → α → Bool)
                 : Prop :=
-              ascendingSlice arr le 0 arr.size
+              ascendingSlice arr le 0 arr.size (by exact Nat.le_refl arr.size)
             ```
 
         - [x] Prove that "array in ascending order" is equivalent to the standard library definition of "list in ascending order" (full proof omitted for brevity):
