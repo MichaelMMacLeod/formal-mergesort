@@ -135,60 +135,23 @@ variable
 
 attribute [local instance] boolRelToRel
 
--- theorem Array.toArray_cons_ne_of_gt_zero'
---     {α}
---     {a : α}
---     {lst : List α}
---     {i : Nat}
---     (i_ne_zero : i ≠ 0)
---     (i_lt_length : i < (a :: lst).length)
---     : (a :: lst).toArray[i] ≠ a := by
---   sorry
+theorem List.toArray_ascending_of_ascending
+    (l : List α)
+    (h : l.ascending le)
+    : l.toArray.ascending le := by
+  unfold Array.ascending Array.ascendingSlice
+  unfold List.ascending List.ascendingSlice at h
+  intro i j adjacent inbounds
+  exact h i j adjacent inbounds
 
--- theorem Array.toArray_cons_ne_of_gt_zero
---     {α}
---     {a : α}
---     {lst : List α}
---     {i : Nat}
---     (i_ne_zero : i ≠ 0)
---     (i_lt_length : i < lst.length)
---     : have : i < (a :: lst).length := by
---         simp only [List.length_cons]
---         omega
---       (a :: lst).toArray[i] = lst.toArray[i] := by
---   sorry
-
--- theorem List.idk1
---     {α}
---     (a : α)
---     (lst : List α)
---     (i : Nat)
---     (h : i < lst.length)
---     (ne_zero : i ≠ 0)
---     : have i_lt_cons_length : i < (a :: lst).length := by rw [List.length_cons]; omega
---       (a :: lst)[i + 1] = lst[i] := by
---   induction i
---   case zero => contradiction
---   case succ i ih =>
---     by_cases i_eq_zero : i = 0
---     . simp [i_eq_zero]
-
---       sorry
---     . sorry
---     -- have v1 : i < lst.length := by
---     --   omega
---     -- have v2 : i ≠ 0 := by
-
---     --   omega
---     -- have v3 := ih v1 v2
---     -- sorry
---   -- induction lst
---   -- case nil => contradiction
---   -- case cons head tail ih =>
---   --   intro i_lt_cons_length
---   --   by_cases h' : i < tail.length
-
---   --   sorry
+theorem Array.toList_ascending_of_ascending
+    (arr : Array α)
+    (h : arr.ascending le)
+    : arr.toList.ascending le := by
+  unfold List.ascending List.ascendingSlice
+  unfold Array.ascending Array.ascendingSlice at h
+  intro i j adjacent inbounds
+  exact h i j adjacent inbounds
 
 theorem List.getElem_cons_mem
     {α}
