@@ -75,6 +75,18 @@ theorem USize.ptr₁_lt_arr_size
       high_le_size
   exact (USize.lt_ofNat_iff arr_size_lt_usize_size).mp ptr₁_lt_size
 
+theorem USize.ptr₂_lt_arr_size
+    {α : Type}
+    {arr : Array α}
+    {high ptr₂ : USize}
+    (arr_size_lt_usize_size : arr.size < USize.size)
+    (high_le_size : high ≤ arr.usize)
+    (ptr₂_lt_high : ptr₂ < high)
+    : ptr₂.toNat < arr.size := by
+  have ptr₂_lt_size : ptr₂ < arr.usize := by
+    exact USize.lt_of_lt_of_le ptr₂_lt_high high_le_size
+  exact (USize.lt_ofNat_iff arr_size_lt_usize_size).mp ptr₂_lt_size
+
 -- variable
 --   {α : Type}
 --   {arr aux : Array α}
