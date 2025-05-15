@@ -85,6 +85,47 @@ def List.ascendingSlice
       (inbounds : low ≤ i ∧ j < high ∧ high ≤ lst.length) →
         le lst[i] lst[j]
 
+def List.ascendingSlice_all
+    {α}
+    (lst : List α)
+    (le : α → α → Bool)
+    (low high : Nat)
+    : Prop :=
+  ∀ i j : Nat,
+    (i_lt_j : i < j) →
+      (inbounds : low ≤ i ∧ j < high ∧ high ≤ lst.length) →
+        le lst[i] lst[j]
+
+theorem List.ascendingSlice_all_of_ascendingSlice
+    {α}
+    (lst : List α)
+    (le : α → α → Bool)
+    (trans : ∀ (a b c : α), le a b → le b c → le a c)
+    (low high : Nat)
+    (h : lst.ascendingSlice le low high)
+    : lst.ascendingSlice_all le low high := by
+  unfold List.ascendingSlice_all
+  intro i j i_lt_j inbounds
+  let rec loop
+      (k : Nat)
+      (k_inbounds : k > i ∧ k < j)
+      (ih : le lst[i] lst[k])
+      : le lst[i] lst[j] := by
+    if adjacent : k + 1 = j then
+      simp only [← adjacent]
+      have : le lst[k] lst[k + 1] := h k (k + 1) rfl (by omega)
+      exact trans lst[i] lst[k] lst[k + 1] ih this
+    else
+      refine loop (k + 1) (by omega) ?ih
+      have : le lst[k] lst[k + 1] := h k (k + 1) rfl (by omega)
+      exact trans lst[i] lst[k] lst[k + 1] ih this
+  termination_by j - k
+  if j_eq_i_add_one : j = i + 1 then
+    simp [j_eq_i_add_one]
+    exact h i (i + 1) rfl (by omega)
+  else
+    exact loop (i + 1) (by omega) (h i (i + 1) rfl (by omega))
+
 def List.ascending
     {α}
     (lst : List α)
@@ -200,19 +241,71 @@ theorem toArray_ascending_of_pairwise_le
   refine List.toArray_ascending_of_ascending lst ?_
   exact ascending_le_of_pairwise_le h
 
-theorem pairwise_le_iff_ascending_of_le
+theorem le_head_of_ascending_of_mem_tail
+    (trans : ∀ (a b c : α), le a b → le b c → le a c)
+    (head a : α)
+    (tail : List α)
+    (a_mem_tail : a ∈ tail)
+    (h : (head :: tail).ascending le)
+    : le head a = true := by
+  have h_all := List.ascendingSlice_all_of_ascendingSlice (head :: tail) le trans 0 (head :: tail).length h
+  unfold List.ascendingSlice_all at h_all
+  have ⟨a_index, tail_get_eq_a⟩ := List.get_of_mem a_mem_tail
+  have : tail.length > 0 := by
+    simp [List.length_pos_iff_exists_mem.mpr ⟨a, a_mem_tail⟩]
+  if a_index_eq_zero : a_index = ⟨0, by omega⟩ then
+    have h := h 0 1 (by simp) ?adjacent
+    case adjacent => simpa
+    simp only [List.getElem_cons_zero, List.getElem_cons_succ] at h
+    rw [a_index_eq_zero] at tail_get_eq_a
+    have : tail[0] = tail.get ⟨0, by omega⟩ := rfl
+    rw [this, tail_get_eq_a] at h
+    exact h
+  else
+    have h := h_all 0 (a_index + 1) (Nat.zero_lt_succ a_index) (by simp)
+    simp only [List.getElem_cons_zero, List.getElem_cons_succ] at h
+    have getElem_eq_get : tail[(↑a_index : Nat)] = tail.get a_index := rfl
+    rwa [getElem_eq_get, tail_get_eq_a] at h
+
+theorem pairwise_le_of_ascending_le
+    (lst : List α)
+    (trans : ∀ (a b c : α), le a b → le b c → le a c)
+    (h : lst.ascending le)
+    : lst.Pairwise le := by
+  unfold List.ascending List.ascendingSlice at h
+  induction lst
+  case nil => exact List.Pairwise.nil
+  case cons head tail ih =>
+    rw [List.pairwise_cons]
+    apply And.intro
+    . intro a' a'_mem_tail
+      exact le_head_of_ascending_of_mem_tail trans head a' tail a'_mem_tail h
+    . refine ih ?_
+      intro i j adjacent inbounds
+      have i_plus_one_eq_j' : i + 1 + 1 = j + 1 := by omega
+      have inbounds' : 0 ≤ i + 1 ∧ j + 1 < (head :: tail).length ∧ (head :: tail).length ≤ (head :: tail).length := by
+        simp only [Nat.le_add_left, List.length_cons, Nat.add_lt_add_iff_right, Nat.le_refl,
+          and_true, true_and]
+        exact inbounds.right.left
+      have le_head_cons_tail := h (i + 1) (j + 1) i_plus_one_eq_j' inbounds'
+      have left_eq := List.getElem_cons_succ head tail i (by omega)
+      have right_eq := List.getElem_cons_succ head tail j (by omega)
+      rw [left_eq, right_eq] at le_head_cons_tail
+      exact le_head_cons_tail
+
+theorem pairwise_le_of_toArray_ascending_le
     {lst : List α}
     (trans : ∀ (a b c : α), le a b → le b c → le a c)
-    (total : ∀ (a b : α), le a b || le b a)
+    (h : lst.toArray.ascending le)
+    : lst.Pairwise le := by
+  exact pairwise_le_of_ascending_le lst trans h
+
+theorem pairwise_le_iff_ascending_le_of_trans
+    {lst : List α}
+    (trans : ∀ (a b c : α), le a b → le b c → le a c)
     : lst.Pairwise le ↔ lst.toArray.ascending le := by
   apply Iff.intro
   case mp => exact toArray_ascending_of_pairwise_le
-  case mpr => sorry
+  case mpr => exact pairwise_le_of_toArray_ascending_le trans
 
 end MergeSort.Internal
-
-#check List.sorted_mergeSort
-
-    -- (irreflexive : ∀ a : α, ¬lt a a)
-    -- (asymmetric : ∀ a b : α, lt a b → ¬lt b a)
-    -- (transitive : ∀ a b c : α, lt a b → lt b c → lt a c)
