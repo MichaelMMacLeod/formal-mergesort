@@ -26,9 +26,6 @@ structure H₂ (arr aux : Array α) (low mid high ptr₁ ptr₂ i : USize) : Pro
   i_le_high : i ≤ high
   i_def : i = ptr₁ + ptr₂ - mid
 
-def USize.ge_of_eq {a b : USize} (h : a = b) : a ≥ b := USize.le_of_eq (Eq.symm h)
-
-
 def H₁.make_H₂'
     (high : Subtype (H₁ arr aux low mid))
     (ptr₁_def : ptr₁ = low)
@@ -76,13 +73,11 @@ def H₂.make_H₃
     (ptr₁_ptr₂_in_range : ptr₁ < mid ∧ ptr₂ < high)
     : H₃ arr aux low mid high ptr₁ ptr₂ i :=
   { h₂ with
-    ptr₁_lt_mid := by cases System.Platform.numBits_eq <;> bv_normalize
-    ptr₂_lt_high := by cases System.Platform.numBits_eq <;> bv_normalize
+    ptr₁_lt_mid := ptr₁_ptr₂_in_range.left
+    ptr₂_lt_high := ptr₁_ptr₂_in_range.right
     i_lt_high := by
       rw [h₂.i_def]
-      cases System.Platform.numBits_eq
-      . bv_decide
-      . bv_decide
+      exact USize.sub_add_lt_of_and_lt_lt h₂.ptr₂_ge_mid ptr₁_ptr₂_in_range
   }
 
 def H₃.ptr₁_lt_arr_size
