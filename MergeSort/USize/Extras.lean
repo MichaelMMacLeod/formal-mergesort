@@ -121,9 +121,8 @@ theorem USize.eq_of_not_lt_of_le
     {a b : USize}
     (le : a ≤ b)
     (not_lt : ¬a < b)
-    : a = b := by
-  have v := Fin.eq_of_not_lt_of_le le not_lt
-  exact USize.eq_of_toFin_eq v
+    : a = b :=
+  USize.eq_of_toFin_eq (Fin.eq_of_not_lt_of_le le not_lt)
 
 theorem USize.ptr₁_eq_mid_or_ptr₂_eq_high
     {mid high ptr₁ ptr₂ : USize}
@@ -138,6 +137,21 @@ theorem USize.ptr₁_eq_mid_or_ptr₂_eq_high
   . intro not_ptr₂_lt_high
     apply Or.intro_right
     exact USize.eq_of_not_lt_of_le ptr₂_le_high not_ptr₂_lt_high
+
+theorem USize.i_lt_arr_usize
+    {α : Type}
+    {arr : Array α}
+    {mid high ptr₁ ptr₂ i : USize}
+    (high_le_size : high ≤ arr.usize)
+    (i_le_high : i ≤ high)
+    (i_def : i = ptr₁ + ptr₂ - mid)
+    (not_ptr₁_ptr₂_in_range : ptr₁ = mid ∨ ptr₂ = high)
+    (ptr₁_lt_mid : ptr₁ < mid)
+    : i < arr.usize :=
+  Fin.i_lt_arr_usize high_le_size i_le_high
+    (congrArg BitVec.toFin (congrArg toBitVec i_def))
+    (Or.imp (congrArg toFin) (congrArg toFin) not_ptr₁_ptr₂_in_range)
+    ptr₁_lt_mid
 
   -- cases System.Platform.numBits_eq
   -- . bv_decide

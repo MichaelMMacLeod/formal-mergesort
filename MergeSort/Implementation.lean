@@ -161,10 +161,9 @@ def H₅.ptr₁_lt_arr_size
 def H₅.i_lt_aux_size
     (h₅ : H₅ arr aux low mid high ptr₁ ptr₂ i)
     : i.toNat < aux.size := by
-  have i_lt_size : i < arr.usize := by
-    cases System.Platform.numBits_eq
-    . bv_decide
-    . bv_decide
+  have i_lt_size : i < arr.usize :=
+    USize.i_lt_arr_usize h₅.high_le_size h₅.i_le_high h₅.i_def
+      h₅.not_ptr₁_ptr₂_in_range h₅.ptr₁_lt_mid
   rw [← h₅.size_eq]
   exact (USize.lt_ofNat_iff h₅.arr_size_lt_usize_size).mp i_lt_size
 

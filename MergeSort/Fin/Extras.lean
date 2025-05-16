@@ -101,3 +101,21 @@ theorem Fin.eq_of_not_lt_of_le
     (not_lt : ¬a < b)
     : a = b := by
   omega
+
+theorem Fin.i_lt_arr_usize
+    {mid high ptr₁ ptr₂ i arrUSize : Fin (2 ^ System.Platform.numBits)}
+    (high_le_size : high ≤ arrUSize)
+    (i_le_high : i ≤ high)
+    (i_def : i = ptr₁ + ptr₂ - mid)
+    (not_ptr₁_ptr₂_in_range : ptr₁ = mid ∨ ptr₂ = high)
+    (ptr₁_lt_mid : ptr₁ < mid)
+    : i < arrUSize := by
+  cases System.Platform.numBits_eq
+  case inl h | inr h =>
+    revert ptr₁_lt_mid not_ptr₁_ptr₂_in_range i_def i_le_high high_le_size
+      arrUSize i ptr₂ ptr₁ high mid
+    rw [h]
+    intro mid high ptr₁ ptr₂ i arrUSize high_le_size i_le_high i_def
+      not_ptr₁_ptr₂_in_range ptr₁_lt_mid
+    simp only [Nat.reducePow] at *
+    omega
