@@ -137,10 +137,8 @@ def H₂.make_H₄
     (not_ptr₁_ptr₂_in_range : ¬(ptr₁ < mid ∧ ptr₂ < high))
     : H₄ arr aux low mid high ptr₁ ptr₂ i :=
   { h₂ with
-    not_ptr₁_ptr₂_in_range := by
-      cases System.Platform.numBits_eq
-      . bv_decide
-      . bv_decide
+    not_ptr₁_ptr₂_in_range := USize.ptr₁_eq_mid_or_ptr₂_eq_high h₂.ptr₁_le_mid
+      h₂.ptr₂_le_high not_ptr₁_ptr₂_in_range
   }
 
 structure H₅ (arr aux : Array α) (low mid high ptr₁ ptr₂ i : USize) : Prop

@@ -117,6 +117,28 @@ theorem USize.succ_eq_add_succ_sub_of_add_sub
     (congrArg BitVec.toFin (congrArg toBitVec i_def))
   exact USize.eq_of_toFin_eq this
 
+theorem USize.eq_of_not_lt_of_le
+    {a b : USize}
+    (le : a ≤ b)
+    (not_lt : ¬a < b)
+    : a = b := by
+  have v := Fin.eq_of_not_lt_of_le le not_lt
+  exact USize.eq_of_toFin_eq v
+
+theorem USize.ptr₁_eq_mid_or_ptr₂_eq_high
+    {mid high ptr₁ ptr₂ : USize}
+    (ptr₁_le_mid : ptr₁ ≤ mid)
+    (ptr₂_le_high : ptr₂ ≤ high)
+    (not_ptr₁_ptr₂_in_range : ¬(ptr₁ < mid ∧ ptr₂ < high))
+    : ptr₁ = mid ∨ ptr₂ = high := by
+  apply (Decidable.not_and_iff_or_not.mp not_ptr₁_ptr₂_in_range).elim
+  . intro not_ptr₁_lt_mid
+    apply Or.intro_left
+    exact USize.eq_of_not_lt_of_le ptr₁_le_mid not_ptr₁_lt_mid
+  . intro not_ptr₂_lt_high
+    apply Or.intro_right
+    exact USize.eq_of_not_lt_of_le ptr₂_le_high not_ptr₂_lt_high
+
   -- cases System.Platform.numBits_eq
   -- . bv_decide
   -- . bv_decide

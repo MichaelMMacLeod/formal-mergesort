@@ -94,3 +94,10 @@ theorem Fin.succ_eq_add_succ_sub_of_add_sub
     intro mid ptr₁ ptr₂ i i_def
     simp only [Nat.reducePow] at *
     omega
+
+theorem Fin.eq_of_not_lt_of_le
+    {a b : Fin (2 ^ System.Platform.numBits)}
+    (le : a ≤ b)
+    (not_lt : ¬a < b)
+    : a = b := by
+  omega
