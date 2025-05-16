@@ -70,3 +70,27 @@ theorem Fin.ptr₁_lt_size
       i_def arr_size_lt_usize_size high_le_size
     simp only [Nat.reducePow] at *
     omega
+
+theorem Fin.succ_eq_succ_add_sub_of_add_sub
+    {mid ptr₁ ptr₂ i : Fin (2 ^ System.Platform.numBits)}
+    (i_def : i = ptr₁ + ptr₂ - mid)
+    : i + 1 = (ptr₁ + 1) + ptr₂ - mid := by
+  cases System.Platform.numBits_eq
+  case inl h | inr h =>
+    revert i_def i ptr₂ ptr₁ mid
+    rw [h]
+    intro mid ptr₁ ptr₂ i i_def
+    simp only [Nat.reducePow] at *
+    omega
+
+theorem Fin.succ_eq_add_succ_sub_of_add_sub
+    {mid ptr₁ ptr₂ i : Fin (2 ^ System.Platform.numBits)}
+    (i_def : i = ptr₁ + ptr₂ - mid)
+    : i + 1 = ptr₁ + (ptr₂ + 1) - mid := by
+  cases System.Platform.numBits_eq
+  case inl h | inr h =>
+    revert i_def i ptr₂ ptr₁ mid
+    rw [h]
+    intro mid ptr₁ ptr₂ i i_def
+    simp only [Nat.reducePow] at *
+    omega

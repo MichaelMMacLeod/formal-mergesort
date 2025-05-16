@@ -105,26 +105,11 @@ def H₃.next₁
     size_eq := by
       simp only [Array.uset, Array.ugetElem_eq_getElem, Array.size_set]
       exact h₃.size_eq
-    ptr₁_ge_low := by
-      cases System.Platform.numBits_eq
-      . bv_decide
-      . bv_decide
-    ptr₁_le_mid := by
-      cases System.Platform.numBits_eq
-      . bv_decide
-      . bv_decide
-    i_ge_low := by
-      cases System.Platform.numBits_eq
-      . bv_decide
-      . bv_decide
-    i_le_high := by
-      cases System.Platform.numBits_eq
-      . bv_decide
-      . bv_decide
-    i_def := by
-      cases System.Platform.numBits_eq
-      . bv_decide
-      . bv_decide
+    ptr₁_ge_low := USize.add_one_ge_of_lt_of_ge h₃.ptr₁_ge_low h₃.ptr₁_lt_mid
+    ptr₁_le_mid := USize.add_one_le_of_lt h₃.ptr₁_lt_mid
+    i_ge_low := USize.add_one_ge_of_lt_of_ge h₃.i_ge_low h₃.i_lt_high
+    i_le_high := USize.add_one_le_of_lt h₃.i_lt_high
+    i_def := USize.succ_eq_succ_add_sub_of_add_sub h₃.i_def
   }
 
 def H₃.next₂
@@ -136,26 +121,11 @@ def H₃.next₂
     size_eq := by
       simp only [Array.uset, Array.ugetElem_eq_getElem, Array.size_set]
       exact h₃.size_eq
-    ptr₂_ge_mid := by
-      cases System.Platform.numBits_eq
-      . bv_decide
-      . bv_decide
-    ptr₂_le_high := by
-      cases System.Platform.numBits_eq
-      . bv_decide
-      . bv_decide
-    i_ge_low := by
-      cases System.Platform.numBits_eq
-      . bv_decide
-      . bv_decide
-    i_le_high := by
-      cases System.Platform.numBits_eq
-      . bv_decide
-      . bv_decide
-    i_def := by
-      cases System.Platform.numBits_eq
-      . bv_decide
-      . bv_decide
+    ptr₂_ge_mid := USize.add_one_ge_of_lt_of_ge h₃.ptr₂_ge_mid h₃.ptr₂_lt_high
+    ptr₂_le_high := USize.add_one_le_of_lt h₃.ptr₂_lt_high
+    i_ge_low := USize.add_one_ge_of_lt_of_ge h₃.i_ge_low h₃.i_lt_high
+    i_le_high := USize.add_one_le_of_lt h₃.i_lt_high
+    i_def := USize.succ_eq_add_succ_sub_of_add_sub h₃.i_def
   }
 
 structure H₄ (arr aux : Array α) (low mid high ptr₁ ptr₂ i : USize) : Prop

@@ -101,6 +101,26 @@ theorem USize.i_lt_aux_size
   rw [← size_eq]
   exact (USize.lt_ofNat_iff arr_size_lt_usize_size).mp i_lt_size
 
+theorem USize.succ_eq_succ_add_sub_of_add_sub
+    {mid ptr₁ ptr₂ i : USize}
+    (i_def : i = ptr₁ + ptr₂ - mid)
+    : i.succ = ptr₁.succ + ptr₂ - mid := by
+  have := Fin.succ_eq_succ_add_sub_of_add_sub
+    (congrArg BitVec.toFin (congrArg toBitVec i_def))
+  exact USize.eq_of_toFin_eq this
+
+theorem USize.succ_eq_add_succ_sub_of_add_sub
+    {mid ptr₁ ptr₂ i : USize}
+    (i_def : i = ptr₁ + ptr₂ - mid)
+    : i.succ = ptr₁ + ptr₂.succ - mid := by
+  have := Fin.succ_eq_add_succ_sub_of_add_sub
+    (congrArg BitVec.toFin (congrArg toBitVec i_def))
+  exact USize.eq_of_toFin_eq this
+
+  -- cases System.Platform.numBits_eq
+  -- . bv_decide
+  -- . bv_decide
+
 -- variable
 --   {α : Type}
 --   {arr aux : Array α}
