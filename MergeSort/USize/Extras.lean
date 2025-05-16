@@ -160,11 +160,42 @@ theorem USize.i_succ_ge_low
     (i_def : i = ptr₁ + ptr₂ - mid)
     (not_ptr₁_ptr₂_in_range : ptr₁ = mid ∨ ptr₂ = high)
     (ptr₁_lt_mid : ptr₁ < mid)
-    : i.succ ≥ low := by
-  exact Fin.i_add_one_ge_low i_ge_low i_le_high
+    : i.succ ≥ low :=
+  Fin.i_add_one_ge_low i_ge_low i_le_high
     (congrArg BitVec.toFin (congrArg toBitVec i_def))
     (Or.imp (congrArg toFin) (congrArg toFin) not_ptr₁_ptr₂_in_range)
     ptr₁_lt_mid
+
+theorem USize.i_succ_le_high
+    {mid high ptr₁ ptr₂ i : USize}
+    (i_le_high : i ≤ high)
+    (i_def : i = ptr₁ + ptr₂ - mid)
+    (not_ptr₁_ptr₂_in_range : ptr₁ = mid ∨ ptr₂ = high)
+    (ptr₁_lt_mid : ptr₁ < mid)
+    : i.succ ≤ high :=
+  Fin.i_add_one_le_high i_le_high
+    (congrArg BitVec.toFin (congrArg toBitVec i_def))
+    (Or.imp (congrArg toFin) (congrArg toFin) not_ptr₁_ptr₂_in_range)
+    ptr₁_lt_mid
+
+theorem USize.not_ptr₁_succ_ptr₂_in_range
+    {mid high ptr₁ ptr₂ : USize}
+    (not_ptr₁_ptr₂_in_range : ptr₁ = mid ∨ ptr₂ = high)
+    (ptr₁_lt_mid : ptr₁ < mid)
+    : ptr₁ + 1 = mid ∨ ptr₂ = high := by
+  have := Fin.not_ptr₁_add_one_ptr₂_in_range
+    (Or.imp (congrArg toFin) (congrArg toFin) not_ptr₁_ptr₂_in_range)
+    ptr₁_lt_mid
+  -- there's got to be a better way to do this
+  match this with
+  | Or.inl h =>
+    have v : ptr₁ + 1 = mid := USize.eq_of_toFin_eq h
+    apply Or.intro_left
+    exact v
+  | Or.inr h =>
+    apply Or.intro_right
+    apply USize.eq_of_toFin_eq
+    exact h
 
   -- cases System.Platform.numBits_eq
   -- . bv_decide

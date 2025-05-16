@@ -93,3 +93,17 @@ theorem Fin.i_add_one_ge_low
     (not_ptr₁_ptr₂_in_range : ptr₁ = mid ∨ ptr₂ = high)
     (ptr₁_lt_mid : ptr₁ < mid)
     : i + 1 ≥ low := by solve_numBits_fin_goal
+
+theorem Fin.i_add_one_le_high
+    {mid high ptr₁ ptr₂ i : Fin (2 ^ System.Platform.numBits)}
+    (i_le_high : i ≤ high)
+    (i_def : i = ptr₁ + ptr₂ - mid)
+    (not_ptr₁_ptr₂_in_range : ptr₁ = mid ∨ ptr₂ = high)
+    (ptr₁_lt_mid : ptr₁ < mid)
+    : i + 1 ≤ high := by solve_numBits_fin_goal
+
+theorem Fin.not_ptr₁_add_one_ptr₂_in_range
+    {mid high ptr₁ ptr₂ : Fin (2 ^ System.Platform.numBits)}
+    (not_ptr₁_ptr₂_in_range : ptr₁ = mid ∨ ptr₂ = high)
+    (ptr₁_lt_mid : ptr₁ < mid)
+    : ptr₁ + 1 = mid ∨ ptr₂ = high := by solve_numBits_fin_goal

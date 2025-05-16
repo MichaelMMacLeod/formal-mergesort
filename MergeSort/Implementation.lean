@@ -172,21 +172,6 @@ def H₅.next
     : have ptr₁_lt_arr_size := h₅.ptr₁_lt_arr_size
       let aux' := aux.uset i arr[ptr₁] h₅.i_lt_aux_size
       H₄ arr aux' low mid high ptr₁.succ ptr₂ i.succ :=
-  have v1 := h₅.arr_size_lt_usize_size
-  have v2 := h₅.low_le_mid
-  have v3 := h₅.mid_le_size
-  have v4 := h₅.mid_le_high
-  have v5 := h₅.high_le_size
-  have v6 := h₅.size_eq
-  have v7 := h₅.ptr₁_ge_low
-  have v8 := h₅.ptr₁_le_mid
-  have v9 := h₅.ptr₂_ge_mid
-  have v10 := h₅.ptr₂_le_high
-  have v11 := h₅.i_ge_low
-  have v12 := h₅.i_le_high
-  have v13 := h₅.i_def
-  have v14 := h₅.not_ptr₁_ptr₂_in_range
-  have v15 := h₅.ptr₁_lt_mid
   { h₅ with
     size_eq := by
       simp only [Array.uset, Array.ugetElem_eq_getElem, Array.size_set]
@@ -195,9 +180,11 @@ def H₅.next
     ptr₁_le_mid := USize.add_one_le_of_lt h₅.ptr₁_lt_mid
     i_ge_low := USize.i_succ_ge_low h₅.i_ge_low h₅.i_le_high h₅.i_def
       h₅.not_ptr₁_ptr₂_in_range h₅.ptr₁_lt_mid
-    i_le_high := by exact?
+    i_le_high := USize.i_succ_le_high h₅.i_le_high h₅.i_def h₅.not_ptr₁_ptr₂_in_range
+      h₅.ptr₁_lt_mid
     i_def := USize.succ_eq_succ_add_sub_of_add_sub h₅.i_def
-    not_ptr₁_ptr₂_in_range := by exact?
+    not_ptr₁_ptr₂_in_range := USize.not_ptr₁_succ_ptr₂_in_range h₅.not_ptr₁_ptr₂_in_range
+      h₅.ptr₁_lt_mid
   }
 
 structure H₆ (arr aux : Array α) (low mid high ptr₁ ptr₂ i : USize) : Prop
